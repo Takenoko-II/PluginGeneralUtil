@@ -171,7 +171,7 @@ public class Execute {
         private Align() {}
 
         public @NotNull Execute $(@NotNull String axes) {
-            return redirect(stack -> stack.write(SourceStack.floorAxis(axes, stack.getLocation())));
+            return redirect(stack -> stack.floorAxis(axes));
         }
     }
 

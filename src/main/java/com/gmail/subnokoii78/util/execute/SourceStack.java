@@ -5,7 +5,6 @@ import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,7 +23,7 @@ public class SourceStack {
 
     private EntityAnchor anchor = EntityAnchor.FEET;
 
-    SourceStack() {}
+    public SourceStack() {}
 
     public @Nullable Entity getExecutor() {
         return executor;
@@ -200,6 +199,20 @@ public class SourceStack {
         return new DualAxisRotationBuilder(componentOutputs.get(0), componentOutputs.get(1));
     }
 
+    public void floorAxis(@NotNull String axes) {
+        final Set<String> chars = Set.of(axes.split(""));
+
+        if (axes.length() > 3) throw new IllegalArgumentException("軸は3つまで指定可能です");
+        else if (axes.length() != chars.size()) throw new IllegalArgumentException("軸が重複しています");
+        else if (!Set.of("x", "y", "z").containsAll(chars)) {
+            throw new IllegalArgumentException("x, y, zの文字が有効です");
+        }
+
+        if (chars.contains("x")) location.x(Math.floor(location.x()));
+        if (chars.contains("y")) location.y(Math.floor(location.y()));
+        if (chars.contains("z")) location.z(Math.floor(location.z()));
+    }
+
     public <T extends Entity> @NotNull List<T> getEntities(@NotNull EntitySelector<T> selector) {
         return selector.getEntities(this);
     }
@@ -212,21 +225,5 @@ public class SourceStack {
         stack.write(rotation);
         stack.write(anchor);
         return stack;
-    }
-
-    public static @NotNull Vector3Builder floorAxis(@NotNull String axes, @NotNull Vector3Builder vector) {
-        final Set<String> chars = Set.of(axes.split(""));
-        final Vector3Builder copy = vector.copy();
-
-        if (axes.length() > 3) throw new IllegalArgumentException("軸は3つまで指定可能です");
-        else if (!Set.of("x", "y", "z").containsAll(chars)) {
-            throw new IllegalArgumentException("x, y, zの文字が有効です");
-        }
-
-        if (chars.contains("x")) copy.x(Math.floor(copy.x()));
-        if (chars.contains("y")) copy.y(Math.floor(copy.y()));
-        if (chars.contains("z")) copy.z(Math.floor(copy.z()));
-
-        return copy;
     }
 }
