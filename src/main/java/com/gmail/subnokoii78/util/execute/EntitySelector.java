@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public abstract class EntitySelector<T extends Entity> {
-    private final Set<EntitySelectorModifier<T>> modifiers = new HashSet<>();
+    private final List<EntitySelectorModifier<T>> modifiers = new ArrayList<>();
 
     private EntitySelector() {}
 
@@ -19,20 +19,7 @@ public abstract class EntitySelector<T extends Entity> {
         List<T> out = entities;
 
         // xyz -> sort -> limit
-
-        // ModifierPriorityの追加
-        // Set -> List
-
         for (final EntitySelectorModifier<T> modifier : modifiers) {
-            if (modifier instanceof EntitySelectorModifier.EntitySelectorXYZ xyz) {
-                copy.write(xyz.getCoordinates());
-                break;
-            }
-        }
-
-        for (final EntitySelectorModifier<T> modifier : modifiers) {
-            if (modifier instanceof EntitySelectorModifier.EntitySelectorXYZ) continue;
-
             out = modifier.modify(out, copy);
         }
 
@@ -47,6 +34,7 @@ public abstract class EntitySelector<T extends Entity> {
 
     public <U> @NotNull EntitySelector<T> argument(@NotNull EntitySelectorModifier.Builder<T, U> modifier, @NotNull U value) {
         modifiers.add(modifier.build(value));
+        modifiers.sort((a, b) -> b.getPriority() - a.getPriority());
         return this;
     }
 

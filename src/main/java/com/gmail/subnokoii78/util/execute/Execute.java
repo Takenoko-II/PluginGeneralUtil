@@ -2,22 +2,20 @@ package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
-import org.bukkit.Axis;
-import org.bukkit.Location;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Entity;
+import org.bukkit.entity.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class Execute {
-    private final Execute that = this;
-
     private final List<SourceStack> stacks = new ArrayList<>();
 
     private @NotNull Execute redirect(Consumer<SourceStack> modifier) {
@@ -39,21 +37,29 @@ public class Execute {
         this.stacks.add(new SourceStack());
     }
 
-    public final As as = new As();
+    public final As AS = new As();
 
-    public final At at = new At();
+    public final At AT = new At();
 
-    public final Positioned positioned = new Positioned();
+    public final Positioned POSITIONED = new Positioned();
 
-    public final Rotated rotated = new Rotated();
+    public final Rotated ROTATED = new Rotated();
 
-    public final Facing facing = new Facing();
+    public final Facing FACING = new Facing();
 
-    public final Align align = new Align();
+    public final Align ALIGN = new Align();
 
-    public final Anchored anchored = new Anchored();
+    public final Anchored ANCHORED = new Anchored();
 
-    public final In in = new In();
+    public final In IN = new In();
+
+    public final If IF = new If();
+
+    public final Unless UNLESS = new Unless();
+
+    public final On ON = new On();
+
+    public final Summon SUMMON = new Summon();
 
     public final class As {
         private As() {}
@@ -205,12 +211,202 @@ public class Execute {
                 );
 
                 if (block.getType().equals(blockType)) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+
+        public @NotNull Execute predicate(Predicate<SourceStack> predicate) {
+            return fork(stack -> {
+                final SourceStack copy = stack.copy();
+
+                if (predicate.test(copy)) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+    }
+
+    public final class Unless {
+        private Unless() {}
+
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector) {
+            return fork(stack -> {
+                if (!stack.getEntities(selector).isEmpty()) {
                     return List.of();
                 }
                 else return List.of(stack);
             });
         }
 
+        public @NotNull Execute block(@NotNull String location, @NotNull Material blockType) {
+            return fork(stack -> {
+                final Block block = stack.getDimension().getBlockAt(
+                    stack.readCoordinates(location)
+                        .withWorld(stack.getDimension())
+                );
 
+                if (!block.getType().equals(blockType)) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+
+        public @NotNull Execute predicate(Predicate<SourceStack> predicate) {
+            return fork(stack -> {
+                final SourceStack copy = stack.copy();
+
+                if (!predicate.test(copy)) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+    }
+
+    public final class On {
+        private On() {}
+
+        public @NotNull Execute passengers() {
+            return fork(stack -> {
+                final Entity executor = stack.getExecutor();
+                if (executor == null) return List.of();
+
+                return executor.getPassengers()
+                    .stream()
+                    .map(passenger -> {
+                        final SourceStack copy = stack.copy();
+                        copy.write(passenger);
+                        return copy;
+                    })
+                    .toList();
+            });
+        }
+
+        public @NotNull Execute vehicle() {
+            return redirect(stack -> {
+                final Entity executor = stack.getExecutor();
+                if (executor == null) return;
+                final Entity vehicle = executor.getVehicle();
+                if (vehicle == null) return;
+                stack.write(vehicle);
+            });
+        }
+
+        public @NotNull Execute owner() {
+            return fork(stack -> {
+                final Entity executor = stack.getExecutor();
+                if (executor == null) return List.of();
+                if (!(executor instanceof Tameable tameable)) return List.of();
+                final AnimalTamer tamer = tameable.getOwner();
+                if (tamer == null) return List.of();
+                final Entity tamerEntity = stack.getDimension().getEntity(tamer.getUniqueId());
+                if (tamerEntity == null) return List.of();
+                stack.write(tamerEntity);
+                return List.of(stack);
+            });
+        }
+
+        public @NotNull Execute origin() {
+            return fork(stack -> {
+                final Entity executor = stack.getExecutor();
+                if (executor == null) return List.of();
+
+                return switch (executor) {
+                    case Projectile projectile -> {
+                        final UUID id = projectile.getOwnerUniqueId();
+                        if (id == null) yield List.of();
+                        final Entity owner = stack.getDimension().getEntity(id);
+                        if (owner == null) yield List.of();
+                        stack.write(owner);
+                        yield List.of(stack);
+                    }
+                    case Item item -> {
+                        final UUID id = item.getThrower();
+                        if (id == null) yield List.of();
+                        final Entity owner = stack.getDimension().getEntity(id);
+                        if (owner == null) yield List.of();
+                        stack.write(owner);
+                        yield List.of(stack);
+                    }
+                    case EvokerFangs evokerFangs -> {
+                        final Entity owner = evokerFangs.getOwner();
+                        if (owner == null) yield List.of();
+                        stack.write(owner);
+                        yield List.of(stack);
+                    }
+                    case Vex vex -> {
+                        final Entity owner = vex.getSummoner();
+                        if (owner == null) yield List.of();
+                        stack.write(owner);
+                        yield List.of(stack);
+                    }
+                    case TNTPrimed tnt -> {
+                        final Entity source = tnt.getSource();
+                        if (source == null) yield List.of();
+                        stack.write(source);
+                        yield List.of(stack);
+                    }
+                    case AreaEffectCloud cloud -> {
+                        final UUID id = cloud.getOwnerUniqueId();
+                        if (id == null) yield List.of();
+                        final Entity owner = stack.getDimension().getEntity(id);
+                        if (owner == null) yield List.of();
+                        stack.write(owner);
+                        yield List.of(stack);
+                    }
+                    default -> List.of();
+                };
+            });
+        }
+    }
+
+    public final class Summon {
+        private Summon() {}
+
+        public @NotNull Execute $(@NotNull EntityType entityType) {
+            return redirect(stack -> stack.getDimension().spawnEntity(stack.getLocation().withWorld(stack.getDimension()), entityType));
+        }
+    }
+
+    public final class Run {
+        private Run() {}
+
+        public void command(@NotNull String command) {
+            redirect(stack -> {
+                if (stack.getExecutor() == null) {
+                    Bukkit.getServer().dispatchCommand(
+                        Bukkit.getConsoleSender(),
+                        String.format(
+                            "execute in %s positioned %s rotated %s run %s",
+                            DimensionProvider.get(stack.getDimension()).getId(),
+                            stack.getLocation().format("$c $c $c"),
+                            stack.getRotation().format("$c $c"),
+                            command
+                        )
+                    );
+                }
+                else {
+                    Bukkit.getServer().dispatchCommand(
+                        stack.getExecutor(),
+                        String.format(
+                            "execute as %s in %s positioned %s rotated %s run %s",
+                            stack.getExecutor().getUniqueId(),
+                            DimensionProvider.get(stack.getDimension()).getId(),
+                            stack.getLocation().format("$c $c $c"),
+                            stack.getRotation().format("$c $c"),
+                            command
+                        )
+                    );
+                }
+            });
+        }
+    }
+
+    public void $(@NotNull Consumer<SourceStack> callback) {
+        redirect(callback);
     }
 }

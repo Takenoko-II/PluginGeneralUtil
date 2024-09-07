@@ -21,7 +21,15 @@ public abstract class EntitySelectorModifier<T extends Entity> {
 
     abstract @NotNull List<T> modify(@NotNull List<T> entities, @NotNull SourceStack stack);
 
-    public static final Builder<Entity, Vector3Builder> XYZ = new EntitySelectorXYZ.Builder();
+    abstract int getPriority();
+
+    public static final Builder<Entity, Vector3Builder> XYZ = new Builder<>(3) {
+        @Override
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Vector3Builder argument) {
+            stack.write(argument);
+            return entities;
+        }
+    };
 
     public static final Builder<Entity, EntityType> TYPE = new Builder<>() {
         @Override
@@ -74,7 +82,7 @@ public abstract class EntitySelectorModifier<T extends Entity> {
         }
     };
 
-    public static final Builder<Entity, SelectorSortOrder> SORT = new Builder<>() {
+    public static final Builder<Entity, SelectorSortOrder> SORT = new Builder<>(2) {
         @NotNull
         @Override
         List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull SelectorSortOrder argument) {
@@ -181,7 +189,7 @@ public abstract class EntitySelectorModifier<T extends Entity> {
         }
     };
 
-    public static final Builder<Entity, Integer> LIMIT = new Builder<>() {
+    public static final Builder<Entity, Integer> LIMIT = new Builder<>(1) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Integer argument) {
             return entities.subList(0, argument);
@@ -189,7 +197,15 @@ public abstract class EntitySelectorModifier<T extends Entity> {
     };
 
     public static abstract class Builder<T extends Entity, U> {
-        private Builder() {}
+        private final int priority;
+
+        private Builder(int priority) {
+            this.priority = priority;
+        }
+
+        private Builder() {
+            this.priority = 0;
+        }
 
         abstract @NotNull List<T> modify(@NotNull List<T> entities, @NotNull SourceStack stack, @NotNull U argument);
 
@@ -201,37 +217,12 @@ public abstract class EntitySelectorModifier<T extends Entity> {
                 @NotNull List<T> modify(@NotNull List<T> entities, @NotNull SourceStack stack) {
                     return that.modify(entities, stack, value);
                 }
+
+                @Override
+                int getPriority() {
+                    return priority;
+                }
             };
-        }
-    }
-
-    public static abstract class EntitySelectorXYZ extends EntitySelectorModifier<Entity> {
-        @Override
-        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack) {
-            return entities;
-        }
-
-        abstract @NotNull Vector3Builder getCoordinates();
-
-        public static final class Builder extends EntitySelectorModifier.Builder<Entity, Vector3Builder> {
-            private Builder() {}
-
-            @Override
-            @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Vector3Builder argument) {
-                return entities;
-            }
-
-            @Override
-            @NotNull EntitySelectorXYZ build(@NotNull Vector3Builder value) {
-                final Builder that = this;
-
-                return new EntitySelectorXYZ() {
-                    @Override
-                    @NotNull Vector3Builder getCoordinates() {
-                        return value;
-                    }
-                };
-            }
         }
     }
 }

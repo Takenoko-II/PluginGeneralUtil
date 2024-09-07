@@ -5,16 +5,19 @@ import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 public enum DimensionProvider {
-    OVERWORLD(World.Environment.NORMAL),
+    OVERWORLD(World.Environment.NORMAL, "minecraft:overworld"),
 
-    THE_NETHER(World.Environment.NETHER),
+    THE_NETHER(World.Environment.NETHER, "minecraft_the_nether"),
 
-    THE_END(World.Environment.THE_END);
+    THE_END(World.Environment.THE_END, "minecraft:the_end");
 
     private final World.Environment environment;
 
-    DimensionProvider(@NotNull World.Environment environment) {
+    private final String id;
+
+    DimensionProvider(@NotNull World.Environment environment, @NotNull String id) {
         this.environment = environment;
+        this.id = id;
     }
 
     public @NotNull World getWorld() throws IllegalStateException {
@@ -25,5 +28,19 @@ public enum DimensionProvider {
         }
 
         throw new IllegalStateException("ディメンションが見つかりませんでした 生成されていない可能性があります");
+    }
+
+    public @NotNull String getId() {
+        return id;
+    }
+
+    public static @NotNull DimensionProvider get(@NotNull World world) {
+        for (final DimensionProvider provider : values()) {
+            if (provider.environment.equals(world.getEnvironment())) {
+                return provider;
+            }
+        }
+
+        throw new IllegalStateException("ディメンションが見つかりませんでした カスタムディメンションですか？");
     }
 }
