@@ -5,7 +5,9 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 
 public enum ServerDirectoryPaths {
-    LATEST_LOG("logs/latest.log");
+    LATEST_LOG("logs/latest.log"),
+
+    PERSISTENT("plugins/TestPluginPersistent/database.dat");
 
     private final Path path;
 

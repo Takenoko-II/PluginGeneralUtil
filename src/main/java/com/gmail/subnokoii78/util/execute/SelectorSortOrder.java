@@ -1,4 +1,4 @@
-package com.gmail.subnokoii78.util.vector.execute;
+package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.entity.Entity;

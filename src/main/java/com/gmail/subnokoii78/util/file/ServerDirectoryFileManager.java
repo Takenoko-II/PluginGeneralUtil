@@ -11,8 +11,12 @@ import java.util.List;
 public class ServerDirectoryFileManager {
     protected final Path path;
 
-    protected ServerDirectoryFileManager(@NotNull String path) {
-        this.path = Path.of(path);
+    public ServerDirectoryFileManager(@NotNull ServerDirectoryPaths path) {
+        this.path = path.getPath();
+    }
+
+    private ServerDirectoryFileManager(@NotNull Path path) {
+        this.path = path;
     }
 
     public boolean exist() {
@@ -20,6 +24,12 @@ public class ServerDirectoryFileManager {
     }
 
     public void create() {
+        if (exist()) return;
+
+        if (path.getParent() == null) {
+            new ServerDirectoryFileManager(path.subpath(0, path.getNameCount() - 1)).create();
+        }
+
         try {
             Files.createFile(path);
         }

@@ -1,4 +1,4 @@
-package com.gmail.subnokoii78.util.vector.execute;
+package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class SourceStack {
     private Entity executor = null;
@@ -20,7 +21,7 @@ public class SourceStack {
 
     private final DualAxisRotationBuilder rotation = new DualAxisRotationBuilder();
 
-    private final Vector3Builder entityAnchor = new Vector3Builder();
+    private EntityAnchor anchor = EntityAnchor.FEET;
 
     SourceStack() {}
 
@@ -41,7 +42,7 @@ public class SourceStack {
     }
 
     public @NotNull Vector3Builder getEntityAnchor() {
-        return entityAnchor;
+        return anchor.getEntityAnchor(executor);
     }
 
     void write(@NotNull Entity executor) {
@@ -60,8 +61,8 @@ public class SourceStack {
         this.rotation.yaw(rotation.yaw()).pitch(rotation.pitch());
     }
 
-    void anchored(@NotNull EntityAnchor anchor) {
-        this.entityAnchor.add(anchor.getEntityAnchor(executor));
+    void write(@NotNull EntityAnchor anchor) {
+        this.anchor = anchor;
     }
 
     private double parseAbsolutePos(@NotNull String input) {
@@ -208,7 +209,23 @@ public class SourceStack {
         stack.write(executor);
         stack.write(location);
         stack.write(rotation);
-        stack.write(entityAnchor);
+        stack.write(anchor);
         return stack;
+    }
+
+    public static @NotNull Vector3Builder floorAxis(@NotNull String axes, @NotNull Vector3Builder vector) {
+        final Set<String> chars = Set.of(axes.split(""));
+        final Vector3Builder copy = vector.copy();
+
+        if (axes.length() > 3) throw new IllegalArgumentException("軸は3つまで指定可能です");
+        else if (!Set.of("x", "y", "z").containsAll(chars)) {
+            throw new IllegalArgumentException("x, y, zの文字が有効です");
+        }
+
+        if (chars.contains("x")) copy.x(Math.floor(copy.x()));
+        if (chars.contains("y")) copy.y(Math.floor(copy.y()));
+        if (chars.contains("z")) copy.z(Math.floor(copy.z()));
+
+        return copy;
     }
 }

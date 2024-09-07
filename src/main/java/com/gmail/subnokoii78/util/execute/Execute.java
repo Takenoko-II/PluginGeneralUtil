@@ -1,15 +1,17 @@
-package com.gmail.subnokoii78.util.vector.execute;
+package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.WorldType;
+import org.bukkit.Axis;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -47,6 +49,8 @@ public class Execute {
 
     public final Facing facing = new Facing();
 
+    public final Align align = new Align();
+
     public final Anchored anchored = new Anchored();
 
     public final In in = new In();
@@ -54,7 +58,7 @@ public class Execute {
     public final class As {
         private As() {}
 
-        private <T extends Entity> @NotNull Execute $(@NotNull EntitySelector<T> selector) {
+        public <T extends Entity> @NotNull Execute $(@NotNull EntitySelector<T> selector) {
             return fork(stack -> stack.getEntities(selector)
                 .stream()
                 .map(entity -> {
@@ -70,7 +74,7 @@ public class Execute {
     public final class At {
         private At() {}
 
-        private <T extends Entity> @NotNull Execute $(@NotNull EntitySelector<T> selector) {
+        public <T extends Entity> @NotNull Execute $(@NotNull EntitySelector<T> selector) {
             return fork(stack -> stack.getEntities(selector)
                 .stream()
                 .map(entity -> {
@@ -89,10 +93,13 @@ public class Execute {
         private Positioned() {}
 
         public @NotNull Execute $(@NotNull String input) {
-            return redirect(stack -> stack.write(stack.readCoordinates(input)));
+            return redirect(stack -> {
+                stack.write(stack.readCoordinates(input));
+                stack.write(EntityAnchor.FEET);
+            });
         }
 
-        private <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
+        public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
             return fork(stack -> stack.getEntities(selector)
                 .stream()
                 .map(entity -> {
@@ -112,7 +119,7 @@ public class Execute {
             return redirect(stack -> stack.write(stack.readAngles(input)));
         }
 
-        private <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
+        public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
             return fork(stack -> stack.getEntities(selector)
                 .stream()
                 .map(entity -> {
@@ -142,7 +149,10 @@ public class Execute {
                     final SourceStack copy = stack.copy();
                     final Vector3Builder direction = copy.getLocation()
                         .add(copy.getEntityAnchor())
-                        .getDirectionTo(Vector3Builder.from(entity).add(anchor.getEntityAnchor(entity)));
+                        .getDirectionTo(
+                            Vector3Builder.from(entity)
+                                .add(anchor.getEntityAnchor(entity))
+                        );
                     copy.write(direction.getRotation2d());
                     return copy;
                 })
@@ -151,22 +161,56 @@ public class Execute {
         }
     }
 
+    public final class Align {
+        private Align() {}
+
+        public @NotNull Execute $(@NotNull String axes) {
+            return redirect(stack -> stack.write(SourceStack.floorAxis(axes, stack.getLocation())));
+        }
+    }
+
     public final class Anchored {
         private Anchored() {}
 
         public @NotNull Execute $(@NotNull EntityAnchor anchor) {
-            stacks.forEach(stack -> stack.anchored(anchor));
-            return that;
+            return redirect(stack -> stack.write(anchor));
         }
     }
 
     public final class In {
         private In() {}
 
-        private <T extends Entity> @NotNull Execute $(@NotNull WorldType worldType) {
-            return redirect(stack -> {
-                stack.write(Bukkit.getWorld(worldType.name()));
+        public @NotNull Execute $(@NotNull DimensionProvider dimension) {
+            return redirect(stack -> stack.write(dimension.getWorld()));
+        }
+    }
+
+    public final class If {
+        private If() {}
+
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector) {
+            return fork(stack -> {
+                if (stack.getEntities(selector).isEmpty()) {
+                    return List.of();
+                }
+                else return List.of(stack);
             });
         }
+
+        public @NotNull Execute block(@NotNull String location, @NotNull Material blockType) {
+            return fork(stack -> {
+                final Block block = stack.getDimension().getBlockAt(
+                    stack.readCoordinates(location)
+                        .withWorld(stack.getDimension())
+                );
+
+                if (block.getType().equals(blockType)) {
+                    return List.of();
+                }
+                else return List.of(stack);
+            });
+        }
+
+
     }
 }

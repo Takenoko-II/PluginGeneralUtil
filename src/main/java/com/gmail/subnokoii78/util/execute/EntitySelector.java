@@ -1,4 +1,4 @@
-package com.gmail.subnokoii78.util.vector.execute;
+package com.gmail.subnokoii78.util.execute;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
@@ -15,10 +15,25 @@ public abstract class EntitySelector<T extends Entity> {
     abstract @NotNull List<T> getTargetCandidates(@NotNull SourceStack stack);
 
     private @NotNull List<T> modifier(@NotNull List<T> entities, @NotNull SourceStack stack) {
+        final SourceStack copy = stack.copy();
         List<T> out = entities;
 
+        // xyz -> sort -> limit
+
+        // ModifierPriorityの追加
+        // Set -> List
+
         for (final EntitySelectorModifier<T> modifier : modifiers) {
-            out = modifier.modify(out, stack);
+            if (modifier instanceof EntitySelectorModifier.EntitySelectorXYZ xyz) {
+                copy.write(xyz.getCoordinates());
+                break;
+            }
+        }
+
+        for (final EntitySelectorModifier<T> modifier : modifiers) {
+            if (modifier instanceof EntitySelectorModifier.EntitySelectorXYZ) continue;
+
+            out = modifier.modify(out, copy);
         }
 
         return out;
@@ -55,6 +70,20 @@ public abstract class EntitySelector<T extends Entity> {
         @Override
         @NotNull List<Entity> selectorSpecificModifier(@NotNull List<Entity> entities, @NotNull SourceStack stack) {
             return entities;
+        }
+    };
+
+    public static final EntitySelector<Entity> S = new EntitySelector<>() {
+        @NotNull
+        @Override
+        List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
+            return stack.getExecutor() == null ? List.of() : List.of(stack.getExecutor());
+        }
+
+        @NotNull
+        @Override
+        List<Entity> selectorSpecificModifier(@NotNull List<Entity> entities, @NotNull SourceStack stack) {
+            return stack.getExecutor() == null ? List.of() : List.of(stack.getExecutor());
         }
     };
 
