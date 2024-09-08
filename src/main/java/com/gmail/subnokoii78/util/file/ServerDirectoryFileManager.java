@@ -27,7 +27,20 @@ public class ServerDirectoryFileManager {
         if (exist()) return;
 
         if (path.getParent() == null) {
-            new ServerDirectoryFileManager(path.subpath(0, path.getNameCount() - 1)).create();
+            try {
+                Files.createDirectory(path.subpath(0, path.getNameCount() - 1));
+            }
+            catch (IOException e) {
+                throw new IllegalStateException("ディレクトリを作成できませんでした");
+            }
+        }
+        else if (!Files.exists(path.getParent())) {
+            try {
+                Files.createDirectory(path.subpath(0, path.getNameCount() - 1));
+            }
+            catch (IOException e) {
+                throw new IllegalStateException("ディレクトリを作成できませんでした");
+            }
         }
 
         try {

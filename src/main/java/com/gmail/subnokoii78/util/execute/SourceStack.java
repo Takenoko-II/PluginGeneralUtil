@@ -4,6 +4,7 @@ import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +26,19 @@ public class SourceStack {
 
     public SourceStack() {}
 
+    public SourceStack(@NotNull Entity source) {
+        write(source);
+        write(source.getWorld());
+        write(Vector3Builder.from(source));
+        write(DualAxisRotationBuilder.from(source));
+    }
+
+    public SourceStack(@NotNull Block source) {
+        write(source.getWorld());
+        write(Vector3Builder.from(source.getLocation()));
+        write(DualAxisRotationBuilder.from(source.getLocation()));
+    }
+
     public @Nullable Entity getExecutor() {
         return executor;
     }
@@ -41,8 +55,12 @@ public class SourceStack {
         return rotation.copy();
     }
 
-    public @NotNull Vector3Builder getEntityAnchor() {
-        return anchor.getEntityAnchor(executor);
+    public @NotNull String getEntityAnchorId() {
+        return anchor.getId();
+    }
+
+    public @NotNull Vector3Builder getEntityAnchorOffset() {
+        return anchor.getOffset(executor);
     }
 
     void write(@NotNull Entity executor) {
@@ -122,7 +140,7 @@ public class SourceStack {
             i++;
         }
 
-        return out.add(getEntityAnchor());
+        return out.add(getEntityAnchorOffset());
     }
 
     public @NotNull Vector3Builder readCoordinates(@NotNull String coordinates) {

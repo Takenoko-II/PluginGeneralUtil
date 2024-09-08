@@ -7,16 +7,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public enum EntityAnchor {
-    FEET {
+    FEET("feet") {
         @Override
-        public @NotNull Vector3Builder getEntityAnchor(@Nullable Entity entity) {
+        public @NotNull Vector3Builder getOffset(@Nullable Entity entity) {
             return new Vector3Builder();
         }
     },
 
-    EYES {
+    EYES("eyes") {
         @Override
-        public @NotNull Vector3Builder getEntityAnchor(@Nullable Entity entity) {
+        public @NotNull Vector3Builder getOffset(@Nullable Entity entity) {
             if (entity == null) return new Vector3Builder();
             else if (entity instanceof LivingEntity livingEntity) {
                 return new Vector3Builder(0, livingEntity.getEyeHeight(), 0);
@@ -25,5 +25,15 @@ public enum EntityAnchor {
         }
     };
 
-    public abstract @NotNull Vector3Builder getEntityAnchor(@Nullable Entity entity);
+    private final String id;
+
+    EntityAnchor(@NotNull String id) {
+        this.id = id;
+    }
+
+    public @NotNull String getId() {
+        return id;
+    }
+
+    public abstract @NotNull Vector3Builder getOffset(@Nullable Entity entity);
 }

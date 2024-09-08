@@ -43,4 +43,14 @@ public enum DimensionProvider {
 
         throw new IllegalStateException("ディメンションが見つかりませんでした カスタムディメンションですか？");
     }
+
+    public static @NotNull DimensionProvider get(@NotNull String id) {
+        for (final DimensionProvider provider : values()) {
+            if (provider.getId().equals(id)) {
+                return provider;
+            }
+        }
+
+        throw new IllegalStateException("ディメンションが見つかりませんでした");
+    }
 }

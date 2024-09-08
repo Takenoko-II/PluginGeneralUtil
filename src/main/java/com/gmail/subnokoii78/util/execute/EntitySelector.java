@@ -32,8 +32,8 @@ public abstract class EntitySelector<T extends Entity> {
         return selectorSpecificModifier(modifier(getTargetCandidates(stack), stack), stack);
     }
 
-    public <U> @NotNull EntitySelector<T> argument(@NotNull EntitySelectorModifier.Builder<T, U> modifier, @NotNull U value) {
-        modifiers.add(modifier.build(value));
+    public <U> @NotNull EntitySelector<T> argument(@NotNull EntitySelectorModifier.Builder<? extends Entity, U> modifier, @NotNull U value) {
+        modifiers.add((EntitySelectorModifier<T>) modifier.build(value));
         modifiers.sort((a, b) -> b.getPriority() - a.getPriority());
         return this;
     }

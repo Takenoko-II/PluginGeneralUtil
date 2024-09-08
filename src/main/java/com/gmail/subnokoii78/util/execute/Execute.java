@@ -34,6 +34,10 @@ public class Execute {
     }
 
     public Execute(@NotNull SourceStack stack) {
+        this.stacks.add(stack);
+    }
+
+    public Execute() {
         this.stacks.add(new SourceStack());
     }
 
@@ -60,6 +64,8 @@ public class Execute {
     public final On ON = new On();
 
     public final Summon SUMMON = new Summon();
+
+    public final Run RUN = new Run();
 
     public final class As {
         private As() {}
@@ -154,10 +160,10 @@ public class Execute {
                 .map(entity -> {
                     final SourceStack copy = stack.copy();
                     final Vector3Builder direction = copy.getLocation()
-                        .add(copy.getEntityAnchor())
+                        .add(copy.getEntityAnchorOffset())
                         .getDirectionTo(
                             Vector3Builder.from(entity)
-                                .add(anchor.getEntityAnchor(entity))
+                                .add(anchor.getOffset(entity))
                         );
                     copy.write(direction.getRotation2d());
                     return copy;
@@ -393,20 +399,41 @@ public class Execute {
                     Bukkit.getServer().dispatchCommand(
                         stack.getExecutor(),
                         String.format(
-                            "execute as %s in %s positioned %s rotated %s run %s",
+                            "execute as %s in %s positioned %s rotated %s anchored %s run %s",
                             stack.getExecutor().getUniqueId(),
                             DimensionProvider.get(stack.getDimension()).getId(),
                             stack.getLocation().format("$c $c $c"),
                             stack.getRotation().format("$c $c"),
+                            stack.getEntityAnchorId(),
                             command
                         )
                     );
                 }
             });
         }
+
+        public void $(@NotNull Consumer<SourceStack> callback) {
+            redirect(callback);
+        }
     }
 
-    public void $(@NotNull Consumer<SourceStack> callback) {
-        redirect(callback);
+    public final class Store {
+        private Store() {}
+
+        public @NotNull Execute result(@NotNull Consumer<Integer> resultConsumer) {
+            return redirect(stack -> {
+                // stack.write(StoreOptions.RESULT, resultConsumer);
+            });
+        }
+
+        // 最後のサブコマンド(=if, unless, run)実行時に、ResultConsumerを実行するようにするだけ
+        // 最後のサブコマンドをどう判定するか？
+        //  runは確定で最後
+        // if, unlessはオーバーロードを作る？
+
+        public enum StoreOptions {
+            RESULT,
+            SUCCESS;
+        }
     }
 }

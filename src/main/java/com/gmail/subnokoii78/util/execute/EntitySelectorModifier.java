@@ -23,7 +23,7 @@ public abstract class EntitySelectorModifier<T extends Entity> {
 
     abstract int getPriority();
 
-    public static final Builder<Entity, Vector3Builder> XYZ = new Builder<>(3) {
+    public static final Builder<? extends Entity, Vector3Builder> XYZ = new Builder<>(3) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Vector3Builder argument) {
             stack.write(argument);
