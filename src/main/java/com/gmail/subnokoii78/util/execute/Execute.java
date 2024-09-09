@@ -1,5 +1,7 @@
 package com.gmail.subnokoii78.util.execute;
 
+import com.gmail.subnokoii78.util.file.json.JSONTypedArray;
+import com.gmail.subnokoii78.util.file.json.JSONValueType;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;
@@ -10,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -41,69 +44,37 @@ public class Execute {
         this.stacks.add(new SourceStack());
     }
 
-    public final As AS = new As();
-
-    public final At AT = new At();
-
-    public final Positioned POSITIONED = new Positioned();
-
-    public final Rotated ROTATED = new Rotated();
-
-    public final Facing FACING = new Facing();
-
-    public final Align ALIGN = new Align();
-
-    public final Anchored ANCHORED = new Anchored();
-
-    public final In IN = new In();
-
-    public final If IF = new If();
-
-    public final Unless UNLESS = new Unless();
-
-    public final On ON = new On();
-
-    public final Summon SUMMON = new Summon();
-
-    public final Run RUN = new Run();
-
-    public final class As {
-        private As() {}
-
-        public <T extends Entity> @NotNull Execute $(@NotNull EntitySelector<T> selector) {
-            return fork(stack -> stack.getEntities(selector)
-                .stream()
-                .map(entity -> {
-                    final SourceStack copy = stack.copy();
-                    copy.write(entity);
-                    return copy;
-                })
-                .toList()
-            );
-        }
+    public static abstract class MultiFunctionalSubCommand {
+        private MultiFunctionalSubCommand() {}
     }
 
-    public final class At {
-        private At() {}
-
-        public <T extends Entity> @NotNull Execute $(@NotNull EntitySelector<T> selector) {
-            return fork(stack -> stack.getEntities(selector)
-                .stream()
-                .map(entity -> {
-                    final SourceStack copy = stack.copy();
-                    copy.write(Vector3Builder.from(entity));
-                    copy.write(DualAxisRotationBuilder.from(entity));
-                    copy.write(entity.getWorld());
-                    return copy;
-                })
-                .toList()
-            );
-        }
+    public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
+        return fork(stack -> stack.getEntities(selector)
+            .stream()
+            .map(entity -> {
+                final SourceStack copy = stack.copy();
+                copy.write(entity);
+                return copy;
+            })
+            .toList()
+        );
     }
 
-    public final class Positioned {
-        private Positioned() {}
+    public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector<T> selector) {
+        return fork(stack -> stack.getEntities(selector)
+            .stream()
+            .map(entity -> {
+                final SourceStack copy = stack.copy();
+                copy.write(Vector3Builder.from(entity));
+                copy.write(DualAxisRotationBuilder.from(entity));
+                copy.write(entity.getWorld());
+                return copy;
+            })
+            .toList()
+        );
+    }
 
+    public final MultiFunctionalSubCommand positioned = new MultiFunctionalSubCommand() {
         public @NotNull Execute $(@NotNull String input) {
             return redirect(stack -> {
                 stack.write(stack.readCoordinates(input));
@@ -122,11 +93,9 @@ public class Execute {
                 .toList()
             );
         }
-    }
+    };
 
-    public final class Rotated {
-        private Rotated() {}
-
+    public final MultiFunctionalSubCommand rotated = new MultiFunctionalSubCommand() {
         public @NotNull Execute $(@NotNull String input) {
             return redirect(stack -> stack.write(stack.readAngles(input)));
         }
@@ -142,11 +111,9 @@ public class Execute {
                 .toList()
             );
         }
-    }
+    };
 
-    public final class Facing {
-        private Facing() {}
-
+    public final MultiFunctionalSubCommand facing = new MultiFunctionalSubCommand() {
         public @NotNull Execute $(@NotNull String input) {
             return redirect(stack -> {
                 final Vector3Builder direction = stack.getLocation().getDirectionTo(stack.readCoordinates(input));
@@ -171,111 +138,66 @@ public class Execute {
                 .toList()
             );
         }
+    };
+
+    public @NotNull Execute align(@NotNull String axes) {
+        return redirect(stack -> {
+            final Set<Character> axisChars = stack.readAxes(axes);
+            final Vector3Builder location = stack.getLocation();
+
+            if (axisChars.contains('x')) location.x(Math.floor(location.x()));
+            if (axisChars.contains('y')) location.y(Math.floor(location.y()));
+            if (axisChars.contains('z')) location.z(Math.floor(location.z()));
+
+            stack.write(location);
+        });
     }
 
-    public final class Align {
-        private Align() {}
-
-        public @NotNull Execute $(@NotNull String axes) {
-            return redirect(stack -> stack.floorAxis(axes));
-        }
+    public @NotNull Execute anchored(@NotNull EntityAnchor anchor) {
+        return redirect(stack -> stack.write(anchor));
     }
 
-    public final class Anchored {
-        private Anchored() {}
-
-        public @NotNull Execute $(@NotNull EntityAnchor anchor) {
-            return redirect(stack -> stack.write(anchor));
-        }
+    public @NotNull Execute in(@NotNull DimensionProvider dimension) {
+        return redirect(stack -> stack.write(dimension.getWorld()));
     }
 
-    public final class In {
-        private In() {}
+    public @NotNull MultiFunctionalSubCommand ifOrUnless(@NotNull IfUnless toggle) {
+        return new MultiFunctionalSubCommand() {
+            public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector) {
+                return fork(stack -> {
+                    if (toggle.invertOrNot(stack.getEntities(selector).isEmpty())) return List.of();
+                    else return List.of(stack);
+                });
+            }
 
-        public @NotNull Execute $(@NotNull DimensionProvider dimension) {
-            return redirect(stack -> stack.write(dimension.getWorld()));
-        }
+            public @NotNull Execute block(@NotNull String location, @NotNull Material blockType) {
+                return fork(stack -> {
+                    final Block block = stack.getDimension().getBlockAt(
+                        stack.readCoordinates(location)
+                            .withWorld(stack.getDimension())
+                    );
+
+                    if (toggle.invertOrNot(block.getType().equals(blockType))) {
+                        return List.of(stack);
+                    }
+                    else return List.of();
+                });
+            }
+
+            public @NotNull Execute predicate(Predicate<SourceStack> predicate) {
+                return fork(stack -> {
+                    final SourceStack copy = stack.copy();
+
+                    if (toggle.invertOrNot(predicate.test(copy))) {
+                        return List.of(stack);
+                    }
+                    else return List.of();
+                });
+            }
+        };
     }
 
-    public final class If {
-        private If() {}
-
-        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector) {
-            return fork(stack -> {
-                if (stack.getEntities(selector).isEmpty()) {
-                    return List.of();
-                }
-                else return List.of(stack);
-            });
-        }
-
-        public @NotNull Execute block(@NotNull String location, @NotNull Material blockType) {
-            return fork(stack -> {
-                final Block block = stack.getDimension().getBlockAt(
-                    stack.readCoordinates(location)
-                        .withWorld(stack.getDimension())
-                );
-
-                if (block.getType().equals(blockType)) {
-                    return List.of(stack);
-                }
-                else return List.of();
-            });
-        }
-
-        public @NotNull Execute predicate(Predicate<SourceStack> predicate) {
-            return fork(stack -> {
-                final SourceStack copy = stack.copy();
-
-                if (predicate.test(copy)) {
-                    return List.of(stack);
-                }
-                else return List.of();
-            });
-        }
-    }
-
-    public final class Unless {
-        private Unless() {}
-
-        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector) {
-            return fork(stack -> {
-                if (!stack.getEntities(selector).isEmpty()) {
-                    return List.of();
-                }
-                else return List.of(stack);
-            });
-        }
-
-        public @NotNull Execute block(@NotNull String location, @NotNull Material blockType) {
-            return fork(stack -> {
-                final Block block = stack.getDimension().getBlockAt(
-                    stack.readCoordinates(location)
-                        .withWorld(stack.getDimension())
-                );
-
-                if (!block.getType().equals(blockType)) {
-                    return List.of(stack);
-                }
-                else return List.of();
-            });
-        }
-
-        public @NotNull Execute predicate(Predicate<SourceStack> predicate) {
-            return fork(stack -> {
-                final SourceStack copy = stack.copy();
-
-                if (!predicate.test(copy)) {
-                    return List.of(stack);
-                }
-                else return List.of();
-            });
-        }
-    }
-
-    public final class On {
-        private On() {}
-
+    public final MultiFunctionalSubCommand on = new MultiFunctionalSubCommand() {
         public @NotNull Execute passengers() {
             return fork(stack -> {
                 final Entity executor = stack.getExecutor();
@@ -368,19 +290,13 @@ public class Execute {
                 };
             });
         }
+    };
+
+    public @NotNull Execute summon(@NotNull EntityType entityType) {
+        return redirect(stack -> stack.getDimension().spawnEntity(stack.getLocation().withWorld(stack.getDimension()), entityType));
     }
 
-    public final class Summon {
-        private Summon() {}
-
-        public @NotNull Execute $(@NotNull EntityType entityType) {
-            return redirect(stack -> stack.getDimension().spawnEntity(stack.getLocation().withWorld(stack.getDimension()), entityType));
-        }
-    }
-
-    public final class Run {
-        private Run() {}
-
+    public final MultiFunctionalSubCommand run = new MultiFunctionalSubCommand() {
         public void command(@NotNull String command) {
             redirect(stack -> {
                 if (stack.getExecutor() == null) {
@@ -412,28 +328,8 @@ public class Execute {
             });
         }
 
-        public void $(@NotNull Consumer<SourceStack> callback) {
+        public void callback(@NotNull Consumer<SourceStack> callback) {
             redirect(callback);
         }
-    }
-
-    public final class Store {
-        private Store() {}
-
-        public @NotNull Execute result(@NotNull Consumer<Integer> resultConsumer) {
-            return redirect(stack -> {
-                // stack.write(StoreOptions.RESULT, resultConsumer);
-            });
-        }
-
-        // 最後のサブコマンド(=if, unless, run)実行時に、ResultConsumerを実行するようにするだけ
-        // 最後のサブコマンドをどう判定するか？
-        //  runは確定で最後
-        // if, unlessはオーバーロードを作る？
-
-        public enum StoreOptions {
-            RESULT,
-            SUCCESS;
-        }
-    }
+    };
 }

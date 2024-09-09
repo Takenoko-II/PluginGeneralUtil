@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class SourceStack {
     private Entity executor = null;
@@ -217,7 +218,7 @@ public class SourceStack {
         return new DualAxisRotationBuilder(componentOutputs.get(0), componentOutputs.get(1));
     }
 
-    public void floorAxis(@NotNull String axes) {
+    public @NotNull Set<Character> readAxes(@NotNull String axes) {
         final Set<String> chars = Set.of(axes.split(""));
 
         if (axes.length() > 3) throw new IllegalArgumentException("軸は3つまで指定可能です");
@@ -226,9 +227,9 @@ public class SourceStack {
             throw new IllegalArgumentException("x, y, zの文字が有効です");
         }
 
-        if (chars.contains("x")) location.x(Math.floor(location.x()));
-        if (chars.contains("y")) location.y(Math.floor(location.y()));
-        if (chars.contains("z")) location.z(Math.floor(location.z()));
+        return chars.stream()
+            .map(c -> c.charAt(0))
+            .collect(Collectors.toSet());
     }
 
     public <T extends Entity> @NotNull List<T> getEntities(@NotNull EntitySelector<T> selector) {

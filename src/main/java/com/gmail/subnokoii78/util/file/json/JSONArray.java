@@ -122,4 +122,19 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
 
         return list;
     }
+
+    public <T> JSONTypedArray<T> typed(@NotNull JSONValueType<T> type) {
+        final JSONTypedArray<T> array = new JSONTypedArray<>(type);
+
+        for (int i = 0; i < length(); i++) {
+            if (!getTypeAt(i).equals(type)) {
+                throw new IllegalStateException("その型の値でない要素が見つかりました");
+            }
+
+            final T element = get(i, type);
+            array.add(element);
+        }
+
+        return array;
+    }
 }
