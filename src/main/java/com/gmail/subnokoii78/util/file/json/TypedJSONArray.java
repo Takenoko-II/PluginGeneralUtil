@@ -6,15 +6,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class JSONTypedArray<T> extends JSONValue<List<T>> implements Iterable<T> {
+public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T> {
     private final JSONValueType<T> type;
 
-    public JSONTypedArray(@NotNull JSONValueType<T> type) {
+    public TypedJSONArray(@NotNull JSONValueType<T> type) {
         super(new ArrayList<>());
         this.type = type;
     }
 
-    public JSONTypedArray(@NotNull JSONValueType<T> type, @NotNull List<T> list) {
+    public TypedJSONArray(@NotNull JSONValueType<T> type, @NotNull List<T> list) {
         super(new ArrayList<>(list));
         this.type = type;
     }
@@ -110,7 +110,7 @@ public class JSONTypedArray<T> extends JSONValue<List<T>> implements Iterable<T>
         return list.iterator();
     }
 
-    public JSONArray asJSONArray() {
+    public @NotNull JSONArray untyped() {
         final JSONArray array = new JSONArray();
         for (int i = 0; i < length(); i++) {
             array.add(get(i));

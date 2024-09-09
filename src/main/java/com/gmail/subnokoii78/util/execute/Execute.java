@@ -1,7 +1,5 @@
 package com.gmail.subnokoii78.util.execute;
 
-import com.gmail.subnokoii78.util.file.json.JSONTypedArray;
-import com.gmail.subnokoii78.util.file.json.JSONValueType;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;
@@ -45,7 +43,11 @@ public class Execute {
     }
 
     public static abstract class MultiFunctionalSubCommand {
-        private MultiFunctionalSubCommand() {}
+        protected final Execute execute;
+
+        private MultiFunctionalSubCommand(@NotNull Execute execute) {
+            this.execute = execute;
+        }
     }
 
     public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
@@ -74,16 +76,22 @@ public class Execute {
         );
     }
 
-    public final MultiFunctionalSubCommand positioned = new MultiFunctionalSubCommand() {
+    public final Positioned positioned = new Positioned(this);
+
+    public static final class Positioned extends MultiFunctionalSubCommand {
+        private Positioned(@NotNull Execute execute) {
+            super(execute);
+        }
+
         public @NotNull Execute $(@NotNull String input) {
-            return redirect(stack -> {
+            return execute.redirect(stack -> {
                 stack.write(stack.readCoordinates(input));
                 stack.write(EntityAnchor.FEET);
             });
         }
 
         public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
-            return fork(stack -> stack.getEntities(selector)
+            return execute.fork(stack -> stack.getEntities(selector)
                 .stream()
                 .map(entity -> {
                     final SourceStack copy = stack.copy();
@@ -93,15 +101,21 @@ public class Execute {
                 .toList()
             );
         }
-    };
+    }
 
-    public final MultiFunctionalSubCommand rotated = new MultiFunctionalSubCommand() {
+    public final Rotated rotated = new Rotated(this);
+
+    public static final class Rotated extends MultiFunctionalSubCommand {
+        private Rotated(@NotNull Execute execute) {
+            super(execute);
+        }
+
         public @NotNull Execute $(@NotNull String input) {
-            return redirect(stack -> stack.write(stack.readAngles(input)));
+            return execute.redirect(stack -> stack.write(stack.readAngles(input)));
         }
 
         public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
-            return fork(stack -> stack.getEntities(selector)
+            return execute.fork(stack -> stack.getEntities(selector)
                 .stream()
                 .map(entity -> {
                     final SourceStack copy = stack.copy();
@@ -111,18 +125,24 @@ public class Execute {
                 .toList()
             );
         }
-    };
+    }
 
-    public final MultiFunctionalSubCommand facing = new MultiFunctionalSubCommand() {
+    public final Facing facing = new Facing(this);
+
+    public static final class Facing extends MultiFunctionalSubCommand {
+        private Facing(@NotNull Execute execute) {
+            super(execute);
+        }
+
         public @NotNull Execute $(@NotNull String input) {
-            return redirect(stack -> {
+            return execute.redirect(stack -> {
                 final Vector3Builder direction = stack.getLocation().getDirectionTo(stack.readCoordinates(input));
                 stack.write(direction.getRotation2d());
             });
         }
 
         public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector, @NotNull EntityAnchor anchor) {
-            return fork(stack -> stack.getEntities(selector)
+            return execute.fork(stack -> stack.getEntities(selector)
                 .stream()
                 .map(entity -> {
                     final SourceStack copy = stack.copy();
@@ -138,7 +158,7 @@ public class Execute {
                 .toList()
             );
         }
-    };
+    }
 
     public @NotNull Execute align(@NotNull String axes) {
         return redirect(stack -> {
@@ -161,45 +181,60 @@ public class Execute {
         return redirect(stack -> stack.write(dimension.getWorld()));
     }
 
-    public @NotNull MultiFunctionalSubCommand ifOrUnless(@NotNull IfUnless toggle) {
-        return new MultiFunctionalSubCommand() {
-            public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector) {
-                return fork(stack -> {
-                    if (toggle.invertOrNot(stack.getEntities(selector).isEmpty())) return List.of();
-                    else return List.of(stack);
-                });
-            }
-
-            public @NotNull Execute block(@NotNull String location, @NotNull Material blockType) {
-                return fork(stack -> {
-                    final Block block = stack.getDimension().getBlockAt(
-                        stack.readCoordinates(location)
-                            .withWorld(stack.getDimension())
-                    );
-
-                    if (toggle.invertOrNot(block.getType().equals(blockType))) {
-                        return List.of(stack);
-                    }
-                    else return List.of();
-                });
-            }
-
-            public @NotNull Execute predicate(Predicate<SourceStack> predicate) {
-                return fork(stack -> {
-                    final SourceStack copy = stack.copy();
-
-                    if (toggle.invertOrNot(predicate.test(copy))) {
-                        return List.of(stack);
-                    }
-                    else return List.of();
-                });
-            }
-        };
+    public @NotNull GuardSubCommandIfUnless ifOrUnless(@NotNull IfUnless toggle) {
+        return new GuardSubCommandIfUnless(this, toggle);
     }
 
-    public final MultiFunctionalSubCommand on = new MultiFunctionalSubCommand() {
+    public static final class GuardSubCommandIfUnless extends MultiFunctionalSubCommand {
+        private final IfUnless toggle;
+
+        private GuardSubCommandIfUnless(@NotNull Execute execute, @NotNull IfUnless toggle) {
+            super(execute);
+            this.toggle = toggle;
+        }
+
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector) {
+            return execute.fork(stack -> {
+                if (toggle.invertOrNot(stack.getEntities(selector).isEmpty())) return List.of();
+                else return List.of(stack);
+            });
+        }
+
+        public @NotNull Execute block(@NotNull String location, @NotNull Material blockType) {
+            return execute.fork(stack -> {
+                final Block block = stack.getDimension().getBlockAt(
+                    stack.readCoordinates(location)
+                        .withWorld(stack.getDimension())
+                );
+
+                if (toggle.invertOrNot(block.getType().equals(blockType))) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+
+        public @NotNull Execute predicate(Predicate<SourceStack> predicate) {
+            return execute.fork(stack -> {
+                final SourceStack copy = stack.copy();
+
+                if (toggle.invertOrNot(predicate.test(copy))) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+    }
+
+    public final On on = new On(this);
+
+    public static final class On extends MultiFunctionalSubCommand {
+        private On(@NotNull Execute execute) {
+            super(execute);
+        }
+
         public @NotNull Execute passengers() {
-            return fork(stack -> {
+            return execute.fork(stack -> {
                 final Entity executor = stack.getExecutor();
                 if (executor == null) return List.of();
 
@@ -215,7 +250,7 @@ public class Execute {
         }
 
         public @NotNull Execute vehicle() {
-            return redirect(stack -> {
+            return execute.redirect(stack -> {
                 final Entity executor = stack.getExecutor();
                 if (executor == null) return;
                 final Entity vehicle = executor.getVehicle();
@@ -225,7 +260,7 @@ public class Execute {
         }
 
         public @NotNull Execute owner() {
-            return fork(stack -> {
+            return execute.fork(stack -> {
                 final Entity executor = stack.getExecutor();
                 if (executor == null) return List.of();
                 if (!(executor instanceof Tameable tameable)) return List.of();
@@ -239,7 +274,7 @@ public class Execute {
         }
 
         public @NotNull Execute origin() {
-            return fork(stack -> {
+            return execute.fork(stack -> {
                 final Entity executor = stack.getExecutor();
                 if (executor == null) return List.of();
 
@@ -290,15 +325,21 @@ public class Execute {
                 };
             });
         }
-    };
+    }
 
     public @NotNull Execute summon(@NotNull EntityType entityType) {
         return redirect(stack -> stack.getDimension().spawnEntity(stack.getLocation().withWorld(stack.getDimension()), entityType));
     }
 
-    public final MultiFunctionalSubCommand run = new MultiFunctionalSubCommand() {
+    public final Run run = new Run(this);
+
+    public static final class Run extends MultiFunctionalSubCommand {
+        private Run(@NotNull Execute execute) {
+            super(execute);
+        }
+
         public void command(@NotNull String command) {
-            redirect(stack -> {
+            execute.redirect(stack -> {
                 if (stack.getExecutor() == null) {
                     Bukkit.getServer().dispatchCommand(
                         Bukkit.getConsoleSender(),
@@ -329,7 +370,7 @@ public class Execute {
         }
 
         public void callback(@NotNull Consumer<SourceStack> callback) {
-            redirect(callback);
+            execute.redirect(callback);
         }
-    };
+    }
 }

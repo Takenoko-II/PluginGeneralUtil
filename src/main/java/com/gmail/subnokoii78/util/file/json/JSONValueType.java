@@ -1,6 +1,5 @@
 package com.gmail.subnokoii78.util.file.json;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -10,12 +9,20 @@ import java.util.stream.Stream;
 public final class JSONValueType<T> {
     private final Function<Object, T> getter;
 
-    private JSONValueType(Function<Object, T> getter) {
+    private final String string;
+
+    private JSONValueType(Function<Object, T> getter, @NotNull String string) {
         this.getter = getter;
+        this.string = string;
     }
 
     T get(Object value) {
         return getter.apply(value);
+    }
+
+    @Override
+    public @NotNull String toString() {
+        return string;
     }
 
     public static JSONValueType<?> of(Object value) {
@@ -45,22 +52,22 @@ public final class JSONValueType<T> {
     public static final JSONValueType<Boolean> BOOLEAN = new JSONValueType<>(value -> {
         if (value instanceof Boolean v) return v;
         else throw new IllegalArgumentException("value is not a boolean value");
-    });
+    }, "Boolean");
 
     public static final JSONValueType<Number> NUMBER = new JSONValueType<>(value -> {
         if (value instanceof Number v) return v;
         else throw new IllegalArgumentException("value is not a number value");
-    });
+    }, "Number");
 
     public static final JSONValueType<String> STRING = new JSONValueType<>(value -> {
         if (value instanceof String v) return v;
         else throw new IllegalArgumentException("value is not a string value");
-    });
+    }, "String");
 
     public static final JSONValueType<JSONObject> OBJECT = new JSONValueType<>(value -> {
         if (value instanceof Map<?, ?> v) return new JSONObject((Map<String, Object>) v);
         else throw new IllegalArgumentException("value is not a json object value");
-    });
+    }, "Object");
 
     public static final JSONValueType<JSONArray> ARRAY = new JSONValueType<>(value -> {
         if (value instanceof List<?> v) return new JSONArray((List<Object>) v);
@@ -108,10 +115,10 @@ public final class JSONValueType<T> {
         }
         else if (value instanceof Object[] v) return new JSONArray(Arrays.stream(v).toList());
         else throw new IllegalArgumentException("value is not a json array value");
-    });
+    }, "Array");
 
     public static final JSONValueType<JSONNull> NULL = new JSONValueType<>(value -> {
         if (value == null) return new JSONNull();
         else throw new IllegalArgumentException("value is not a null value");
-    });
+    }, "Null");
 }

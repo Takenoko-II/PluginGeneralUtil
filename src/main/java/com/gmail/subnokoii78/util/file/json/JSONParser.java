@@ -19,14 +19,14 @@ public final class JSONParser {
         this.text = json.replaceAll("\n", "");
     }
 
-    public JSONObject parseObject() {
+    public @NotNull JSONObject parseObject() {
         reset();
         parseObjectCommon();
         remainingChars();
         return new JSONObject(map);
     }
 
-    public JSONArray parseArray() {
+    public @NotNull JSONArray parseArray() {
         reset();
         if (next() != '[') {
             throw new IllegalStateException("配列は[で開始される必要があります");

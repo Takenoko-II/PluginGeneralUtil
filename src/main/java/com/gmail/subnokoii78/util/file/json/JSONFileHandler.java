@@ -24,7 +24,7 @@ public final class JSONFileHandler {
         this.path = path;
     }
 
-    private String read() {
+    private @NotNull String read() {
         try {
             return String.join("", Files.readAllLines(Path.of(path)));
         }
@@ -46,7 +46,7 @@ public final class JSONFileHandler {
      * オブジェクトを解析します。
      * @return 解析されたjsonオブジェクト
      */
-    public JSONObject readObject() {
+    public @NotNull JSONObject readObject() {
         return new JSONParser(read()).parseObject();
     }
 
@@ -54,7 +54,7 @@ public final class JSONFileHandler {
      * 配列を解析します。
      * @return 解析されたjson配列
      */
-    public JSONArray readArray() {
+    public @NotNull JSONArray readArray() {
         return new JSONParser(read()).parseArray();
     }
 

@@ -13,6 +13,8 @@ public final class PositiveDoubleRange {
         else this.min = min;
         if (max == null) this.max = Double.POSITIVE_INFINITY;
         else this.max = max;
+
+        if (this.min > this.max) throw new IllegalArgumentException("min > max");
     }
 
     public double min() {

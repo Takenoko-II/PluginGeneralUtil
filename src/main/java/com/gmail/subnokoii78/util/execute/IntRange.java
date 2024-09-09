@@ -13,6 +13,8 @@ public final class IntRange {
         else this.min = min;
         if (max == null) this.max = Integer.MAX_VALUE;
         else this.max = max;
+
+        if (this.min > this.max) throw new IllegalArgumentException("min > max");
     }
 
     public int min() {

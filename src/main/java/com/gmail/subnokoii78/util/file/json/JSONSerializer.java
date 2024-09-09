@@ -23,6 +23,7 @@ public final class JSONSerializer {
             case String v -> string(v);
             case JSONObject v -> object(v, indentation);
             case JSONArray v -> array(v, indentation);
+            case TypedJSONArray<?> v -> array(v.untyped(), indentation);
             case JSONValue<?> v -> serialize(v.value, indentation);
             case null -> new StringBuilder("null");
             default -> throw new IllegalArgumentException("このオブジェクトは無効な型の値を含みます");
