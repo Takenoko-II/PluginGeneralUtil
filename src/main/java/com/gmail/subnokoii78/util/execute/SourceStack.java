@@ -115,7 +115,7 @@ public class SourceStack {
     }
 
     private @NotNull Vector3Builder parseLocalPos(@NotNull List<String> components) {
-        final Vector3Builder out = new Vector3Builder();
+        final Vector3Builder out = location.copy();
 
         int i = 0;
         for (final String input : components) {

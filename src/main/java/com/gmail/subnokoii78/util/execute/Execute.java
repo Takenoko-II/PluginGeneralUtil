@@ -136,7 +136,7 @@ public class Execute {
 
         public @NotNull Execute $(@NotNull String input) {
             return execute.redirect(stack -> {
-                final Vector3Builder direction = stack.getLocation().getDirectionTo(stack.readCoordinates(input));
+                final Vector3Builder direction = stack.getLocation().add(stack.getEntityAnchorOffset()).getDirectionTo(stack.readCoordinates(input));
                 stack.write(direction.getRotation2d());
             });
         }
