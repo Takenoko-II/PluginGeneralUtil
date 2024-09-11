@@ -1,17 +1,21 @@
 package com.gmail.subnokoii78.util.execute;
 
+import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
+import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.command.CommandException;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class SourceStack {
@@ -245,4 +249,45 @@ public class SourceStack {
         stack.write(anchor);
         return stack;
     }
+
+    public boolean runCommand(@NotNull String command) {
+        final String common = String.format(
+            "in %s positioned %s rotated %s",
+            DimensionProvider.get(dimension).getId(),
+            location.format("$c $c $c"),
+            rotation.format("$c $c")
+        );
+
+        try {
+            if (executor == null) {
+                Bukkit.getServer().dispatchCommand(
+                    NULL_EXECUTOR,
+                    String.format(
+                        "execute %s run %s",
+                        common,
+                        command
+                    )
+                );
+            }
+            else {
+                Bukkit.getServer().dispatchCommand(
+                    executor,
+                    String.format(
+                        "execute %s as %s anchored %s run %s",
+                        common,
+                        executor.getUniqueId(),
+                        anchor.getId(),
+                        command
+                    )
+                );
+            }
+        }
+        catch (CommandException e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static final CommandSender NULL_EXECUTOR = Bukkit.createCommandSender(component -> {});
 }

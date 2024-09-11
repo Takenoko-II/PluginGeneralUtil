@@ -338,39 +338,16 @@ public class Execute {
             super(execute);
         }
 
-        public void command(@NotNull String command) {
-            execute.redirect(stack -> {
-                if (stack.getExecutor() == null) {
-                    Bukkit.getServer().dispatchCommand(
-                        Bukkit.getConsoleSender(),
-                        String.format(
-                            "execute in %s positioned %s rotated %s run %s",
-                            DimensionProvider.get(stack.getDimension()).getId(),
-                            stack.getLocation().format("$c $c $c"),
-                            stack.getRotation().format("$c $c"),
-                            command
-                        )
-                    );
-                }
-                else {
-                    Bukkit.getServer().dispatchCommand(
-                        stack.getExecutor(),
-                        String.format(
-                            "execute as %s in %s positioned %s rotated %s anchored %s run %s",
-                            stack.getExecutor().getUniqueId(),
-                            DimensionProvider.get(stack.getDimension()).getId(),
-                            stack.getLocation().format("$c $c $c"),
-                            stack.getRotation().format("$c $c"),
-                            stack.getEntityAnchorId(),
-                            command
-                        )
-                    );
-                }
-            });
+        public boolean command(@NotNull String command) {
+            final List<Boolean> out = new ArrayList<>();
+
+            execute.stacks.forEach(stack -> out.add(stack.runCommand(command)));
+
+            return out.contains(true);
         }
 
         public void callback(@NotNull Consumer<SourceStack> callback) {
-            execute.redirect(callback);
+            execute.stacks.forEach(stack -> callback.accept(stack.copy()));
         }
     }
 }
