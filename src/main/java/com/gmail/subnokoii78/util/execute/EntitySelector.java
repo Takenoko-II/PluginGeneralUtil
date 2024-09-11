@@ -62,16 +62,14 @@ public abstract class EntitySelector<T extends Entity> {
     };
 
     public static final EntitySelector<Entity> S = new EntitySelector<>() {
-        @NotNull
         @Override
-        List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
+        @NotNull List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
             return stack.getExecutor() == null ? List.of() : List.of(stack.getExecutor());
         }
 
-        @NotNull
         @Override
-        List<Entity> selectorSpecificModifier(@NotNull List<Entity> entities, @NotNull SourceStack stack) {
-            return stack.getExecutor() == null ? List.of() : List.of(stack.getExecutor());
+        @NotNull List<Entity> selectorSpecificModifier(@NotNull List<Entity> entities, @NotNull SourceStack stack) {
+            return entities;
         }
     };
 
