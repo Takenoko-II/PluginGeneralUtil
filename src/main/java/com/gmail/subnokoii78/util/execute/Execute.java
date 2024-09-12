@@ -1,5 +1,7 @@
 package com.gmail.subnokoii78.util.execute;
 
+import com.gmail.subnokoii78.util.file.json.JSONArray;
+import com.gmail.subnokoii78.util.file.json.JSONSerializer;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Material;
@@ -348,5 +350,14 @@ public class Execute {
         public void callback(@NotNull Consumer<SourceStack> callback) {
             execute.stacks.forEach(stack -> callback.accept(stack.copy()));
         }
+    }
+
+    @Override
+    public @NotNull String toString() {
+        final JSONArray jsonArray = new JSONArray();
+        stacks.forEach(stack -> {
+            jsonArray.add(stack.getAsJSONObject());
+        });
+        return new JSONSerializer(jsonArray).serialize();
     }
 }

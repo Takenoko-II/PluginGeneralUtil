@@ -7,12 +7,20 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public abstract class EntitySelector<T extends Entity> {
+public class EntitySelector<T extends Entity> {
     private final List<EntitySelectorModifier<T>> modifiers = new ArrayList<>();
 
-    private EntitySelector() {}
+    private final Builder<T> builder;
 
-    abstract @NotNull List<T> getTargetCandidates(@NotNull SourceStack stack);
+    private EntitySelector(@NotNull Builder<T> builder) {
+        this.builder = builder;
+    }
+
+    public <U> @NotNull EntitySelector<T> argument(@NotNull EntitySelectorModifier.Builder<? extends Entity, U> modifier, @NotNull U value) {
+        modifiers.add((EntitySelectorModifier<T>) modifier.build(value));
+        modifiers.sort((a, b) -> b.getPriority() - a.getPriority());
+        return this;
+    }
 
     private @NotNull List<T> modifier(@NotNull List<T> entities, @NotNull SourceStack stack) {
         final SourceStack copy = stack.copy();
@@ -26,16 +34,8 @@ public abstract class EntitySelector<T extends Entity> {
         return out;
     }
 
-    abstract @NotNull List<T> selectorSpecificModifier(@NotNull List<T> entities, @NotNull SourceStack stack);
-
     public @NotNull List<T> getEntities(@NotNull SourceStack stack) {
-        return selectorSpecificModifier(modifier(getTargetCandidates(stack), stack), stack);
-    }
-
-    public <U> @NotNull EntitySelector<T> argument(@NotNull EntitySelectorModifier.Builder<? extends Entity, U> modifier, @NotNull U value) {
-        modifiers.add((EntitySelectorModifier<T>) modifier.build(value));
-        modifiers.sort((a, b) -> b.getPriority() - a.getPriority());
-        return this;
+        return builder.selectorSpecificModifier(modifier(builder.getTargetCandidates(stack), stack), stack);
     }
 
     private static @NotNull List<Entity> getAllEntities() {
@@ -48,7 +48,7 @@ public abstract class EntitySelector<T extends Entity> {
         return Bukkit.getOnlinePlayers().stream().map(player -> (Player) player).toList();
     }
 
-    public static final EntitySelector<Entity> E = new EntitySelector<>() {
+    public static final Builder<Entity> E = new Builder<>() {
         @Override
         @NotNull List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
             final List<Entity> entities = EntitySelector.getAllEntities();
@@ -61,7 +61,7 @@ public abstract class EntitySelector<T extends Entity> {
         }
     };
 
-    public static final EntitySelector<Entity> S = new EntitySelector<>() {
+    public static final Builder<Entity> S = new Builder<>() {
         @Override
         @NotNull List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
             return stack.getExecutor() == null ? List.of() : List.of(stack.getExecutor());
@@ -73,7 +73,7 @@ public abstract class EntitySelector<T extends Entity> {
         }
     };
 
-    public static final EntitySelector<Player> A = new EntitySelector<>() {
+    public static final Builder<Player> A = new Builder<>() {
         @Override
         @NotNull List<Player> getTargetCandidates(@NotNull SourceStack stack) {
             final List<Player> players = EntitySelector.getAllPlayers();
@@ -86,10 +86,9 @@ public abstract class EntitySelector<T extends Entity> {
         }
     };
 
-    public static final EntitySelector<Player> P = new EntitySelector<>() {
-        @NotNull
+    public static final Builder<Player> P = new Builder<>() {
         @Override
-        List<Player> getTargetCandidates(@NotNull SourceStack stack) {
+        @NotNull List<Player> getTargetCandidates(@NotNull SourceStack stack) {
             final List<Player> players = EntitySelector.getAllPlayers()
                 .stream()
                 .filter(player -> !player.isDead())
@@ -98,17 +97,15 @@ public abstract class EntitySelector<T extends Entity> {
             return SelectorSortOrder.NEAREST.sort(players, stack);
         }
 
-        @NotNull
         @Override
-        List<Player> selectorSpecificModifier(@NotNull List<Player> entities, @NotNull SourceStack stack) {
+        @NotNull List<Player> selectorSpecificModifier(@NotNull List<Player> entities, @NotNull SourceStack stack) {
             return List.of(entities.getFirst());
         }
     };
 
-    public static final EntitySelector<Player> R = new EntitySelector<>() {
-        @NotNull
+    public static final Builder<Player> R = new Builder<>() {
         @Override
-        List<Player> getTargetCandidates(@NotNull SourceStack stack) {
+        @NotNull List<Player> getTargetCandidates(@NotNull SourceStack stack) {
             final List<Player> players = new ArrayList<>(
                 EntitySelector.getAllPlayers()
                     .stream()
@@ -119,24 +116,35 @@ public abstract class EntitySelector<T extends Entity> {
             return SelectorSortOrder.RANDOM.sort(players, stack);
         }
 
-        @NotNull
         @Override
-        List<Player> selectorSpecificModifier(@NotNull List<Player> entities, @NotNull SourceStack stack) {
+        @NotNull List<Player> selectorSpecificModifier(@NotNull List<Player> entities, @NotNull SourceStack stack) {
             return List.of(entities.getFirst());
         }
     };
 
-    public static final EntitySelector<Entity> N = new EntitySelector<>() {
-        @NotNull
+    public static final Builder<Entity> N = new Builder<>() {
         @Override
+        @NotNull
         List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
             return SelectorSortOrder.NEAREST.sort(EntitySelector.getAllEntities(), stack);
         }
 
-        @NotNull
         @Override
+        @NotNull
         List<Entity> selectorSpecificModifier(@NotNull List<Entity> entities, @NotNull SourceStack stack) {
             return List.of(entities.getFirst());
         }
     };
+
+    public static abstract class Builder<T extends Entity> {
+        private Builder() {}
+
+        abstract @NotNull List<T> getTargetCandidates(@NotNull SourceStack stack);
+
+        abstract @NotNull List<T> selectorSpecificModifier(@NotNull List<T> entities, @NotNull SourceStack stack);
+
+        public @NotNull EntitySelector<T> build() {
+            return new EntitySelector<>(this);
+        }
+    }
 }

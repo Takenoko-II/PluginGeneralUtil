@@ -1,11 +1,10 @@
 package com.gmail.subnokoii78.util.execute;
 
-import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
+import com.gmail.subnokoii78.util.file.json.JSONArray;
+import com.gmail.subnokoii78.util.file.json.JSONObject;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;
-import org.bukkit.GameRule;
-import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandException;
@@ -15,7 +14,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class SourceStack {
@@ -244,10 +242,28 @@ public class SourceStack {
         final SourceStack stack = new SourceStack();
         stack.write(dimension);
         stack.write(executor);
-        stack.write(location);
-        stack.write(rotation);
+        stack.write(location.copy());
+        stack.write(rotation.copy());
         stack.write(anchor);
         return stack;
+    }
+
+    public @NotNull JSONObject getAsJSONObject() {
+        final JSONObject jsonObject = new JSONObject();
+        jsonObject.set("executor", executor == null ? "null" : executor.getName());
+        final JSONArray loc = new JSONArray();
+        loc.add(location.x());
+        loc.add(location.y());
+        loc.add(location.z());
+        jsonObject.set("location", loc);
+        final JSONArray rot = new JSONArray();
+        rot.add(rotation.yaw());
+        rot.add(rotation.pitch());
+        jsonObject.set("rotation", rot);
+        jsonObject.set("anchor", anchor.getId());
+        jsonObject.set("dimension", DimensionProvider.get(dimension).getId());
+
+        return jsonObject;
     }
 
     public boolean runCommand(@NotNull String command) {
