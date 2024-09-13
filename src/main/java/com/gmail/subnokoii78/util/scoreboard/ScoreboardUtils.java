@@ -68,6 +68,14 @@ public class ScoreboardUtils {
             this.objective = objective;
         }
 
+        public boolean hasScore(Entity entity) {
+            return objective.getScoreFor(entity).isScoreSet();
+        }
+
+        public boolean hasScore(String name) {
+            return objective.getScore(name).isScoreSet();
+        }
+
         public int getScore(Entity entity) {
             return objective.getScoreFor(entity).getScore();
         }

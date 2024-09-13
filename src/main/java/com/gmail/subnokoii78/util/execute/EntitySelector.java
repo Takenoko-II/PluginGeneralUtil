@@ -10,10 +10,20 @@ import java.util.*;
 public class EntitySelector<T extends Entity> {
     private final List<EntitySelectorModifier<T>> modifiers = new ArrayList<>();
 
-    private final Builder<T> builder;
+    private final Provider<T> provider;
 
-    private EntitySelector(@NotNull Builder<T> builder) {
-        this.builder = builder;
+    private EntitySelector(@NotNull Provider<T> builder) {
+        this.provider = builder;
+    }
+
+    public boolean isSingle() {
+        for (final EntitySelectorModifier<T> modifier : modifiers) {
+            if (modifier.getId().equals(EntitySelectorModifier.LIMIT.getId())) {
+                return true;
+            }
+        }
+
+        return provider.equals(S) || provider.equals(P) || provider.equals(N);
     }
 
     public <U> @NotNull EntitySelector<T> argument(@NotNull EntitySelectorModifier.Builder<? extends Entity, U> modifier, @NotNull U value) {
@@ -35,7 +45,7 @@ public class EntitySelector<T extends Entity> {
     }
 
     public @NotNull List<T> getEntities(@NotNull SourceStack stack) {
-        return builder.selectorSpecificModifier(modifier(builder.getTargetCandidates(stack), stack), stack);
+        return provider.selectorSpecificModifier(modifier(provider.getTargetCandidates(stack), stack), stack);
     }
 
     private static @NotNull List<Entity> getAllEntities() {
@@ -48,7 +58,7 @@ public class EntitySelector<T extends Entity> {
         return Bukkit.getOnlinePlayers().stream().map(player -> (Player) player).toList();
     }
 
-    public static final Builder<Entity> E = new Builder<>() {
+    public static final Provider<Entity> E = new Provider<>() {
         @Override
         @NotNull List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
             final List<Entity> entities = EntitySelector.getAllEntities();
@@ -61,7 +71,7 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
-    public static final Builder<Entity> S = new Builder<>() {
+    public static final Provider<Entity> S = new Provider<>() {
         @Override
         @NotNull List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
             return stack.getExecutor() == null ? List.of() : List.of(stack.getExecutor());
@@ -73,7 +83,7 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
-    public static final Builder<Player> A = new Builder<>() {
+    public static final Provider<Player> A = new Provider<>() {
         @Override
         @NotNull List<Player> getTargetCandidates(@NotNull SourceStack stack) {
             final List<Player> players = EntitySelector.getAllPlayers();
@@ -86,7 +96,7 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
-    public static final Builder<Player> P = new Builder<>() {
+    public static final Provider<Player> P = new Provider<>() {
         @Override
         @NotNull List<Player> getTargetCandidates(@NotNull SourceStack stack) {
             final List<Player> players = EntitySelector.getAllPlayers()
@@ -103,7 +113,7 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
-    public static final Builder<Player> R = new Builder<>() {
+    public static final Provider<Player> R = new Provider<>() {
         @Override
         @NotNull List<Player> getTargetCandidates(@NotNull SourceStack stack) {
             final List<Player> players = new ArrayList<>(
@@ -122,7 +132,7 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
-    public static final Builder<Entity> N = new Builder<>() {
+    public static final Provider<Entity> N = new Provider<>() {
         @Override
         @NotNull
         List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
@@ -136,14 +146,14 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
-    public static abstract class Builder<T extends Entity> {
-        private Builder() {}
+    public static abstract class Provider<T extends Entity> {
+        private Provider() {}
 
         abstract @NotNull List<T> getTargetCandidates(@NotNull SourceStack stack);
 
         abstract @NotNull List<T> selectorSpecificModifier(@NotNull List<T> entities, @NotNull SourceStack stack);
 
-        public @NotNull EntitySelector<T> build() {
+        public @NotNull EntitySelector<T> create() {
             return new EntitySelector<>(this);
         }
     }

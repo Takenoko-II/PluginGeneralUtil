@@ -2,17 +2,19 @@ package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.file.json.JSONArray;
 import com.gmail.subnokoii78.util.file.json.JSONSerializer;
+import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
+import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -61,6 +63,14 @@ public class Execute {
             })
             .toList()
         );
+    }
+
+    {
+        final Execute execute = new Execute();
+        execute.as(EntitySelector.A.create())
+            .at(EntitySelector.S.create())
+            .positioned.$("~ ~1 ~")
+            .ifOrUnless(IfUnless.IF);
     }
 
     public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector<T> selector) {
@@ -201,21 +211,61 @@ public class Execute {
             });
         }
 
-        public @NotNull Execute block(@NotNull String location, @NotNull Material blockType) {
+        public @NotNull Execute block(@NotNull String location, @NotNull Predicate<Block> blockPredicate) {
             return execute.fork(stack -> {
                 final Block block = stack.getDimension().getBlockAt(
                     stack.readCoordinates(location)
                         .withWorld(stack.getDimension())
                 );
 
-                if (toggle.invertOrNot(block.getType().equals(blockType))) {
+                if (toggle.invertOrNot(blockPredicate.test(block))) {
                     return List.of(stack);
                 }
                 else return List.of();
             });
         }
 
-        public @NotNull Execute predicate(Predicate<SourceStack> predicate) {
+        public @NotNull Execute score(@NotNull ScoreHolder holder1, @NotNull String objectiveId1, @NotNull ScoreComparator comparator, @NotNull ScoreHolder holder2, @NotNull String objectiveId2) {
+            return execute.fork(stack -> {
+                final Integer val1 = holder1.getScore(objectiveId1);
+                final Integer val2 = holder2.getScore(objectiveId2);
+
+                if (val1 == null || val2 == null) {
+                    return List.of();
+                }
+
+                if (toggle.invertOrNot(comparator.compare(val1, val2))) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+
+        public @NotNull Execute score(@NotNull ScoreHolder holder, @NotNull String objectiveId, @NotNull IntRange range) {
+            return execute.fork(stack -> {
+                final Integer val = holder.getScore(objectiveId);
+
+                if (val == null) {
+                    return List.of();
+                }
+
+                if (toggle.invertOrNot(range.min() <= val && val <= range.max())) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+
+        public @NotNull Execute dimension(@NotNull DimensionProvider dimensionProvider) {
+            return execute.fork(stack -> {
+                if (toggle.invertOrNot(stack.getDimension().equals(dimensionProvider.getWorld()))) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+
+        public @NotNull Execute predicate(@NotNull Predicate<SourceStack> predicate) {
             return execute.fork(stack -> {
                 final SourceStack copy = stack.copy();
 
@@ -225,6 +275,7 @@ public class Execute {
                 else return List.of();
             });
         }
+
     }
 
     public final On on = new On(this);

@@ -23,11 +23,44 @@ public abstract class EntitySelectorModifier<T extends Entity> {
 
     abstract int getPriority();
 
-    public static final Builder<? extends Entity, Vector3Builder> XYZ = new Builder<>(3) {
+    abstract @NotNull String getId();
+
+    public static final Builder<Entity, Double> X = new Builder<>(3) {
         @Override
-        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Vector3Builder argument) {
-            stack.write(argument);
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Double argument) {
+            stack.write(stack.getLocation().x(argument));
             return entities;
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "x";
+        }
+    };
+
+    public static final Builder<Entity, Double> Y = new Builder<>(3) {
+        @Override
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Double argument) {
+            stack.write(stack.getLocation().y(argument));
+            return entities;
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "y";
+        }
+    };
+
+    public static final Builder<Entity, Double> Z = new Builder<>(3) {
+        @Override
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Double argument) {
+            stack.write(stack.getLocation().z(argument));
+            return entities;
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "z";
         }
     };
 
@@ -37,6 +70,11 @@ public abstract class EntitySelectorModifier<T extends Entity> {
             return entities.stream()
                 .filter(entity -> entity.getType().equals(argument))
                 .toList();
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "type";
         }
     };
 
@@ -58,15 +96,24 @@ public abstract class EntitySelectorModifier<T extends Entity> {
                 })
                 .toList();
         }
+
+        @Override
+        public @NotNull String getId() {
+            return "name";
+        }
     };
 
     public static final Builder<Entity, String> TAG = new Builder<>() {
         @Override
-        @NotNull
-        List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull String argument) {
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull String argument) {
             return entities.stream()
                 .filter(entity -> entity.getScoreboardTags().contains(argument))
                 .toList();
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "tag";
         }
     };
 
@@ -80,43 +127,71 @@ public abstract class EntitySelectorModifier<T extends Entity> {
                 })
                 .toList();
         }
-    };
 
-    public static final Builder<Entity, SelectorSortOrder> SORT = new Builder<>(2) {
-        @NotNull
         @Override
-        List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull SelectorSortOrder argument) {
-            return argument.sort(entities, stack);
+        public @NotNull String getId() {
+            return "distance";
         }
     };
 
-    public static final Builder<Entity, Vector3Builder> D_XYZ = new Builder<>() {
-        @NotNull
+    public static final Builder<Entity, SelectorSortOrder> SORT = new Builder<>(2) {
         @Override
-        List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Vector3Builder argument) {
-            final BoundingBox box = BoundingBox.of(stack.getLocation().toBukkitVector(), argument.toBukkitVector());
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull SelectorSortOrder argument) {
+            return argument.sort(entities, stack);
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "sort";
+        }
+    };
+
+    public static final Builder<Entity, Vector3Builder> DXYZ = new Builder<>() {
+        @Override
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Vector3Builder argument) {
+            final BoundingBox box = BoundingBox.of(
+                stack.getLocation().toBukkitVector(),
+                stack.getLocation()
+                    .add(argument)
+                    .toBukkitVector()
+            );
+
             return entities.stream()
                 .filter(entity -> entity.getBoundingBox().overlaps(box))
                 .toList();
         }
+
+        @Override
+        public @NotNull String getId() {
+            return "dxyz";
+        }
     };
 
-    public static final Builder<Player, GameMode> GAME_MODE = new Builder<>() {
+    public static final Builder<Player, GameMode> GAMEMODE = new Builder<>() {
         @Override
         @NotNull List<Player> modify(@NotNull List<Player> entities, @NotNull SourceStack stack, @NotNull GameMode argument) {
             return entities.stream()
                 .filter(player -> player.getGameMode().equals(argument))
                 .toList();
         }
+
+        @Override
+        public @NotNull String getId() {
+            return "gamemode";
+        }
     };
 
     public static final Builder<Player, PositiveIntRange> LEVEL = new Builder<>() {
-        @NotNull
         @Override
-        List<Player> modify(@NotNull List<Player> entities, @NotNull SourceStack stack, @NotNull PositiveIntRange argument) {
+        @NotNull List<Player> modify(@NotNull List<Player> entities, @NotNull SourceStack stack, @NotNull PositiveIntRange argument) {
             return entities.stream()
                 .filter(player -> argument.min() <= player.getLevel() && player.getLevel() <= argument.max())
                 .toList();
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "level";
         }
     };
 
@@ -127,6 +202,11 @@ public abstract class EntitySelectorModifier<T extends Entity> {
                 .filter(entity -> argument.min() <= entity.getLocation().getPitch() && entity.getLocation().getPitch() <= argument.max())
                 .toList();
         }
+
+        @Override
+        public @NotNull String getId() {
+            return "x_rotation";
+        }
     };
 
     public static final Builder<Entity, PositiveFloatRange> Y_ROTATION = new Builder<>() {
@@ -136,6 +216,11 @@ public abstract class EntitySelectorModifier<T extends Entity> {
                 .filter(entity -> argument.min() <= entity.getLocation().getYaw() && entity.getLocation().getYaw() <= argument.max())
                 .toList();
         }
+
+        @Override
+        public @NotNull String getId() {
+            return "y_rotation";
+        }
     };
 
     public static final Builder<Entity, Team> TEAM = new Builder<>() {
@@ -144,6 +229,11 @@ public abstract class EntitySelectorModifier<T extends Entity> {
             return entities.stream()
                 .filter(argument::hasEntity)
                 .toList();
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "team";
         }
     };
 
@@ -163,6 +253,11 @@ public abstract class EntitySelectorModifier<T extends Entity> {
                     return true;
                 })
                 .toList();
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "advancements";
         }
     };
 
@@ -187,12 +282,22 @@ public abstract class EntitySelectorModifier<T extends Entity> {
                 })
                 .toList();
         }
+
+        @Override
+        public @NotNull String getId() {
+            return "scores";
+        }
     };
 
     public static final Builder<Entity, Integer> LIMIT = new Builder<>(1) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Integer argument) {
             return entities.subList(0, argument);
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "limit";
         }
     };
 
@@ -209,6 +314,8 @@ public abstract class EntitySelectorModifier<T extends Entity> {
 
         abstract @NotNull List<T> modify(@NotNull List<T> entities, @NotNull SourceStack stack, @NotNull U argument);
 
+        public abstract @NotNull String getId();
+
         @NotNull EntitySelectorModifier<T> build(@NotNull U value) {
             final Builder<T, U> that = this;
 
@@ -221,6 +328,11 @@ public abstract class EntitySelectorModifier<T extends Entity> {
                 @Override
                 int getPriority() {
                     return priority;
+                }
+
+                @Override
+                public @NotNull String getId() {
+                    return that.getId();
                 }
             };
         }
