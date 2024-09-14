@@ -2,19 +2,24 @@ package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.file.json.JSONArray;
 import com.gmail.subnokoii78.util.file.json.JSONSerializer;
-import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
+import org.bukkit.Chunk;
+import org.bukkit.Location;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.*;
-import org.bukkit.util.BoundingBox;
+import org.bukkit.inventory.BlockInventoryHolder;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -63,14 +68,6 @@ public class Execute {
             })
             .toList()
         );
-    }
-
-    {
-        final Execute execute = new Execute();
-        execute.as(EntitySelector.A.create())
-            .at(EntitySelector.S.create())
-            .positioned.$("~ ~1 ~")
-            .ifOrUnless(IfUnless.IF);
     }
 
     public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector<T> selector) {
@@ -225,10 +222,24 @@ public class Execute {
             });
         }
 
+        public @NotNull Execute blocks(@NotNull String begin, @NotNull String end, @NotNull String destination, @NotNull ScanMode scanMode) {
+            return execute.fork(stack -> {
+                final String command = String.format(
+                    "execute if blocks %s %s %s %s",
+                    begin, end, destination, scanMode.getId()
+                );
+
+                if (toggle.invertOrNot(stack.runCommand(command))) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+
         public @NotNull Execute score(@NotNull ScoreHolder holder1, @NotNull String objectiveId1, @NotNull ScoreComparator comparator, @NotNull ScoreHolder holder2, @NotNull String objectiveId2) {
             return execute.fork(stack -> {
-                final Integer val1 = holder1.getScore(objectiveId1);
-                final Integer val2 = holder2.getScore(objectiveId2);
+                final Integer val1 = holder1.getScore(objectiveId1, stack);
+                final Integer val2 = holder2.getScore(objectiveId2, stack);
 
                 if (val1 == null || val2 == null) {
                     return List.of();
@@ -243,7 +254,7 @@ public class Execute {
 
         public @NotNull Execute score(@NotNull ScoreHolder holder, @NotNull String objectiveId, @NotNull IntRange range) {
             return execute.fork(stack -> {
-                final Integer val = holder.getScore(objectiveId);
+                final Integer val = holder.getScore(objectiveId, stack);
 
                 if (val == null) {
                     return List.of();
@@ -265,6 +276,82 @@ public class Execute {
             });
         }
 
+        public @NotNull Execute loaded(@NotNull String input) {
+            return execute.fork(stack -> {
+                final Location location = stack.readCoordinates(input).withWorld(stack.getDimension());
+                final Chunk chunk = stack.getDimension().getChunkAt(location);
+
+                if (toggle.invertOrNot(chunk.isLoaded())) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+
+        public @NotNull Execute biome(@NotNull String input, @NotNull Biome value) {
+            return execute.fork(stack -> {
+                final Location location = stack.readCoordinates(input).withWorld(stack.getDimension());
+                final Biome biome = stack.getDimension().getBiome(location);
+
+                if (toggle.invertOrNot(biome.equals(value))) {
+                    return List.of(stack);
+                }
+                else return List.of();
+            });
+        }
+
+        public final Items items = new Items(this);
+
+        public static final class Items {
+            private final GuardSubCommandIfUnless ifUnless;
+
+            private Items(@NotNull GuardSubCommandIfUnless ifUnless) {
+                this.ifUnless = ifUnless;
+            }
+
+            @ApiStatus.Experimental
+            public <T> @NotNull Execute entity(@NotNull EntitySelector<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlots<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
+                if (!selector.isSingle()) {
+                    throw new IllegalArgumentException("セレクターは単一のエンティティを指定する必要があります");
+                }
+
+                return ifUnless.execute.fork(stack -> {
+                    for (final Entity entity : stack.getEntities(selector)) {
+                        if (itemSlots.matches((T) entity, predicate)) {
+                            if (ifUnless.toggle.equals(IfUnless.IF)) {
+                                return List.of(stack);
+                            }
+                            else return List.of();
+                        }
+                    }
+
+                    if (ifUnless.toggle.equals(IfUnless.IF)) {
+                        return List.of();
+                    }
+                    else return List.of(stack);
+                });
+            }
+
+            public @NotNull Execute block(@NotNull String input, @NotNull ItemSlotsGroup.ItemSlots<InventoryHolder, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
+                return ifUnless.execute.fork(stack -> {
+                    final BlockState blockState = stack.getDimension()
+                        .getBlockAt(stack.readCoordinates(input).withWorld(stack.getDimension()))
+                        .getState();
+
+                    if (!(blockState instanceof BlockInventoryHolder blockInventoryHolder)) {
+                        return List.of();
+                    }
+
+                    if (ifUnless.toggle.invertOrNot(itemSlots.matches(blockInventoryHolder, predicate))) {
+                        return List.of(stack);
+                    }
+                    else {
+                        return List.of();
+                    }
+                });
+            }
+        }
+
         public @NotNull Execute predicate(@NotNull Predicate<SourceStack> predicate) {
             return execute.fork(stack -> {
                 final SourceStack copy = stack.copy();
@@ -275,7 +362,6 @@ public class Execute {
                 else return List.of();
             });
         }
-
     }
 
     public final On on = new On(this);

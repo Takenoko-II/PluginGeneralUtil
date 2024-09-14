@@ -15,6 +15,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 public abstract class EntitySelectorModifier<T extends Entity> {
     private EntitySelectorModifier() {}
@@ -298,6 +300,20 @@ public abstract class EntitySelectorModifier<T extends Entity> {
         @Override
         public @NotNull String getId() {
             return "limit";
+        }
+    };
+
+    public static final Builder<Entity, BiPredicate<Entity, SourceStack>> PREDICATE = new Builder<>() {
+        @Override
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull BiPredicate<Entity, SourceStack> argument) {
+            return entities.stream()
+                .filter(entity -> argument.test(entity, stack.copy()))
+                .toList();
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "predicate";
         }
     };
 

@@ -1,6 +1,6 @@
 package com.gmail.subnokoii78.util.vector;
 
-import com.gmail.subnokoii78.util.function.TiFunction;
+import com.gmail.subnokoii78.util.function.TriFunction;
 import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +41,7 @@ public interface VectorBuilder<T extends VectorBuilder<T, U>, U extends Number> 
      * 引数に渡された2つのベクトルとこのベクトルのそれぞれの成分に対して関数を呼び出し、その結果で成分の値を上書きします。
      */
     @Destructive
-    @NotNull T calculate(@NotNull T other1, @NotNull T other2, @NotNull TiFunction<U, U, U, U> operator);
+    @NotNull T calculate(@NotNull T other1, @NotNull T other2, @NotNull TriFunction<U, U, U, U> operator);
 
     /**
      * 引数に渡された値との足し算を行って自身を返します。

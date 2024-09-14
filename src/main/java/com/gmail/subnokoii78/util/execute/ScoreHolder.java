@@ -5,28 +5,57 @@ import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class ScoreHolder {
-    private final String id;
+public abstract class ScoreHolder {
+    abstract @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack);
 
-    public ScoreHolder(@NotNull String id) {
-        this.id = id;
+    public static @NotNull ScoreHolder of(@NotNull EntitySelector<? extends Entity> selector) {
+        return new EntityScoreHolder(selector);
     }
 
-    public ScoreHolder(@NotNull Entity entity) {
-        this.id = entity.getUniqueId().toString();
+    public static @NotNull ScoreHolder of(@NotNull String name) {
+        return new StringScoreHolder(name);
     }
 
-    public ScoreHolder(@NotNull EntitySelector<? extends Entity> selector, @NotNull SourceStack stack) {
-        if (!selector.isSingle()) throw new IllegalArgumentException("セレクターは単一のエンティティを指定する必要があります");
-
-        this.id = selector.getEntities(stack).getFirst().getUniqueId().toString();
+    public static @NotNull ScoreHolder of(@NotNull Entity entity) {
+        return new StringScoreHolder(entity.getUniqueId().toString());
     }
 
-    public @Nullable Integer getScore(@NotNull String objectiveId) {
-        final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective(objectiveId);
+    public static final class EntityScoreHolder extends ScoreHolder {
+        private final EntitySelector<? extends Entity> selector;
 
-        if (objective == null) return null;
+        private EntityScoreHolder(@NotNull EntitySelector<? extends Entity> selector) {
+            if (selector.isSingle()) {
+                this.selector = selector;
+            }
+            else {
+                throw new IllegalArgumentException("セレクターは単一のエンティティを指定する必要があります");
+            }
+        }
 
-        return objective.getScore(id);
+        @Override
+        @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack) {
+            final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective(objectiveId);
+
+            if (objective == null) return null;
+
+            return objective.getScore(stack.getEntities(selector).getFirst());
+        }
+    }
+
+    public static final class StringScoreHolder extends ScoreHolder {
+        private final String name;
+
+        private StringScoreHolder(@NotNull String name) {
+            this.name = name;
+        }
+
+        @Override
+        @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack) {
+            final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective(objectiveId);
+
+            if (objective == null) return null;
+
+            return objective.getScore(name);
+        }
     }
 }

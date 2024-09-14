@@ -1,6 +1,6 @@
 package com.gmail.subnokoii78.util.vector;
 
-import com.gmail.subnokoii78.util.function.TiFunction;
+import com.gmail.subnokoii78.util.function.TriFunction;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
@@ -82,7 +82,7 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
 
     @Override
     @Destructive
-    public @NotNull TripleAxisRotationBuilder calculate(@NotNull TripleAxisRotationBuilder other1, @NotNull TripleAxisRotationBuilder other2, @NotNull TiFunction<Float, Float, Float, Float> operator) {
+    public @NotNull TripleAxisRotationBuilder calculate(@NotNull TripleAxisRotationBuilder other1, @NotNull TripleAxisRotationBuilder other2, @NotNull TriFunction<Float, Float, Float, Float> operator) {
         this.yaw = operator.apply(yaw, other1.yaw, other2.yaw);
         this.pitch = operator.apply(pitch, other1.pitch, other2.pitch);
         this.roll = operator.apply(roll, other1.roll, other2.roll);

@@ -153,7 +153,7 @@ public class EntitySelector<T extends Entity> {
 
         abstract @NotNull List<T> selectorSpecificModifier(@NotNull List<T> entities, @NotNull SourceStack stack);
 
-        public @NotNull EntitySelector<T> create() {
+        public @NotNull EntitySelector<T> get() {
             return new EntitySelector<>(this);
         }
     }

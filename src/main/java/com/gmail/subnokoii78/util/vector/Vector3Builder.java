@@ -1,6 +1,6 @@
 package com.gmail.subnokoii78.util.vector;
 
-import com.gmail.subnokoii78.util.function.TiFunction;
+import com.gmail.subnokoii78.util.function.TriFunction;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -120,7 +120,7 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
 
     @Override
     @Destructive
-    public @NotNull Vector3Builder calculate(@NotNull Vector3Builder other1, @NotNull Vector3Builder other2, @NotNull TiFunction<Double, Double, Double, Double> operator) {
+    public @NotNull Vector3Builder calculate(@NotNull Vector3Builder other1, @NotNull Vector3Builder other2, @NotNull TriFunction<Double, Double, Double, Double> operator) {
         this.x = operator.apply(x, other1.x, other2.x);
         this.y = operator.apply(y, other1.y, other2.y);
         this.z = operator.apply(z, other1.z, other2.z);

@@ -1,6 +1,6 @@
 package com.gmail.subnokoii78.util.vector;
 
-import com.gmail.subnokoii78.util.function.TiFunction;
+import com.gmail.subnokoii78.util.function.TriFunction;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -92,7 +92,7 @@ public class DualAxisRotationBuilder implements VectorBuilder<DualAxisRotationBu
 
     @Override
     @Destructive
-    public @NotNull DualAxisRotationBuilder calculate(@NotNull DualAxisRotationBuilder other1, @NotNull DualAxisRotationBuilder other2, @NotNull TiFunction<Float, Float, Float, Float> operator) {
+    public @NotNull DualAxisRotationBuilder calculate(@NotNull DualAxisRotationBuilder other1, @NotNull DualAxisRotationBuilder other2, @NotNull TriFunction<Float, Float, Float, Float> operator) {
         this.yaw = operator.apply(yaw, other1.yaw, other2.yaw);
         this.pitch = operator.apply(pitch, other1.pitch, other2.pitch);
         return this;
