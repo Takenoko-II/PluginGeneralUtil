@@ -12,6 +12,9 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 public abstract class ItemSlotsGroup<T, U> {
+    /**
+     * コンテナスロット
+     */
     public static final ItemSlotsGroup<InventoryHolder, Integer> CONTAINER = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull InventoryHolder target, @NotNull Integer arg) {
@@ -34,6 +37,9 @@ public abstract class ItemSlotsGroup<T, U> {
         }
     };
 
+    /**
+     * エンダーチェスト
+     */
     public static final ItemSlotsGroup<HumanEntity, Integer> ENDERCHEST = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Integer arg) {
@@ -56,6 +62,9 @@ public abstract class ItemSlotsGroup<T, U> {
         }
     };
 
+    /**
+     * ホットバー
+     */
     public static final ItemSlotsGroup<HumanEntity, Integer> HOTBAR = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Integer arg) {
@@ -78,6 +87,9 @@ public abstract class ItemSlotsGroup<T, U> {
         }
     };
 
+    /**
+     * インベントリ
+     */
     public static final ItemSlotsGroup<InventoryHolder, Integer> INVENTORY = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull InventoryHolder target, @NotNull Integer arg) {
@@ -100,6 +112,9 @@ public abstract class ItemSlotsGroup<T, U> {
         }
     };
 
+    /**
+     * 馬のインベントリ
+     */
     public static final ItemSlotsGroup<Horse, Integer> HORSE = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull Horse target, @NotNull Integer arg) {
@@ -122,6 +137,9 @@ public abstract class ItemSlotsGroup<T, U> {
         }
     };
 
+    /**
+     * 村人のインベントリ
+     */
     public static final ItemSlotsGroup<Villager, Integer> VILLAGER = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull Villager target, @NotNull Integer arg) {
@@ -144,6 +162,9 @@ public abstract class ItemSlotsGroup<T, U> {
         }
     };
 
+    /**
+     * プレイヤーのインベントリ内カーソル
+     */
     public static final ItemSlotsGroup<HumanEntity, Object> PLAYER_CURSOR = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Object arg) {
@@ -159,6 +180,9 @@ public abstract class ItemSlotsGroup<T, U> {
         }
     };
 
+    /**
+     * 防具スロット
+     */
     public static final ItemSlotsGroup<LivingEntity, ArmorSlots> ARMOR = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull LivingEntity target, @NotNull ArmorSlots arg) {
@@ -173,6 +197,9 @@ public abstract class ItemSlotsGroup<T, U> {
         }
     };
 
+    /**
+     * メインハンドまたはオフハンド
+     */
     public static final ItemSlotsGroup<LivingEntity, WeaponSlots> WEAPON = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull LivingEntity target, @NotNull WeaponSlots arg) {
@@ -207,14 +234,27 @@ public abstract class ItemSlotsGroup<T, U> {
         return false;
     }
 
+    /**
+     * 引数に基づいてスロットを取得します。
+     * @param argument スロットの種類に応じた引数
+     * @return スロット
+     */
     public ItemSlots<T, U> getSlots(@NotNull U argument) {
         return new ItemSlots<>(this, argument);
     }
 
+    /**
+     * {@link ItemSlotsGroup#ANY}を引数に渡すことによってこのスロットグループのスロットを全て取得します。
+     * @param any {@link ItemSlotsGroup#ANY}
+     * @return 全スロット
+     */
     public ItemSlots<T, U> getSlots(@NotNull UUID any) {
         return new ItemSlots<>(this, any);
     }
 
+    /**
+     * 全てのスロットを取得するためのキー
+     */
     public static final UUID ANY = UUID.randomUUID();
 
     public static final class ItemSlots<T, U> {
@@ -232,6 +272,12 @@ public abstract class ItemSlotsGroup<T, U> {
             this.argument = null;
         }
 
+        /**
+         * このスロット群に条件に一致するスロットが含まれているかをテストします。
+         * @param target 調べる対象
+         * @param predicate 条件
+         * @return 条件に一致するスロットが含まれていればtrue、それ以外はfalse
+         */
         public boolean matches(@NotNull T target, @NotNull Predicate<ItemStack> predicate) {
             if (argument == null) {
                 return group.matches(target, predicate);
@@ -241,6 +287,9 @@ public abstract class ItemSlotsGroup<T, U> {
     }
 
     public enum ArmorSlots {
+        /**
+         * ヘルメットスロット
+         */
         HEAD {
             @Override
             @Nullable ItemStack get(@NotNull EntityEquipment equipment) {
@@ -248,6 +297,9 @@ public abstract class ItemSlotsGroup<T, U> {
             }
         },
 
+        /**
+         * チェストプレートスロット
+         */
         CHEST {
             @Override
             @Nullable ItemStack get(@NotNull EntityEquipment equipment) {
@@ -255,6 +307,9 @@ public abstract class ItemSlotsGroup<T, U> {
             }
         },
 
+        /**
+         * レギンススロット
+         */
         LEGS {
             @Override
             @Nullable ItemStack get(@NotNull EntityEquipment equipment) {
@@ -262,6 +317,9 @@ public abstract class ItemSlotsGroup<T, U> {
             }
         },
 
+        /**
+         * ブーツスロット
+         */
         FEET {
             @Override
             @Nullable ItemStack get(@NotNull EntityEquipment equipment) {
@@ -273,6 +331,9 @@ public abstract class ItemSlotsGroup<T, U> {
     }
 
     public enum WeaponSlots {
+        /**
+         * メインハンドスロット
+         */
         MAINHAND {
             @Override
             @Nullable ItemStack get(@NotNull EntityEquipment equipment) {
@@ -282,6 +343,9 @@ public abstract class ItemSlotsGroup<T, U> {
             }
         },
 
+        /**
+         * オフハンドスロット
+         */
         OFFHAND {
             @Override
             @Nullable ItemStack get(@NotNull EntityEquipment equipment) {

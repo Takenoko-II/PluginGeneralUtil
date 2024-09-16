@@ -8,18 +8,38 @@ import org.jetbrains.annotations.Nullable;
 public abstract class ScoreHolder {
     abstract @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack);
 
+    /**
+     * 単一のエンティティを示すセレクターからエンティティのスコアホルダーを取得します。
+     * @param selector セレクター
+     * @return スコアホルダー
+     */
     public static @NotNull ScoreHolder of(@NotNull EntitySelector<? extends Entity> selector) {
         return new EntityScoreHolder(selector);
     }
 
+    /**
+     * 単一のエンティティを示すセレクターからエンティティのスコアホルダーを取得します。
+     * @param selector セレクター
+     * @return スコアホルダー
+     */
     public static @NotNull ScoreHolder of(@NotNull EntitySelector.Provider<? extends Entity> selector) {
         return new EntityScoreHolder(selector.create());
     }
 
+    /**
+     * 文字列をスコアホルダーとして取得します。
+     * @param name フェイクプレイヤー名
+     * @return スコアホルダー
+     */
     public static @NotNull ScoreHolder of(@NotNull String name) {
         return new StringScoreHolder(name);
     }
 
+    /**
+     * エンティティをスコアホルダーとして取得します。
+     * @param entity エンティティ
+     * @return スコアホルダー
+     */
     public static @NotNull ScoreHolder of(@NotNull Entity entity) {
         return new StringScoreHolder(entity.getUniqueId().toString());
     }

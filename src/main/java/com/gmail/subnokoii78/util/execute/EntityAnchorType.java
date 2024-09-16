@@ -7,6 +7,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public enum EntityAnchorType {
+    /**
+     * エンティティアンカーを足先にするオプション
+     */
     FEET("feet") {
         @Override
         @NotNull Vector3Builder provideOffset(@Nullable Entity entity) {
@@ -14,6 +17,9 @@ public enum EntityAnchorType {
         }
     },
 
+    /**
+     * エンティティアンカーを目元にするオプション
+     */
     EYES("eyes") {
         @Override
         @NotNull Vector3Builder provideOffset(@Nullable Entity entity) {
@@ -31,6 +37,10 @@ public enum EntityAnchorType {
         this.id = id;
     }
 
+    /**
+     * IDを取得します。
+     * @return ID
+     */
     public @NotNull String getId() {
         return id;
     }

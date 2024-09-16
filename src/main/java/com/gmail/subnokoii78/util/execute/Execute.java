@@ -29,9 +29,9 @@ import java.util.stream.Collectors;
 public class Execute {
     private final List<SourceStack> stacks = new ArrayList<>();
 
-    private final Map<StoreOption, Set<TupleLR<ResultConsumer, Set<SourceStack>>>> resultConsumerMap = Map.of(
-        StoreOption.RESULT, new HashSet<>(),
-        StoreOption.SUCCESS, new HashSet<>()
+    private final Map<StoreTarget, Set<TupleLR<ResultConsumer, Set<SourceStack>>>> resultConsumerMap = Map.of(
+        StoreTarget.RESULT, new HashSet<>(),
+        StoreTarget.SUCCESS, new HashSet<>()
     );
 
     private @NotNull Execute redirect(Consumer<SourceStack> modifier) {
@@ -49,10 +49,17 @@ public class Execute {
         return this;
     }
 
+    /**
+     * デフォルトのソーススタックを指定して{@link Execute}オブジェクトを生成します。
+     * @param stack デフォルトの単一実行文脈
+     */
     public Execute(@NotNull SourceStack stack) {
         this.stacks.add(stack);
     }
 
+    /**
+     * 空のソーススタックをデフォルトのソーススタックとして{@link Execute}オブジェクトを生成します。
+     */
     public Execute() {
         this.stacks.add(new SourceStack());
     }
@@ -65,6 +72,11 @@ public class Execute {
         }
     }
 
+    /**
+     * サブコマンドas
+     * @param selector 実行者となるエンティティのセレクター
+     * @return this
+     */
     public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
         return fork(stack -> stack.getEntities(selector)
             .stream()
@@ -77,10 +89,20 @@ public class Execute {
         );
     }
 
+    /**
+     * サブコマンドas
+     * @param selector 実行者となるエンティティのセレクター
+     * @return this
+     */
     public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
         return as(selector.create());
     }
 
+    /**
+     * サブコマンドat
+     * @param selector 実行者となるエンティティのセレクター
+     * @return this
+     */
     public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector<T> selector) {
         return fork(stack -> stack.getEntities(selector)
             .stream()
@@ -95,10 +117,18 @@ public class Execute {
         );
     }
 
+    /**
+     * サブコマンドat
+     * @param selector 実行者となるエンティティのセレクター
+     * @return this
+     */
     public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector.Provider<T> selector) {
         return at(selector.create());
     }
 
+    /**
+     * サブコマンドpositioned
+     */
     public final Positioned positioned = new Positioned(this);
 
     public static final class Positioned extends MultiFunctionalSubCommand {
@@ -106,6 +136,11 @@ public class Execute {
             super(execute);
         }
 
+        /**
+         * 絶対座標・相対座標・ローカル座標の入力によって実行座標を変更します。
+         * @param input 座標の入力
+         * @return that
+         */
         public @NotNull Execute $(@NotNull String input) {
             return execute.redirect(stack -> {
                 stack.write(stack.readCoordinates(input));
@@ -113,6 +148,11 @@ public class Execute {
             });
         }
 
+        /**
+         * 参照するエンティティのセレクターの入力によって実行座標を変更します。
+         * @param selector 参照するエンティティ
+         * @return that
+         */
         public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
             return execute.fork(stack -> stack.getEntities(selector)
                 .stream()
@@ -125,10 +165,20 @@ public class Execute {
             );
         }
 
+        /**
+         * 参照するエンティティのセレクターの入力によって実行座標を変更します。
+         * @param selector 参照するエンティティ
+         * @return that
+         */
         public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
             return as(selector.create());
         }
 
+        /**
+         * サブサブコマンドover
+         * @param heightMap Y座標の基準
+         * @return that
+         */
         public @NotNull Execute over(@NotNull HeightMap heightMap) {
             return execute.redirect(stack -> {
                 final Location location = stack.getAsBukkitLocation().toHighestLocation(heightMap);
@@ -139,6 +189,9 @@ public class Execute {
         }
     }
 
+    /**
+     * サブコマンドrotated
+     */
     public final Rotated rotated = new Rotated(this);
 
     public static final class Rotated extends MultiFunctionalSubCommand {
@@ -146,10 +199,20 @@ public class Execute {
             super(execute);
         }
 
+        /**
+         * 絶対回転・相対回転の入力によって実行方向を変更します。
+         * @param input 回転の入力
+         * @return that
+         */
         public @NotNull Execute $(@NotNull String input) {
             return execute.redirect(stack -> stack.write(stack.readAngles(input)));
         }
 
+        /**
+         * 参照するエンティティのセレクターの入力によって実行方向を変更します。
+         * @param selector 参照するエンティティ
+         * @return that
+         */
         public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector<T> selector) {
             return execute.fork(stack -> stack.getEntities(selector)
                 .stream()
@@ -162,11 +225,19 @@ public class Execute {
             );
         }
 
+        /**
+         * 参照するエンティティのセレクターの入力によって実行方向を変更します。
+         * @param selector 参照するエンティティ
+         * @return that
+         */
         public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
             return as(selector.create());
         }
     }
 
+    /**
+     * サブコマンドfacing
+     */
     public final Facing facing = new Facing(this);
 
     public static final class Facing extends MultiFunctionalSubCommand {
@@ -174,6 +245,11 @@ public class Execute {
             super(execute);
         }
 
+        /**
+         * 絶対座標・相対座標・ローカル座標の入力によって実行方向を変更します。
+         * @param input 座標の入力
+         * @return that
+         */
         public @NotNull Execute $(@NotNull String input) {
             return execute.redirect(stack -> {
                 final Vector3Builder direction = stack.getPosition().add(stack.getEntityAnchor().getOffset()).getDirectionTo(stack.readCoordinates(input));
@@ -181,6 +257,11 @@ public class Execute {
             });
         }
 
+        /**
+         * 参照するエンティティのセレクターの入力によって実行方向を変更します。
+         * @param selector 参照するエンティティ
+         * @return that
+         */
         public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector, @NotNull EntityAnchorType anchor) {
             return execute.fork(stack -> stack.getEntities(selector)
                 .stream()
@@ -199,11 +280,21 @@ public class Execute {
             );
         }
 
+        /**
+         * 参照するエンティティのセレクターの入力によって実行方向を変更します。
+         * @param selector 参照するエンティティ
+         * @return that
+         */
         public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Provider<T> selector, @NotNull EntityAnchorType anchor) {
             return entity(selector.create(), anchor);
         }
     }
 
+    /**
+     * サブコマンドalign
+     * @param axes 切り捨てる軸
+     * @return this
+     */
     public @NotNull Execute align(@NotNull String axes) {
         return redirect(stack -> {
             final Set<Character> axisChars = SourceStack.readAxes(axes);
@@ -217,14 +308,29 @@ public class Execute {
         });
     }
 
+    /**
+     * サブコマンドanchored
+     * @param anchor 実行アンカー
+     * @return this
+     */
     public @NotNull Execute anchored(@NotNull EntityAnchorType anchor) {
         return redirect(stack -> stack.write(anchor));
     }
 
+    /**
+     * サブコマンドin
+     * @param dimension ディメンション
+     * @return this
+     */
     public @NotNull Execute in(@NotNull DimensionProvider dimension) {
         return redirect(stack -> stack.write(dimension.getWorld()));
     }
 
+    /**
+     * ガードサブコマンドif|unless
+     * @param toggle ifまたはunless
+     * @return ifまたはunless
+     */
     public @NotNull GuardSubCommandIfUnless ifOrUnless(@NotNull IfUnless toggle) {
         return new GuardSubCommandIfUnless(this, toggle);
     }
@@ -237,17 +343,33 @@ public class Execute {
             this.toggle = toggle;
         }
 
+        /**
+         * 特定のエンティティが存在するかどうかをテストします。
+         * @param selector セレクター
+         * @return that
+         */
         public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector) {
             return execute.fork(stack -> {
-                if (toggle.invertOrNot(stack.getEntities(selector).isEmpty())) return List.of();
+                if (toggle.apply(stack.getEntities(selector).isEmpty())) return List.of();
                 else return List.of(stack);
             });
         }
 
+        /**
+         * 特定のエンティティが存在するかどうかをテストします。
+         * @param selector セレクター
+         * @return that
+         */
         public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Provider<T> selector) {
             return entity(selector.create());
         }
 
+        /**
+         * 特定の座標に条件を満たすブロックが存在するかどうかをテストします。
+         * @param location 座標の入力
+         * @param blockPredicate ブロックの条件
+         * @return that
+         */
         public @NotNull Execute block(@NotNull String location, @NotNull Predicate<Block> blockPredicate) {
             return execute.fork(stack -> {
                 final Block block = stack.getDimension().getBlockAt(
@@ -255,13 +377,21 @@ public class Execute {
                         .withWorld(stack.getDimension())
                 );
 
-                if (toggle.invertOrNot(blockPredicate.test(block))) {
+                if (toggle.apply(blockPredicate.test(block))) {
                     return List.of(stack);
                 }
                 else return List.of();
             });
         }
 
+        /**
+         * 特定の2範囲のブロックが一致するかどうかをテストします。
+         * @param begin 始点座標
+         * @param end 種店座標
+         * @param destination 比較先座標
+         * @param scanMode 比較時のオプション
+         * @return that
+         */
         public @NotNull Execute blocks(@NotNull String begin, @NotNull String end, @NotNull String destination, @NotNull ScanMode scanMode) {
             return execute.fork(stack -> {
                 final String command = String.format(
@@ -269,13 +399,22 @@ public class Execute {
                     begin, end, destination, scanMode.getId()
                 );
 
-                if (toggle.invertOrNot(stack.runCommand(command))) {
+                if (toggle.apply(stack.runCommand(command))) {
                     return List.of(stack);
                 }
                 else return List.of();
             });
         }
 
+        /**
+         * スコアボードの値が条件に一致するかどうかをテストします。
+         * @param holder1 スコアホルダー1つ目
+         * @param objectiveId1 オブジェクト1つ目
+         * @param comparator 比較演算子
+         * @param holder2 スコアホルダー2つ目
+         * @param objectiveId2 オブジェクト2つ目
+         * @return that
+         */
         public @NotNull Execute score(@NotNull ScoreHolder holder1, @NotNull String objectiveId1, @NotNull ScoreComparator comparator, @NotNull ScoreHolder holder2, @NotNull String objectiveId2) {
             return execute.fork(stack -> {
                 final Integer val1 = holder1.getScore(objectiveId1, stack);
@@ -285,13 +424,20 @@ public class Execute {
                     return List.of();
                 }
 
-                if (toggle.invertOrNot(comparator.compare(val1, val2))) {
+                if (toggle.apply(comparator.compare(val1, val2))) {
                     return List.of(stack);
                 }
                 else return List.of();
             });
         }
 
+        /**
+         * スコアボードの値が条件に一致するかどうかをテストします。
+         * @param holder スコアホルダー
+         * @param objectiveId オブジェクト
+         * @param range 数値の範囲
+         * @return that
+         */
         public @NotNull Execute score(@NotNull ScoreHolder holder, @NotNull String objectiveId, @NotNull IntRange range) {
             return execute.fork(stack -> {
                 final Integer val = holder.getScore(objectiveId, stack);
@@ -300,46 +446,65 @@ public class Execute {
                     return List.of();
                 }
 
-                if (toggle.invertOrNot(range.min() <= val && val <= range.max())) {
+                if (toggle.apply(range.min() <= val && val <= range.max())) {
                     return List.of(stack);
                 }
                 else return List.of();
             });
         }
 
+        /**
+         * ディメンションが指定のものであるかどうかをテストします。
+         * @param dimensionProvider ディメンション
+         * @return that
+         */
         public @NotNull Execute dimension(@NotNull DimensionProvider dimensionProvider) {
             return execute.fork(stack -> {
-                if (toggle.invertOrNot(stack.getDimension().equals(dimensionProvider.getWorld()))) {
+                if (toggle.apply(stack.getDimension().equals(dimensionProvider.getWorld()))) {
                     return List.of(stack);
                 }
                 else return List.of();
             });
         }
 
+        /**
+         * 特定の座標がロードされているかをテストします。
+         * @param input 座標の入力
+         * @return that
+         */
         public @NotNull Execute loaded(@NotNull String input) {
             return execute.fork(stack -> {
                 final Location location = stack.readCoordinates(input).withWorld(stack.getDimension());
                 final Chunk chunk = stack.getDimension().getChunkAt(location);
 
-                if (toggle.invertOrNot(chunk.isLoaded())) {
+                if (toggle.apply(chunk.isLoaded())) {
                     return List.of(stack);
                 }
                 else return List.of();
             });
         }
 
+        /**
+         * 特定の座標におけるバイオームが指定のものであるかどうかをテストします。
+         * @param input 座標の入力
+         * @param value バイオーム
+         * @return that
+         */
         public @NotNull Execute biome(@NotNull String input, @NotNull Biome value) {
             return execute.fork(stack -> {
                 final Location location = stack.readCoordinates(input).withWorld(stack.getDimension());
                 final Biome biome = stack.getDimension().getBiome(location);
 
-                if (toggle.invertOrNot(biome.equals(value))) {
+                if (toggle.apply(biome.equals(value))) {
                     return List.of(stack);
                 }
                 else return List.of();
             });
         }
 
+        /**
+         * サブサブコマンドitems
+         */
         public final Items items = new Items(this);
 
         public static final class Items {
@@ -349,6 +514,13 @@ public class Execute {
                 this.ifUnless = ifUnless;
             }
 
+            /**
+             * 単一のエンティティの特定のスロット群にあるアイテムの中に条件を満たすアイテムがあるかどうかをテストします。
+             * @param selector 単一のエンティティを示すセレクター
+             * @param itemSlots アイテムスロットの候補
+             * @param predicate 条件
+             * @return that
+             */
             @ApiStatus.Experimental
             public <T> @NotNull Execute entity(@NotNull EntitySelector<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlots<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
                 if (!selector.isSingle()) {
@@ -372,10 +544,24 @@ public class Execute {
                 });
             }
 
+            /**
+             * 単一のエンティティの特定のスロット群にあるアイテムの中に条件を満たすアイテムがあるかどうかをテストします。
+             * @param selector 単一のエンティティを示すセレクター
+             * @param itemSlots アイテムスロットの候補
+             * @param predicate 条件
+             * @return that
+             */
             public <T> @NotNull Execute entity(@NotNull EntitySelector.Provider<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlots<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
                 return entity(selector.create(), itemSlots, predicate);
             }
 
+            /**
+             * あるブロックの特定のスロット群にあるアイテムの中に条件を満たすアイテムがあるかどうかをテストします。
+             * @param input 座標の入力
+             * @param itemSlots アイテムスロットの候補
+             * @param predicate 条件
+             * @return that
+             */
             public @NotNull Execute block(@NotNull String input, @NotNull ItemSlotsGroup.ItemSlots<InventoryHolder, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
                 return ifUnless.execute.fork(stack -> {
                     final BlockState blockState = stack.getDimension()
@@ -386,7 +572,7 @@ public class Execute {
                         return List.of();
                     }
 
-                    if (ifUnless.toggle.invertOrNot(itemSlots.matches(blockInventoryHolder, predicate))) {
+                    if (ifUnless.toggle.apply(itemSlots.matches(blockInventoryHolder, predicate))) {
                         return List.of(stack);
                     }
                     else {
@@ -396,11 +582,16 @@ public class Execute {
             }
         }
 
+        /**
+         * 指定の条件を満たすかどうかをテストします。
+         * @param predicate 条件
+         * @return that
+         */
         public @NotNull Execute predicate(@NotNull Predicate<SourceStack> predicate) {
             return execute.fork(stack -> {
                 final SourceStack copy = stack.copy();
 
-                if (toggle.invertOrNot(predicate.test(copy))) {
+                if (toggle.apply(predicate.test(copy))) {
                     return List.of(stack);
                 }
                 else return List.of();
@@ -408,6 +599,9 @@ public class Execute {
         }
     }
 
+    /**
+     * サブコマンドon
+     */
     public final On on = new On(this);
 
     public static final class On extends MultiFunctionalSubCommand {
@@ -415,6 +609,10 @@ public class Execute {
             super(execute);
         }
 
+        /**
+         * 実行者に騎乗しているエンティティに実行者を渡します。
+         * @return that
+         */
         public @NotNull Execute passengers() {
             return execute.fork(stack -> {
                 final Entity executor = stack.getExecutor();
@@ -431,6 +629,10 @@ public class Execute {
             });
         }
 
+        /**
+         * 実行者が乗っている乗り物となるエンティティに実行者を渡します。
+         * @return that
+         */
         public @NotNull Execute vehicle() {
             return execute.redirect(stack -> {
                 final Entity executor = stack.getExecutor();
@@ -441,6 +643,10 @@ public class Execute {
             });
         }
 
+        /**
+         * 実行者を飼いならしているエンティティに実行者を渡します。
+         * @return that
+         */
         public @NotNull Execute owner() {
             return execute.fork(stack -> {
                 final Entity executor = stack.getExecutor();
@@ -455,6 +661,10 @@ public class Execute {
             });
         }
 
+        /**
+         * 実行者の発生元となるエンティティに実行者を渡します。
+         * @return that
+         */
         public @NotNull Execute origin() {
             return execute.fork(stack -> {
                 final Entity executor = stack.getExecutor();
@@ -508,6 +718,10 @@ public class Execute {
             });
         }
 
+        /**
+         * 実行者が現在敵対しているエンティティに実行者を渡します。
+         * @return that
+         */
         public @NotNull Execute target() {
             return execute.fork(stack -> {
                 if (stack.getExecutor() == null) return List.of();
@@ -520,6 +734,10 @@ public class Execute {
             });
         }
 
+        /**
+         * 実行者をリードで引っ張っているエンティティに実行者を渡します。
+         * @return that
+         */
         public @NotNull Execute leasher() {
             return execute.fork(stack -> {
                 if (stack.getExecutor() == null) return List.of();
@@ -551,6 +769,10 @@ public class Execute {
                 .toList().getFirst();
         }
 
+        /**
+         * 実行者を操縦しているエンティティに実行者を渡します。
+         * @return that
+         */
         @ApiStatus.Experimental
         public @NotNull Execute controller() {
             return execute.fork(stack -> {
@@ -563,6 +785,10 @@ public class Execute {
             });
         }
 
+        /**
+         * 実行者を直近5秒以内に攻撃したエンティティに実行者を渡します。
+         * @return that
+         */
         @ApiStatus.Experimental
         public @NotNull Execute attacker() {
             return execute.fork(stack -> {
@@ -576,6 +802,11 @@ public class Execute {
         }
     }
 
+    /**
+     * サブコマンドsummon
+     * @param entityType 召喚するエンティティの種類
+     * @return this
+     */
     public @NotNull Execute summon(@NotNull EntityType entityType) {
         return redirect(stack -> {
             final Entity entity = stack.getDimension().spawnEntity(stack.getAsBukkitLocation(), entityType);
@@ -583,6 +814,9 @@ public class Execute {
         });
     }
 
+    /**
+     * サブコマンドrun
+     */
     public final Run run = new Run(this);
 
     public static final class Run extends MultiFunctionalSubCommand {
@@ -590,11 +824,21 @@ public class Execute {
             super(execute);
         }
 
+        /**
+         * 現在の実行文脈を使用して指定のコマンドを実行します。
+         * @param command コマンド文字列
+         * @return 成功した場合true、失敗した場合false
+         */
         @ApiStatus.Experimental
         public boolean command(@NotNull String command) {
             return callback(stack -> stack.runCommand(command) ? 1 : 0);
         }
 
+        /**
+         * 現在の実行文脈を使用して渡された関数を実行します。
+         * @param callback コールバック
+         * @return 成功した場合true、失敗した場合false
+         */
         public boolean callback(@NotNull Function<SourceStack, Integer> callback) {
             final List<Integer> results = new ArrayList<>();
 
@@ -611,14 +855,14 @@ public class Execute {
             final int resultValue = results.stream().reduce(0, Integer::sum);
             final int successValue = results.size();
 
-            execute.resultConsumerMap.get(StoreOption.RESULT)
+            execute.resultConsumerMap.get(StoreTarget.RESULT)
                 .forEach(tuple -> {
                     tuple.right().forEach(stack -> {
                         tuple.left().accept(stack, resultValue);
                     });
                 });
 
-            execute.resultConsumerMap.get(StoreOption.SUCCESS)
+            execute.resultConsumerMap.get(StoreTarget.SUCCESS)
                 .forEach(tuple -> {
                     tuple.right().forEach(stack -> {
                         tuple.left().accept(stack, successValue);
@@ -629,6 +873,9 @@ public class Execute {
         }
     }
 
+    /**
+     * サブコマンドstore
+     */
     public final Store store = new Store(this);
 
     public static final class Store extends MultiFunctionalSubCommand {
@@ -636,9 +883,14 @@ public class Execute {
             super(execute);
         }
 
+        /**
+         * 実行の結果得られた整数値の和を使用してコールバックを呼び出す関数を登録します。
+         * @param resultConsumer コールバック
+         * @return that
+         */
         public @NotNull Execute result(@NotNull ResultConsumer resultConsumer) {
             execute.resultConsumerMap
-                .get(StoreOption.RESULT)
+                .get(StoreTarget.RESULT)
                 .add(
                     new TupleLR<>(
                         resultConsumer,
@@ -651,9 +903,14 @@ public class Execute {
             return execute;
         }
 
+        /**
+         * 実行の結果成功した回数を使用してコールバックを呼び出す関数を登録します。
+         * @param resultConsumer コールバック
+         * @return that
+         */
         public @NotNull Execute success(@NotNull ResultConsumer resultConsumer) {
             execute.resultConsumerMap
-                .get(StoreOption.SUCCESS)
+                .get(StoreTarget.SUCCESS)
                 .add(
                     new TupleLR<>(
                         resultConsumer,
@@ -667,6 +924,10 @@ public class Execute {
         }
     }
 
+    /**
+     * この{@link Execute}オブジェクトを文字列として視覚化します。
+     * @return 変換された文字列
+     */
     @Override
     public @NotNull String toString() {
         final JSONArray jsonArray = new JSONArray();

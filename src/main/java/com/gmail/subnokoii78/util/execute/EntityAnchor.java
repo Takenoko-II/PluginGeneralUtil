@@ -13,10 +13,18 @@ public final class EntityAnchor {
         this.stack = stack;
     }
 
+    /**
+     * エンティティアンカーの種類を取得します。
+     * @return eyesまたはfeet
+     */
     public @NotNull EntityAnchorType getType() {
         return anchor;
     }
 
+    /**
+     * エンティティアンカーによる実行座標のオフセットを取得します。
+     * @return アンカーオフセット
+     */
     public @NotNull Vector3Builder getOffset() {
         return anchor.provideOffset(stack.getExecutor());
     }
