@@ -2,9 +2,13 @@ package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.file.json.JSONArray;
 import com.gmail.subnokoii78.util.file.json.JSONSerializer;
+import com.gmail.subnokoii78.util.other.TupleLR;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
+import io.papermc.paper.entity.Leashable;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.HeightMap;
 import org.bukkit.Location;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -16,16 +20,19 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class Execute {
     private final List<SourceStack> stacks = new ArrayList<>();
+
+    private final Map<StoreOption, Set<TupleLR<ResultConsumer, Set<SourceStack>>>> resultConsumerMap = Map.of(
+        StoreOption.RESULT, new HashSet<>(),
+        StoreOption.SUCCESS, new HashSet<>()
+    );
 
     private @NotNull Execute redirect(Consumer<SourceStack> modifier) {
         stacks.forEach(modifier);
@@ -70,6 +77,10 @@ public class Execute {
         );
     }
 
+    public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
+        return as(selector.create());
+    }
+
     public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector<T> selector) {
         return fork(stack -> stack.getEntities(selector)
             .stream()
@@ -84,6 +95,10 @@ public class Execute {
         );
     }
 
+    public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector.Provider<T> selector) {
+        return at(selector.create());
+    }
+
     public final Positioned positioned = new Positioned(this);
 
     public static final class Positioned extends MultiFunctionalSubCommand {
@@ -94,7 +109,7 @@ public class Execute {
         public @NotNull Execute $(@NotNull String input) {
             return execute.redirect(stack -> {
                 stack.write(stack.readCoordinates(input));
-                stack.write(EntityAnchor.FEET);
+                stack.write(EntityAnchorType.FEET);
             });
         }
 
@@ -108,6 +123,19 @@ public class Execute {
                 })
                 .toList()
             );
+        }
+
+        public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
+            return as(selector.create());
+        }
+
+        public @NotNull Execute over(@NotNull HeightMap heightMap) {
+            return execute.redirect(stack -> {
+                final Location location = stack.getAsBukkitLocation().toHighestLocation(heightMap);
+                stack.write(Vector3Builder.from(location));
+                stack.write(DualAxisRotationBuilder.from(location));
+                stack.write(location.getWorld());
+            });
         }
     }
 
@@ -133,6 +161,10 @@ public class Execute {
                 .toList()
             );
         }
+
+        public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
+            return as(selector.create());
+        }
     }
 
     public final Facing facing = new Facing(this);
@@ -144,21 +176,21 @@ public class Execute {
 
         public @NotNull Execute $(@NotNull String input) {
             return execute.redirect(stack -> {
-                final Vector3Builder direction = stack.getLocation().add(stack.getEntityAnchorOffset()).getDirectionTo(stack.readCoordinates(input));
+                final Vector3Builder direction = stack.getPosition().add(stack.getEntityAnchor().getOffset()).getDirectionTo(stack.readCoordinates(input));
                 stack.write(direction.getRotation2d());
             });
         }
 
-        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector, @NotNull EntityAnchor anchor) {
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector, @NotNull EntityAnchorType anchor) {
             return execute.fork(stack -> stack.getEntities(selector)
                 .stream()
                 .map(entity -> {
                     final SourceStack copy = stack.copy();
-                    final Vector3Builder direction = copy.getLocation()
-                        .add(copy.getEntityAnchorOffset())
+                    final Vector3Builder direction = copy.getPosition()
+                        .add(copy.getEntityAnchor().getOffset())
                         .getDirectionTo(
                             Vector3Builder.from(entity)
-                                .add(anchor.getOffset(entity))
+                                .add(anchor.provideOffset(entity))
                         );
                     copy.write(direction.getRotation2d());
                     return copy;
@@ -166,12 +198,16 @@ public class Execute {
                 .toList()
             );
         }
+
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Provider<T> selector, @NotNull EntityAnchorType anchor) {
+            return entity(selector.create(), anchor);
+        }
     }
 
     public @NotNull Execute align(@NotNull String axes) {
         return redirect(stack -> {
-            final Set<Character> axisChars = stack.readAxes(axes);
-            final Vector3Builder location = stack.getLocation();
+            final Set<Character> axisChars = SourceStack.readAxes(axes);
+            final Vector3Builder location = stack.getPosition();
 
             if (axisChars.contains('x')) location.x(Math.floor(location.x()));
             if (axisChars.contains('y')) location.y(Math.floor(location.y()));
@@ -181,7 +217,7 @@ public class Execute {
         });
     }
 
-    public @NotNull Execute anchored(@NotNull EntityAnchor anchor) {
+    public @NotNull Execute anchored(@NotNull EntityAnchorType anchor) {
         return redirect(stack -> stack.write(anchor));
     }
 
@@ -206,6 +242,10 @@ public class Execute {
                 if (toggle.invertOrNot(stack.getEntities(selector).isEmpty())) return List.of();
                 else return List.of(stack);
             });
+        }
+
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Provider<T> selector) {
+            return entity(selector.create());
         }
 
         public @NotNull Execute block(@NotNull String location, @NotNull Predicate<Block> blockPredicate) {
@@ -330,6 +370,10 @@ public class Execute {
                     }
                     else return List.of(stack);
                 });
+            }
+
+            public <T> @NotNull Execute entity(@NotNull EntitySelector.Provider<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlots<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
+                return entity(selector.create(), itemSlots, predicate);
             }
 
             public @NotNull Execute block(@NotNull String input, @NotNull ItemSlotsGroup.ItemSlots<InventoryHolder, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
@@ -463,10 +507,80 @@ public class Execute {
                 };
             });
         }
+
+        public @NotNull Execute target() {
+            return execute.fork(stack -> {
+                if (stack.getExecutor() == null) return List.of();
+                else if (!(stack.getExecutor() instanceof Mob mob)) return List.of();
+                else if (mob.getTarget() == null) return List.of();
+                else {
+                    stack.write(mob.getTarget());
+                    return List.of(stack);
+                }
+            });
+        }
+
+        public @NotNull Execute leasher() {
+            return execute.fork(stack -> {
+                if (stack.getExecutor() == null) return List.of();
+                else if (!(stack.getExecutor() instanceof Leashable leashable)) return List.of();
+                else if (!leashable.isLeashed()) return List.of();
+                else {
+                    stack.write(leashable.getLeashHolder());
+                    return List.of(stack);
+                }
+            });
+        }
+
+        private @NotNull Entity getExecuteOnEntity(@NotNull Entity executor, @NotNull String fromAfterOnToBeforeRun) {
+            final String id = UUID.randomUUID().toString();
+            final String command = String.format("execute on %s run tag @s add %s", fromAfterOnToBeforeRun, id);
+            Bukkit.getServer().dispatchCommand(executor, command);
+            return Bukkit.getServer()
+                .getWorlds().stream()
+                .flatMap(world -> world
+                    .getEntities().stream()
+                    .filter(entity -> {
+                        if (entity.getScoreboardTags().contains(id)) {
+                            entity.removeScoreboardTag(id);
+                            return true;
+                        }
+                        else return false;
+                    })
+                )
+                .toList().getFirst();
+        }
+
+        @ApiStatus.Experimental
+        public @NotNull Execute controller() {
+            return execute.fork(stack -> {
+                if (stack.getExecutor() == null) return List.of();
+                else {
+                    final Entity entity = getExecuteOnEntity(stack.getExecutor(), "controller");
+                    stack.write(entity);
+                    return List.of(stack);
+                }
+            });
+        }
+
+        @ApiStatus.Experimental
+        public @NotNull Execute attacker() {
+            return execute.fork(stack -> {
+                if (stack.getExecutor() == null) return List.of();
+                else {
+                    final Entity entity = getExecuteOnEntity(stack.getExecutor(), "attacker");
+                    stack.write(entity);
+                    return List.of(stack);
+                }
+            });
+        }
     }
 
     public @NotNull Execute summon(@NotNull EntityType entityType) {
-        return redirect(stack -> stack.getDimension().spawnEntity(stack.getLocation().withWorld(stack.getDimension()), entityType));
+        return redirect(stack -> {
+            final Entity entity = stack.getDimension().spawnEntity(stack.getAsBukkitLocation(), entityType);
+            stack.write(entity);
+        });
     }
 
     public final Run run = new Run(this);
@@ -476,25 +590,87 @@ public class Execute {
             super(execute);
         }
 
+        @ApiStatus.Experimental
         public boolean command(@NotNull String command) {
-            final List<Boolean> out = new ArrayList<>();
-
-            execute.stacks.forEach(stack -> out.add(stack.runCommand(command)));
-
-            return out.contains(true);
+            return callback(stack -> stack.runCommand(command) ? 1 : 0);
         }
 
-        public void callback(@NotNull Consumer<SourceStack> callback) {
-            execute.stacks.forEach(stack -> callback.accept(stack.copy()));
+        public boolean callback(@NotNull Function<SourceStack, Integer> callback) {
+            final List<Integer> results = new ArrayList<>();
+
+            execute.stacks.forEach(stack -> {
+                try {
+                    int result = callback.apply(stack.copy());
+                    if (result > 0) results.add(result);
+                }
+                catch (RuntimeException e) {
+                    // fail;
+                }
+            });
+
+            final int resultValue = results.stream().reduce(0, Integer::sum);
+            final int successValue = results.size();
+
+            execute.resultConsumerMap.get(StoreOption.RESULT)
+                .forEach(tuple -> {
+                    tuple.right().forEach(stack -> {
+                        tuple.left().accept(stack, resultValue);
+                    });
+                });
+
+            execute.resultConsumerMap.get(StoreOption.SUCCESS)
+                .forEach(tuple -> {
+                    tuple.right().forEach(stack -> {
+                        tuple.left().accept(stack, successValue);
+                    });
+                });
+
+            return !results.isEmpty();
+        }
+    }
+
+    public final Store store = new Store(this);
+
+    public static final class Store extends MultiFunctionalSubCommand {
+        private Store(@NotNull Execute execute) {
+            super(execute);
+        }
+
+        public @NotNull Execute result(@NotNull ResultConsumer resultConsumer) {
+            execute.resultConsumerMap
+                .get(StoreOption.RESULT)
+                .add(
+                    new TupleLR<>(
+                        resultConsumer,
+                        execute.stacks.stream()
+                            .map(SourceStack::copy)
+                            .collect(Collectors.toSet())
+                    )
+                );
+
+            return execute;
+        }
+
+        public @NotNull Execute success(@NotNull ResultConsumer resultConsumer) {
+            execute.resultConsumerMap
+                .get(StoreOption.SUCCESS)
+                .add(
+                    new TupleLR<>(
+                        resultConsumer,
+                        execute.stacks.stream()
+                            .map(SourceStack::copy)
+                            .collect(Collectors.toSet())
+                    )
+                );
+
+            return execute;
         }
     }
 
     @Override
     public @NotNull String toString() {
         final JSONArray jsonArray = new JSONArray();
-        stacks.forEach(stack -> {
-            jsonArray.add(stack.getAsJSONObject());
-        });
+        stacks.forEach(stack -> jsonArray.add(stack.getAsJSONObject()));
         return new JSONSerializer(jsonArray).serialize();
     }
 }

@@ -19,7 +19,7 @@ public abstract class SelectorSortOrder {
             final List<T> out = new ArrayList<>(entities);
 
             out.sort((o1, o2) -> {
-                final Vector3Builder location = stack.getLocation();
+                final Vector3Builder location = stack.getPosition();
                 final double distance1 = location.getDistanceTo(Vector3Builder.from(o1));
                 final double distance2 = location.getDistanceTo(Vector3Builder.from(o2));
                 return Double.compare(distance1, distance2);
@@ -35,7 +35,7 @@ public abstract class SelectorSortOrder {
             final List<T> out = new ArrayList<>(entities);
 
             out.sort((o1, o2) -> {
-                final Vector3Builder location = stack.getLocation();
+                final Vector3Builder location = stack.getPosition();
                 final double distance1 = location.getDistanceTo(Vector3Builder.from(o1));
                 final double distance2 = location.getDistanceTo(Vector3Builder.from(o2));
                 return Double.compare(distance2, distance1);

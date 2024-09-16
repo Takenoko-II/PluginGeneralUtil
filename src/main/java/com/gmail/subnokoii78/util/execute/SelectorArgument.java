@@ -16,10 +16,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 
-public abstract class EntitySelectorModifier<T extends Entity> {
-    private EntitySelectorModifier() {}
+public abstract class SelectorArgument<T extends Entity> {
+    private SelectorArgument() {}
 
     abstract @NotNull List<T> modify(@NotNull List<T> entities, @NotNull SourceStack stack);
 
@@ -30,7 +29,7 @@ public abstract class EntitySelectorModifier<T extends Entity> {
     public static final Builder<Entity, Double> X = new Builder<>(3) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Double argument) {
-            stack.write(stack.getLocation().x(argument));
+            stack.write(stack.getPosition().x(argument));
             return entities;
         }
 
@@ -43,7 +42,7 @@ public abstract class EntitySelectorModifier<T extends Entity> {
     public static final Builder<Entity, Double> Y = new Builder<>(3) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Double argument) {
-            stack.write(stack.getLocation().y(argument));
+            stack.write(stack.getPosition().y(argument));
             return entities;
         }
 
@@ -56,7 +55,7 @@ public abstract class EntitySelectorModifier<T extends Entity> {
     public static final Builder<Entity, Double> Z = new Builder<>(3) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Double argument) {
-            stack.write(stack.getLocation().z(argument));
+            stack.write(stack.getPosition().z(argument));
             return entities;
         }
 
@@ -124,7 +123,7 @@ public abstract class EntitySelectorModifier<T extends Entity> {
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull PositiveDoubleRange argument) {
             return entities.stream()
                 .filter(entity -> {
-                    final double distance = stack.getLocation().getDistanceTo(Vector3Builder.from(entity));
+                    final double distance = stack.getPosition().getDistanceTo(Vector3Builder.from(entity));
                     return argument.min() <= distance && distance <= argument.max();
                 })
                 .toList();
@@ -152,8 +151,8 @@ public abstract class EntitySelectorModifier<T extends Entity> {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Vector3Builder argument) {
             final BoundingBox box = BoundingBox.of(
-                stack.getLocation().toBukkitVector(),
-                stack.getLocation()
+                stack.getPosition().toBukkitVector(),
+                stack.getPosition()
                     .add(argument)
                     .toBukkitVector()
             );
@@ -330,12 +329,17 @@ public abstract class EntitySelectorModifier<T extends Entity> {
 
         abstract @NotNull List<T> modify(@NotNull List<T> entities, @NotNull SourceStack stack, @NotNull U argument);
 
+        /**
+         * セレクター引数のIDを取得します。
+         * @return ID
+         */
         public abstract @NotNull String getId();
 
-        @NotNull EntitySelectorModifier<T> build(@NotNull U value) {
+        @NotNull
+        SelectorArgument<T> build(@NotNull U value) {
             final Builder<T, U> that = this;
 
-            return new EntitySelectorModifier<>() {
+            return new SelectorArgument<>() {
                 @Override
                 @NotNull List<T> modify(@NotNull List<T> entities, @NotNull SourceStack stack) {
                     return that.modify(entities, stack, value);

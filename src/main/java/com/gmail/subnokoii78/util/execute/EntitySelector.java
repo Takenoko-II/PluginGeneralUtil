@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class EntitySelector<T extends Entity> {
-    private final List<EntitySelectorModifier<T>> modifiers = new ArrayList<>();
+    private final List<SelectorArgument<T>> modifiers = new ArrayList<>();
 
     private final Provider<T> provider;
 
@@ -16,9 +16,13 @@ public class EntitySelector<T extends Entity> {
         this.provider = builder;
     }
 
+    /**
+     * セレクターが単一のエンティティを示すことが保障されていることをテストします。
+     * @return @p, @n, @e[limit=1]などはtrue
+     */
     public boolean isSingle() {
-        for (final EntitySelectorModifier<T> modifier : modifiers) {
-            if (modifier.getId().equals(EntitySelectorModifier.LIMIT.getId())) {
+        for (final SelectorArgument<T> modifier : modifiers) {
+            if (modifier.getId().equals(SelectorArgument.LIMIT.getId())) {
                 return true;
             }
         }
@@ -26,8 +30,14 @@ public class EntitySelector<T extends Entity> {
         return provider.equals(S) || provider.equals(P) || provider.equals(N);
     }
 
-    public <U> @NotNull EntitySelector<T> argument(@NotNull EntitySelectorModifier.Builder<? extends Entity, U> modifier, @NotNull U value) {
-        modifiers.add((EntitySelectorModifier<T>) modifier.build(value));
+    /**
+     * セレクターに引数を追加します。
+     * @param modifier セレクター引数の種類
+     * @param value セレクター引数に渡す値
+     * @return thisをそのまま返す
+     */
+    public <U> @NotNull EntitySelector<T> argument(@NotNull SelectorArgument.Builder<? extends Entity, U> modifier, @NotNull U value) {
+        modifiers.add((SelectorArgument<T>) modifier.build(value));
         modifiers.sort((a, b) -> b.getPriority() - a.getPriority());
         return this;
     }
@@ -37,14 +47,14 @@ public class EntitySelector<T extends Entity> {
         List<T> out = entities;
 
         // xyz -> sort -> limit
-        for (final EntitySelectorModifier<T> modifier : modifiers) {
+        for (final SelectorArgument<T> modifier : modifiers) {
             out = modifier.modify(out, copy);
         }
 
         return out;
     }
 
-    public @NotNull List<T> getEntities(@NotNull SourceStack stack) {
+    @NotNull List<T> getEntities(@NotNull SourceStack stack) {
         return provider.selectorSpecificModifier(modifier(provider.getTargetCandidates(stack), stack), stack);
     }
 
@@ -58,6 +68,9 @@ public class EntitySelector<T extends Entity> {
         return Bukkit.getOnlinePlayers().stream().map(player -> (Player) player).toList();
     }
 
+    /**
+     * セレクター「@e」に相当するセレクターのテンプレート
+     */
     public static final Provider<Entity> E = new Provider<>() {
         @Override
         @NotNull List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
@@ -71,6 +84,9 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
+    /**
+     * セレクター「@s」に相当するセレクターのテンプレート
+     */
     public static final Provider<Entity> S = new Provider<>() {
         @Override
         @NotNull List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
@@ -83,6 +99,9 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
+    /**
+     * セレクター「@a」に相当するセレクターのテンプレート
+     */
     public static final Provider<Player> A = new Provider<>() {
         @Override
         @NotNull List<Player> getTargetCandidates(@NotNull SourceStack stack) {
@@ -96,6 +115,9 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
+    /**
+     * セレクター「@p」に相当するセレクターのテンプレート
+     */
     public static final Provider<Player> P = new Provider<>() {
         @Override
         @NotNull List<Player> getTargetCandidates(@NotNull SourceStack stack) {
@@ -113,6 +135,9 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
+    /**
+     * セレクター「@r」に相当するセレクターのテンプレート
+     */
     public static final Provider<Player> R = new Provider<>() {
         @Override
         @NotNull List<Player> getTargetCandidates(@NotNull SourceStack stack) {
@@ -132,6 +157,9 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
+    /**
+     * セレクター「@n」に相当するセレクターのテンプレート
+     */
     public static final Provider<Entity> N = new Provider<>() {
         @Override
         @NotNull
@@ -153,7 +181,10 @@ public class EntitySelector<T extends Entity> {
 
         abstract @NotNull List<T> selectorSpecificModifier(@NotNull List<T> entities, @NotNull SourceStack stack);
 
-        public @NotNull EntitySelector<T> get() {
+        /**
+         * 新しくセレクターを作成します。
+         */
+        public @NotNull EntitySelector<T> create() {
             return new EntitySelector<>(this);
         }
     }
