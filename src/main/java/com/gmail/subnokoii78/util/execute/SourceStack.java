@@ -2,6 +2,7 @@ package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.file.json.JSONArray;
 import com.gmail.subnokoii78.util.file.json.JSONObject;
+import com.gmail.subnokoii78.util.other.TupleLR;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;

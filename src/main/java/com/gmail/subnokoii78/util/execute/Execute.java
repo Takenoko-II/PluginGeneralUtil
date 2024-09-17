@@ -858,14 +858,14 @@ public class Execute {
             execute.resultConsumerMap.get(StoreTarget.RESULT)
                 .forEach(tuple -> {
                     tuple.right().forEach(stack -> {
-                        tuple.left().accept(stack, resultValue);
+                        tuple.left().accept(stack, resultValue / tuple.right().size());
                     });
                 });
 
             execute.resultConsumerMap.get(StoreTarget.SUCCESS)
                 .forEach(tuple -> {
                     tuple.right().forEach(stack -> {
-                        tuple.left().accept(stack, successValue);
+                        tuple.left().accept(stack, successValue / tuple.right().size());
                     });
                 });
 
