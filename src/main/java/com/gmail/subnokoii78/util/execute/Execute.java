@@ -2,7 +2,6 @@ package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.file.json.JSONArray;
 import com.gmail.subnokoii78.util.file.json.JSONSerializer;
-import com.gmail.subnokoii78.util.other.TupleLR;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import io.papermc.paper.entity.Leashable;
@@ -21,18 +20,14 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class Execute {
     private final List<SourceStack> stacks = new ArrayList<>();
-
-    private final Map<StoreTarget, Set<TupleLR<ResultConsumer, Set<SourceStack>>>> resultConsumerMap = Map.of(
-        StoreTarget.RESULT, new HashSet<>(),
-        StoreTarget.SUCCESS, new HashSet<>()
-    );
 
     private @NotNull Execute redirect(Consumer<SourceStack> modifier) {
         stacks.forEach(modifier);
@@ -831,7 +826,7 @@ public class Execute {
          */
         @ApiStatus.Experimental
         public boolean command(@NotNull String command) {
-            return callback(stack -> stack.runCommand(command) ? 1 : 0);
+            return callback(stack -> stack.runCommand(command) ? SUCCESS : FAILURE);
         }
 
         /**
@@ -840,36 +835,25 @@ public class Execute {
          * @return 成功した場合true、失敗した場合false
          */
         public boolean callback(@NotNull Function<SourceStack, Integer> callback) {
-            final List<Integer> results = new ArrayList<>();
+            final AtomicBoolean success = new AtomicBoolean(false);
 
             execute.stacks.forEach(stack -> {
                 try {
                     int result = callback.apply(stack.copy());
-                    if (result > 0) results.add(result);
+                    if (result > FAILURE) {
+                        stack.getCallback().onSuccess(result);
+                        success.set(true);
+                    }
+                    else {
+                        stack.getCallback().onFailure();
+                    }
                 }
                 catch (RuntimeException e) {
-                    // fail;
+                    stack.getCallback().onFailure();
                 }
             });
 
-            final int resultValue = results.stream().reduce(0, Integer::sum);
-            final int successValue = results.size();
-
-            execute.resultConsumerMap.get(StoreTarget.RESULT)
-                .forEach(tuple -> {
-                    tuple.right().forEach(stack -> {
-                        tuple.left().accept(stack, resultValue / tuple.right().size());
-                    });
-                });
-
-            execute.resultConsumerMap.get(StoreTarget.SUCCESS)
-                .forEach(tuple -> {
-                    tuple.right().forEach(stack -> {
-                        tuple.left().accept(stack, successValue / tuple.right().size());
-                    });
-                });
-
-            return !results.isEmpty();
+            return success.get();
         }
     }
 
@@ -884,41 +868,27 @@ public class Execute {
         }
 
         /**
-         * 実行の結果得られた整数値の和を使用してコールバックを呼び出す関数を登録します。
-         * @param resultConsumer コールバック
+         * 実行の結果得られた整数値の和を格納する関数を登録します。
+         * @param resultConsumer 実行文脈毎に呼び出される関数
          * @return that
          */
         public @NotNull Execute result(@NotNull ResultConsumer resultConsumer) {
-            execute.resultConsumerMap
-                .get(StoreTarget.RESULT)
-                .add(
-                    new TupleLR<>(
-                        resultConsumer,
-                        execute.stacks.stream()
-                            .map(SourceStack::copy)
-                            .collect(Collectors.toSet())
-                    )
-                );
+            execute.stacks.forEach(stack -> {
+                stack.write(StoreTarget.RESULT, resultConsumer);
+            });
 
             return execute;
         }
 
         /**
-         * 実行の結果成功した回数を使用してコールバックを呼び出す関数を登録します。
-         * @param resultConsumer コールバック
+         * 実行の結果成功した回数を格納する関数を登録します。
+         * @param resultConsumer 実行文脈毎に呼び出される関数
          * @return that
          */
         public @NotNull Execute success(@NotNull ResultConsumer resultConsumer) {
-            execute.resultConsumerMap
-                .get(StoreTarget.SUCCESS)
-                .add(
-                    new TupleLR<>(
-                        resultConsumer,
-                        execute.stacks.stream()
-                            .map(SourceStack::copy)
-                            .collect(Collectors.toSet())
-                    )
-                );
+            execute.stacks.forEach(stack -> {
+                stack.write(StoreTarget.SUCCESS, resultConsumer);
+            });
 
             return execute;
         }
@@ -934,4 +904,8 @@ public class Execute {
         stacks.forEach(stack -> jsonArray.add(stack.getAsJSONObject()));
         return new JSONSerializer(jsonArray).serialize();
     }
+
+    public static final int SUCCESS = 1;
+
+    public static final int FAILURE = 0;
 }

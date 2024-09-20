@@ -2,7 +2,6 @@ package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.file.json.JSONArray;
 import com.gmail.subnokoii78.util.file.json.JSONObject;
-import com.gmail.subnokoii78.util.other.TupleLR;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;
@@ -12,6 +11,7 @@ import org.bukkit.block.Block;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,6 +30,8 @@ public class SourceStack {
     private final DualAxisRotationBuilder rotation = new DualAxisRotationBuilder();
 
     private EntityAnchor anchor = new EntityAnchor(EntityAnchorType.FEET, this);
+
+    private ResultCallback resultCallback = ResultCallback.EMPTY;
 
     /**
      * 初期状態のソーススタックを取得します。
@@ -112,6 +114,10 @@ public class SourceStack {
         return anchor;
     }
 
+    public @NotNull ResultCallback getCallback() {
+        return resultCallback;
+    }
+
     void write(@NotNull Entity executor) {
         this.executor = executor;
     }
@@ -130,6 +136,12 @@ public class SourceStack {
 
     void write(@NotNull EntityAnchorType anchor) {
         this.anchor = new EntityAnchor(anchor, this);
+    }
+
+    void write(@NotNull StoreTarget storeTarget, @NotNull ResultConsumer resultConsumer) {
+        this.resultCallback = this.resultCallback.chain(storeTarget, (successful, returnValue) -> {
+            resultConsumer.accept(copy(), returnValue);
+        });
     }
 
     private double parseAbsolutePos(@NotNull String input) {
@@ -315,6 +327,7 @@ public class SourceStack {
         stack.write(location.copy());
         stack.write(rotation.copy());
         stack.anchor = anchor;
+        stack.resultCallback = resultCallback;
         return stack;
     }
 
@@ -346,17 +359,18 @@ public class SourceStack {
      * @param command 実行するコマンド
      * @return 成功したときtrue、失敗すればfalse
      */
+    @ApiStatus.Experimental
     public boolean runCommand(@NotNull String command) {
         final String common = String.format(
             "in %s positioned %s rotated %s",
             DimensionProvider.get(dimension).getId(),
-            location.format("$c $c $c"),
+            location.copy().add(anchor.getOffset()).format("$c $c $c"),
             rotation.format("$c $c")
         );
 
         try {
             if (executor == null) {
-                Bukkit.getServer().dispatchCommand(
+                return Bukkit.getServer().dispatchCommand(
                     NULL_SENDER,
                     String.format(
                         "execute %s run %s",
@@ -366,13 +380,12 @@ public class SourceStack {
                 );
             }
             else {
-                Bukkit.getServer().dispatchCommand(
+                return Bukkit.getServer().dispatchCommand(
                     executor,
                     String.format(
-                        "execute %s as %s anchored %s run %s",
+                        "execute %s as %s run %s",
                         common,
                         executor.getUniqueId(),
-                        anchor,
                         command
                     )
                 );
@@ -381,8 +394,6 @@ public class SourceStack {
         catch (CommandException e) {
             return false;
         }
-
-        return true;
     }
 
     /**
