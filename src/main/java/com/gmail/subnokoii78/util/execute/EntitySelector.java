@@ -7,7 +7,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class EntitySelector<T extends Entity> {
+/**
+ * エンティティセレクターを表現するクラス
+ * @param <T> @pや@aは{@link Player}、@eや@nは{@link Entity}、@sは暫定で{@link Entity}
+ */
+public final class EntitySelector<T extends Entity> {
     private final List<SelectorArgument<T>> modifiers = new ArrayList<>();
 
     private final Provider<T> provider;
@@ -37,6 +41,7 @@ public class EntitySelector<T extends Entity> {
      * @return thisをそのまま返す
      */
     public <U> @NotNull EntitySelector<T> argument(@NotNull SelectorArgument.Builder<? extends Entity, U> modifier, @NotNull U value) {
+        // ここだけ気に入らん
         modifiers.add((SelectorArgument<T>) modifier.build(value));
         modifiers.sort((a, b) -> b.getPriority() - a.getPriority());
         return this;
@@ -174,6 +179,9 @@ public class EntitySelector<T extends Entity> {
         }
     };
 
+    /**
+     * 引数未設定の状態のエンティティセレクターを作成するためのクラス
+     */
     public static abstract class Provider<T extends Entity> {
         private Provider() {}
 
@@ -184,7 +192,7 @@ public class EntitySelector<T extends Entity> {
         /**
          * 新しくセレクターを作成します。
          */
-        public @NotNull EntitySelector<T> create() {
+        public @NotNull EntitySelector<T> newSelector() {
             return new EntitySelector<>(this);
         }
     }

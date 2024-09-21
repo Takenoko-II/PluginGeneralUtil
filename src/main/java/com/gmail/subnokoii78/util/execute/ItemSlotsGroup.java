@@ -11,6 +11,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+/**
+ * アイテムスロットのグループを表現するクラス
+ * @param <T> そのスロットグループを取得できるクラス
+ * @param <U> スロットグループからスロットを取得するときに必要な値の型
+ */
 public abstract class ItemSlotsGroup<T, U> {
     /**
      * コンテナスロット
@@ -18,7 +23,7 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<InventoryHolder, Integer> CONTAINER = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull InventoryHolder target, @NotNull Integer arg) {
-            final PositiveIntRange range = PositiveIntRange.parse("0..53");
+            final LevelRange range = LevelRange.of("0..53");
 
             if (!(range.min() <= arg && arg <= range.max())) {
                 throw new IllegalArgumentException("containerの値は0～53です");
@@ -43,7 +48,7 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<HumanEntity, Integer> ENDERCHEST = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Integer arg) {
-            final PositiveIntRange range = PositiveIntRange.parse("0..26");
+            final LevelRange range = LevelRange.of("0..26");
 
             if (!(range.min() <= arg && arg <= range.max())) {
                 throw new IllegalArgumentException("enderchestの値は0～26です");
@@ -68,7 +73,7 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<HumanEntity, Integer> HOTBAR = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Integer arg) {
-            final PositiveIntRange range = PositiveIntRange.parse("0..8");
+            final LevelRange range = LevelRange.of("0..8");
 
             if (!(range.min() <= arg && arg <= range.max())) {
                 throw new IllegalArgumentException("hotbarの値は0～8です");
@@ -93,7 +98,7 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<InventoryHolder, Integer> INVENTORY = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull InventoryHolder target, @NotNull Integer arg) {
-            final PositiveIntRange range = PositiveIntRange.parse("0..26");
+            final LevelRange range = LevelRange.of("0..26");
 
             if (!(range.min() <= arg && arg <= range.max())) {
                 throw new IllegalArgumentException("inventoryの値は0～26です");
@@ -118,7 +123,7 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<Horse, Integer> HORSE = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull Horse target, @NotNull Integer arg) {
-            final PositiveIntRange range = PositiveIntRange.parse("0..14");
+            final LevelRange range = LevelRange.of("0..14");
 
             if (!(range.min() <= arg && arg <= range.max())) {
                 throw new IllegalArgumentException("horseの値は0～14です");
@@ -143,7 +148,7 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<Villager, Integer> VILLAGER = new ItemSlotsGroup<>() {
         @Override
         @Nullable ItemStack getItemStack(@NotNull Villager target, @NotNull Integer arg) {
-            final PositiveIntRange range = PositiveIntRange.parse("0..7");
+            final LevelRange range = LevelRange.of("0..7");
 
             if (!(range.min() <= arg && arg <= range.max())) {
                 throw new IllegalArgumentException("villagerの値は0～7です");
@@ -239,17 +244,17 @@ public abstract class ItemSlotsGroup<T, U> {
      * @param argument スロットの種類に応じた引数
      * @return スロット
      */
-    public ItemSlots<T, U> getSlots(@NotNull U argument) {
+    public ItemSlots<T, U> getSingleSlot(@NotNull U argument) {
         return new ItemSlots<>(this, argument);
     }
 
     /**
      * {@link ItemSlotsGroup#ANY}を引数に渡すことによってこのスロットグループのスロットを全て取得します。
-     * @param any {@link ItemSlotsGroup#ANY}
+     * @param id {@link ItemSlotsGroup#ANY}
      * @return 全スロット
      */
-    public ItemSlots<T, U> getSlots(@NotNull UUID any) {
-        return new ItemSlots<>(this, any);
+    public ItemSlots<T, U> getSlots(@NotNull UUID id) {
+        return new ItemSlots<>(this, id);
     }
 
     /**
@@ -257,6 +262,11 @@ public abstract class ItemSlotsGroup<T, U> {
      */
     public static final UUID ANY = UUID.randomUUID();
 
+    /**
+     * アイテムスロットの集合を表現するクラス
+     * @param <T> スロットグループを取得できるクラス
+     * @param <U> スロットグループからスロットを取得するときに必要な値の型
+     */
     public static final class ItemSlots<T, U> {
         private final ItemSlotsGroup<T, U> group;
 
@@ -286,6 +296,9 @@ public abstract class ItemSlotsGroup<T, U> {
         }
     }
 
+    /**
+     * 防具スロットの列挙型
+     */
     public enum ArmorSlots {
         /**
          * ヘルメットスロット
@@ -330,6 +343,9 @@ public abstract class ItemSlotsGroup<T, U> {
         abstract @Nullable ItemStack get(@NotNull EntityEquipment equipment);
     }
 
+    /**
+     * メインハンドまたはオフハンドの列挙型
+     */
     public enum WeaponSlots {
         /**
          * メインハンドスロット

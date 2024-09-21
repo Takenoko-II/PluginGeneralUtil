@@ -3,6 +3,9 @@ package com.gmail.subnokoii78.util.execute;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * ソーススタックと結びついたエンティティアンカーを表現するクラス
+ */
 public final class EntityAnchor {
     private final EntityAnchorType anchor;
 

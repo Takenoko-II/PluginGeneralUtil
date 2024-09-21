@@ -2,6 +2,11 @@ package com.gmail.subnokoii78.util.execute;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Function;
+
+/**
+ * {@link Execute.Run#callback(Function)}実行後に実行されるチェーン可能なコールバック
+ */
 @FunctionalInterface
 public interface ResultCallback {
     ResultCallback EMPTY = (successful, returnValue) -> {};

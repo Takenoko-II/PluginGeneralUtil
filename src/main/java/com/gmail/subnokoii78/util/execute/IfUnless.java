@@ -1,5 +1,8 @@
 package com.gmail.subnokoii78.util.execute;
 
+/**
+ * サブコマンドif|unlessを区別するための列挙型
+ */
 public enum IfUnless {
     /**
      * ガードサブコマンドの条件をテストの成功にするオプション

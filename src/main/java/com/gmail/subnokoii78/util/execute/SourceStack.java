@@ -2,12 +2,12 @@ package com.gmail.subnokoii78.util.execute;
 
 import com.gmail.subnokoii78.util.file.json.JSONArray;
 import com.gmail.subnokoii78.util.file.json.JSONObject;
+import com.gmail.subnokoii78.util.file.json.JSONSerializer;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -18,12 +18,15 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * executeコマンドにおける単一の実行文脈を表現するクラス
+ */
 public class SourceStack {
-    private final CommandSender sender;
+    private final ExecuteSender<?> sender;
 
     private Entity executor = null;
 
-    private World dimension = Bukkit.getWorlds().getFirst();
+    private World dimension = VanillaDimensionProvider.OVERWORLD.getWorld();
 
     private final Vector3Builder location = new Vector3Builder();
 
@@ -34,43 +37,25 @@ public class SourceStack {
     private ResultCallback resultCallback = ResultCallback.EMPTY;
 
     /**
-     * 初期状態のソーススタックを取得します。
+     * 初期状態のソーススタックを生成します。
      */
     public SourceStack() {
-        this.sender = NULL_SENDER;
+        this(ExecuteSender.of(Bukkit.getServer()));
     }
 
     /**
-     * エンティティ・ブロック・コンソールなどをコマンドの送信者としてソーススタックを取得します。
-     * @param sender コマンドの送信者
+     * 引数に渡されたオブジェクトをコマンドの送信者としてソーススタックを生成します。
+     * @param sender 送信者
      */
-    public SourceStack(@NotNull CommandSender sender) {
+    public SourceStack(@NotNull ExecuteSender<?> sender) {
         this.sender = sender;
-
-        switch (sender) {
-            case Entity entity: {
-                write(entity);
-                write(entity.getWorld());
-                write(Vector3Builder.from(entity));
-                write(DualAxisRotationBuilder.from(entity));
-                break;
-            }
-            case Block block: {
-                write(block.getWorld());
-                write(Vector3Builder.from(block.getLocation()));
-                write(DualAxisRotationBuilder.from(block.getLocation()));
-                break;
-            }
-            default:
-                break;
-        }
     }
 
     /**
-     * コマンドの送信者を取得します。
-     * @return コマンドの送信者(実行者ではない)
+     * コマンドの送信者(実行者)を取得します。
+     * @return 送信者
      */
-    public @NotNull CommandSender getSender() {
+    public ExecuteSender<?> getSender() {
         return sender;
     }
 
@@ -337,8 +322,8 @@ public class SourceStack {
      */
     public @NotNull JSONObject getAsJSONObject() {
         final JSONObject jsonObject = new JSONObject();
-        jsonObject.set("sender", sender);
-        jsonObject.set("executor", executor == null ? "null" : executor.getName());
+        jsonObject.set("sender", sender.getName());
+        jsonObject.set("executor", hasExecutor() ? executor.getName() : "null");
         final JSONArray loc = new JSONArray();
         loc.add(location.x());
         loc.add(location.y());
@@ -349,7 +334,7 @@ public class SourceStack {
         rot.add(rotation.pitch());
         jsonObject.set("rotation", rot);
         jsonObject.set("anchor", anchor.getType().getId());
-        jsonObject.set("dimension", DimensionProvider.get(dimension).getId());
+        jsonObject.set("dimension", VanillaDimensionProvider.get(dimension).getId());
 
         return jsonObject;
     }
@@ -363,33 +348,33 @@ public class SourceStack {
     public boolean runCommand(@NotNull String command) {
         final String common = String.format(
             "in %s positioned %s rotated %s",
-            DimensionProvider.get(dimension).getId(),
-            location.copy().add(anchor.getOffset()).format("$c $c $c"),
+            VanillaDimensionProvider.get(dimension).getId(),
+            location.format("$c $c $c"),
             rotation.format("$c $c")
         );
 
+        final String commandString;
+
+        if (hasExecutor()) {
+            commandString = String.format(
+                "execute %s as %s anchored %s run %s",
+                common,
+                executor.getUniqueId(),
+                anchor.getType().getId(),
+                command
+            );
+        }
+        else {
+            commandString = String.format(
+                "execute %s anchored %s run %s",
+                common,
+                anchor.getType().getId(),
+                command
+            );
+        }
+
         try {
-            if (executor == null) {
-                return Bukkit.getServer().dispatchCommand(
-                    NULL_SENDER,
-                    String.format(
-                        "execute %s run %s",
-                        common,
-                        command
-                    )
-                );
-            }
-            else {
-                return Bukkit.getServer().dispatchCommand(
-                    executor,
-                    String.format(
-                        "execute %s as %s run %s",
-                        common,
-                        executor.getUniqueId(),
-                        command
-                    )
-                );
-            }
+            return Bukkit.getServer().dispatchCommand(COMMAND_SENDER, commandString);
         }
         catch (CommandException e) {
             return false;
@@ -421,11 +406,20 @@ public class SourceStack {
      * @return 実行座標・実行方向・実行ディメンション
      */
     public @NotNull Location getAsBukkitLocation() {
-        return getPosition().withRotationAndWorld(getRotation(), getDimension());
+        return location.withRotationAndWorld(rotation, dimension);
+    }
+
+    /**
+     * この{@link SourceStack}オブジェクトを文字列として視覚化します。
+     * @return 変換された文字列
+     */
+    @Override
+    public @NotNull String toString() {
+        return new JSONSerializer(getAsJSONObject()).serialize();
     }
 
     /**
      * 架空のコマンド送信者のオブジェクト
      */
-    public static final CommandSender NULL_SENDER = Bukkit.createCommandSender(component -> {});
+    public static final CommandSender COMMAND_SENDER = Bukkit.createCommandSender(component -> {});
 }

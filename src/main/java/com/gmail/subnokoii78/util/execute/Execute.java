@@ -21,11 +21,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+/**
+ * Execute APIの心臓部
+ * <br>executeコマンドのようにプラグインの処理を記述するためのクラス
+ */
 public class Execute {
     private final List<SourceStack> stacks = new ArrayList<>();
 
@@ -90,7 +93,7 @@ public class Execute {
      * @return this
      */
     public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
-        return as(selector.create());
+        return as(selector.newSelector());
     }
 
     /**
@@ -118,7 +121,7 @@ public class Execute {
      * @return this
      */
     public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector.Provider<T> selector) {
-        return at(selector.create());
+        return at(selector.newSelector());
     }
 
     /**
@@ -166,7 +169,7 @@ public class Execute {
          * @return that
          */
         public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
-            return as(selector.create());
+            return as(selector.newSelector());
         }
 
         /**
@@ -226,7 +229,7 @@ public class Execute {
          * @return that
          */
         public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
-            return as(selector.create());
+            return as(selector.newSelector());
         }
     }
 
@@ -281,7 +284,7 @@ public class Execute {
          * @return that
          */
         public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Provider<T> selector, @NotNull EntityAnchorType anchor) {
-            return entity(selector.create(), anchor);
+            return entity(selector.newSelector(), anchor);
         }
     }
 
@@ -317,7 +320,7 @@ public class Execute {
      * @param dimension ディメンション
      * @return this
      */
-    public @NotNull Execute in(@NotNull DimensionProvider dimension) {
+    public @NotNull Execute in(@NotNull VanillaDimensionProvider dimension) {
         return redirect(stack -> stack.write(dimension.getWorld()));
     }
 
@@ -356,7 +359,7 @@ public class Execute {
          * @return that
          */
         public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Provider<T> selector) {
-            return entity(selector.create());
+            return entity(selector.newSelector());
         }
 
         /**
@@ -433,7 +436,7 @@ public class Execute {
          * @param range 数値の範囲
          * @return that
          */
-        public @NotNull Execute score(@NotNull ScoreHolder holder, @NotNull String objectiveId, @NotNull IntRange range) {
+        public @NotNull Execute score(@NotNull ScoreHolder holder, @NotNull String objectiveId, @NotNull ScoreRange range) {
             return execute.fork(stack -> {
                 final Integer val = holder.getScore(objectiveId, stack);
 
@@ -453,7 +456,7 @@ public class Execute {
          * @param dimensionProvider ディメンション
          * @return that
          */
-        public @NotNull Execute dimension(@NotNull DimensionProvider dimensionProvider) {
+        public @NotNull Execute dimension(@NotNull VanillaDimensionProvider dimensionProvider) {
             return execute.fork(stack -> {
                 if (toggle.apply(stack.getDimension().equals(dimensionProvider.getWorld()))) {
                     return List.of(stack);
@@ -515,6 +518,7 @@ public class Execute {
              * @param itemSlots アイテムスロットの候補
              * @param predicate 条件
              * @return that
+             * @apiNote 適切なセレクターを渡さなければ例外が発生する可能性があります。
              */
             @ApiStatus.Experimental
             public <T> @NotNull Execute entity(@NotNull EntitySelector<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlots<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
@@ -547,7 +551,7 @@ public class Execute {
              * @return that
              */
             public <T> @NotNull Execute entity(@NotNull EntitySelector.Provider<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlots<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
-                return entity(selector.create(), itemSlots, predicate);
+                return entity(selector.newSelector(), itemSlots, predicate);
             }
 
             /**
@@ -768,7 +772,6 @@ public class Execute {
          * 実行者を操縦しているエンティティに実行者を渡します。
          * @return that
          */
-        @ApiStatus.Experimental
         public @NotNull Execute controller() {
             return execute.fork(stack -> {
                 if (stack.getExecutor() == null) return List.of();
@@ -784,7 +787,6 @@ public class Execute {
          * 実行者を直近5秒以内に攻撃したエンティティに実行者を渡します。
          * @return that
          */
-        @ApiStatus.Experimental
         public @NotNull Execute attacker() {
             return execute.fork(stack -> {
                 if (stack.getExecutor() == null) return List.of();
@@ -824,7 +826,6 @@ public class Execute {
          * @param command コマンド文字列
          * @return 成功した場合true、失敗した場合false
          */
-        @ApiStatus.Experimental
         public boolean command(@NotNull String command) {
             return callback(stack -> stack.runCommand(command) ? SUCCESS : FAILURE);
         }

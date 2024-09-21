@@ -6,6 +6,9 @@ import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * エンティティアンカーの種類の列挙型
+ */
 public enum EntityAnchorType {
     /**
      * エンティティアンカーを足先にするオプション

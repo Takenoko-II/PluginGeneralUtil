@@ -5,6 +5,9 @@ import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * スコアホルダーを表現するクラス
+ */
 public abstract class ScoreHolder {
     abstract @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack);
 
@@ -23,7 +26,7 @@ public abstract class ScoreHolder {
      * @return スコアホルダー
      */
     public static @NotNull ScoreHolder of(@NotNull EntitySelector.Provider<? extends Entity> selector) {
-        return new EntityScoreHolder(selector.create());
+        return new EntityScoreHolder(selector.newSelector());
     }
 
     /**
@@ -44,7 +47,7 @@ public abstract class ScoreHolder {
         return new StringScoreHolder(entity.getUniqueId().toString());
     }
 
-    public static final class EntityScoreHolder extends ScoreHolder {
+    private static final class EntityScoreHolder extends ScoreHolder {
         private final EntitySelector<? extends Entity> selector;
 
         private EntityScoreHolder(@NotNull EntitySelector<? extends Entity> selector) {
@@ -66,7 +69,7 @@ public abstract class ScoreHolder {
         }
     }
 
-    public static final class StringScoreHolder extends ScoreHolder {
+    private static final class StringScoreHolder extends ScoreHolder {
         private final String name;
 
         private StringScoreHolder(@NotNull String name) {

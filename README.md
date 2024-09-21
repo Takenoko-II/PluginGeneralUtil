@@ -12,7 +12,7 @@
 
 ### [TripleAxisRotationBuilder](src/main/java/com/gmail/subnokoii78/util/vector/TripleAxisRotationBuilder.java)
 ディスプレイエンティティの向きなどの三軸で表される向きを操作するためのクラス
-<br>bukkit用の機能も以下略
+<br>bukkit以下略
 
 ### [TiltedBoundingBox](src/main/java/com/gmail/subnokoii78/util/vector/TiltedBoundingBox.java)
 向きにおいてディスプレイエンティティに匹敵する自由度を持つ当たり判定のクラス
@@ -25,7 +25,7 @@
 ContainerUIクラスで使用されるボタンを表現するクラス
 <br>その他のファイルはItemButtonを継承したクラス
 
-## shape パッケージ
+## shape パッケージ (Shape API)
 ### [ShapeTemplate](src/main/java/com/gmail/subnokoii78/util/shape/ShapeTemplate.java)
 図形のテンプレートを作成するためのクラス
 
@@ -114,7 +114,7 @@ Velocityとの通信を行うクラス
 <br>NMSを使用せずカスタムデータの保存を行うためのクラス
 <br>その他のファイルはDataContainerManagerを継承したクラス
 
-## execute パッケージ
+## execute パッケージ (Execute API)
 
 ### [Execute](src/main/java/com/gmail/subnokoii78/util/execute/Execute.java)
 Execute APIの心臓部
@@ -126,7 +126,7 @@ If/Unlessを区別するための列挙型
 ### [EntitySelector](src/main/java/com/gmail/subnokoii78/util/execute/EntitySelector.java)
 エンティティセレクターを表現するクラス
 
-### [EntitySelectorModifier](src/main/java/com/gmail/subnokoii78/util/execute/EntitySelectorModifier.java)
+### [SelectorArgument](src/main/java/com/gmail/subnokoii78/util/execute/SelectorArgument.java)
 エンティティセレクター引数を表現するクラス
 
 ### [EntityAnchor](src/main/java/com/gmail/subnokoii78/util/execute/EntityAnchor.java)
@@ -138,29 +138,32 @@ all/maskedを区別する列挙型
 ### [ScoreHolder](src/main/java/com/gmail/subnokoii78/util/execute/ScoreHolder.java)
 スコアホルダーを表現するクラス
 
-### [DimensionProvider](src/main/java/com/gmail/subnokoii78/util/execute/DimensionProvider.java)
+### [VanillaDimensionProvider](src/main/java/com/gmail/subnokoii78/util/execute/VanillaDimensionProvider.java)
 ディメンションの絶対的な値による指定を可能にするための列挙型
 
 ### [SelectorSortOrder](src/main/java/com/gmail/subnokoii78/util/execute/SelectorSortOrder.java)
 セレクターの処理順を決定するためのクラス
 
 ### [ScoreComparator](src/main/java/com/gmail/subnokoii78/util/execute/ScoreComparator.java)
-スコアの比較演算子を表現する列挙型
+スコアの比較演算子を表現するインターフェース
 
 ### [ItemSlotsGroup](src/main/java/com/gmail/subnokoii78/util/execute/ItemSlotsGroup.java)
 アイテムのパス指定を容易にするクラス
 
-### [IntRange](src/main/java/com/gmail/subnokoii78/util/execute/IntRange.java)
+### [ScoreRange](src/main/java/com/gmail/subnokoii78/util/execute/ScoreRange.java)
 整数の範囲
 
-### [PositiveIntRange](src/main/java/com/gmail/subnokoii78/util/execute/PositiveIntRange.java)
+### [LevelRange](src/main/java/com/gmail/subnokoii78/util/execute/LevelRange.java)
 正の整数の範囲
 
-### [PositiveFloatRange](src/main/java/com/gmail/subnokoii78/util/execute/PositiveFloatRange.java)
+### [RotationRange](src/main/java/com/gmail/subnokoii78/util/execute/RotationRange.java)
 正の浮動小数点数の範囲
 
-### [PositiveDoubleRange](src/main/java/com/gmail/subnokoii78/util/execute/PositiveDoubleRange.java)
+### [DistanceRange](src/main/java/com/gmail/subnokoii78/util/execute/DistanceRange.java)
 正の倍精度浮動小数点数の範囲
+
+### [ExecuteSender](src/main/java/com/gmail/subnokoii78/util/execute/ExecuteSender.java)
+executeコマンドの送信者を表すクラス
 
 ### [SourceStack](src/main/java/com/gmail/subnokoii78/util/execute/SourceStack.java)
 Executeオブジェクト内部で操作される、コマンドの実行文脈1つ分を表現するクラス

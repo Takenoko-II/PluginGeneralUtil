@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * セレクター引数sort=に渡される値のオプション
+ */
 public abstract class SelectorSortOrder {
     private SelectorSortOrder() {}
 
