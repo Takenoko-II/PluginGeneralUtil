@@ -344,7 +344,6 @@ public class SourceStack {
      * @param command 実行するコマンド
      * @return 成功したときtrue、失敗すればfalse
      */
-    @ApiStatus.Experimental
     public boolean runCommand(@NotNull String command) {
         final String common = String.format(
             "in %s positioned %s rotated %s",

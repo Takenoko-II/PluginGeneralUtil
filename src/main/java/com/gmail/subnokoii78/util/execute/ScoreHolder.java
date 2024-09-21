@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 public abstract class ScoreHolder {
     abstract @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack);
 
+    abstract void setScore(@NotNull String objectiveId, @NotNull SourceStack stack, int value);
+
     /**
      * 単一のエンティティを示すセレクターからエンティティのスコアホルダーを取得します。
      * @param selector セレクター
@@ -67,6 +69,15 @@ public abstract class ScoreHolder {
 
             return objective.getScore(stack.getEntities(selector).getFirst());
         }
+
+        @Override
+        void setScore(@NotNull String objectiveId, @NotNull SourceStack stack, int value) {
+            final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective(objectiveId);
+
+            if (objective == null) return;
+
+            stack.getEntities(selector).forEach(entity -> objective.setScore(entity, value));
+        }
     }
 
     private static final class StringScoreHolder extends ScoreHolder {
@@ -83,6 +94,15 @@ public abstract class ScoreHolder {
             if (objective == null) return null;
 
             return objective.getScore(name);
+        }
+
+        @Override
+        void setScore(@NotNull String objectiveId, @NotNull SourceStack stack, int value) {
+            final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective(objectiveId);
+
+            if (objective == null) return;
+
+            objective.setScore(name, value);
         }
     }
 }

@@ -12,6 +12,7 @@ import org.bukkit.Location;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.BlockInventoryHolder;
 import org.bukkit.inventory.InventoryHolder;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -817,6 +819,8 @@ public class Execute {
     public final Run run = new Run(this);
 
     public static final class Run extends MultiFunctionalSubCommand {
+        private final Set<BiConsumer<SourceStack, Throwable>> catchers = new HashSet<>();
+
         private Run(@NotNull Execute execute) {
             super(execute);
         }
@@ -825,7 +829,9 @@ public class Execute {
          * 現在の実行文脈を使用して指定のコマンドを実行します。
          * @param command コマンド文字列
          * @return 成功した場合true、失敗した場合false
+         * @apiNote {@link org.bukkit.Server#dispatchCommand(CommandSender, String)}が整数ではなく真偽値を返してしまうため、{@link ResultCallback}に正しい値が渡されない問題があります。使用する意味も薄いため、将来的に削除される可能性があります。
          */
+        @ApiStatus.Obsolete
         public boolean command(@NotNull String command) {
             return callback(stack -> stack.runCommand(command) ? SUCCESS : FAILURE);
         }
@@ -849,12 +855,23 @@ public class Execute {
                         stack.getCallback().onFailure();
                     }
                 }
-                catch (RuntimeException e) {
+                catch (Throwable e) {
                     stack.getCallback().onFailure();
+                    catchers.forEach(catcher -> catcher.accept(stack.copy(), e));
                 }
             });
 
             return success.get();
+        }
+
+        /**
+         * エラーを原因に実行が失敗したときに呼び出されるコールバックを登録します。
+         * @param catcher コールバック
+         * @return this
+         */
+        public @NotNull Run onCatch(@NotNull BiConsumer<SourceStack, Throwable> catcher) {
+            catchers.add(catcher);
+            return this;
         }
     }
 
@@ -869,29 +886,79 @@ public class Execute {
         }
 
         /**
-         * 実行の結果得られた整数値の和を格納する関数を登録します。
-         * @param resultConsumer 実行文脈毎に呼び出される関数
-         * @return that
+         * サブサブコマンドresult
          */
-        public @NotNull Execute result(@NotNull ResultConsumer resultConsumer) {
+        public final DestinationProvider result = new DestinationProvider(this, StoreTarget.SUCCESS);
+
+        /**
+         * サブサブコマンドsuccess
+         */
+        public final DestinationProvider success = new DestinationProvider(this, StoreTarget.SUCCESS);
+
+        private @NotNull Execute register(@NotNull StoreTarget target, @NotNull ResultConsumer resultConsumer) {
             execute.stacks.forEach(stack -> {
-                stack.write(StoreTarget.RESULT, resultConsumer);
+                stack.write(target, resultConsumer);
             });
 
             return execute;
         }
 
-        /**
-         * 実行の結果成功した回数を格納する関数を登録します。
-         * @param resultConsumer 実行文脈毎に呼び出される関数
-         * @return that
-         */
-        public @NotNull Execute success(@NotNull ResultConsumer resultConsumer) {
-            execute.stacks.forEach(stack -> {
-                stack.write(StoreTarget.SUCCESS, resultConsumer);
-            });
+        public static final class DestinationProvider {
+            private final Store store;
 
-            return execute;
+            private final StoreTarget target;
+
+            private DestinationProvider(@NotNull Store store, @NotNull StoreTarget target) {
+                this.store = store;
+                this.target = target;
+            }
+
+            /**
+             * 実行によって得られた整数をエンティティに関連付けて格納します。
+             * @param selector セレクター
+             * @param consumer 格納する関数
+             * @return that.that
+             */
+            public @NotNull Execute entity(@NotNull EntitySelector<? extends Entity> selector, @NotNull BiConsumer<Entity, Integer> consumer) {
+                return store.register(target, (stack, integer) -> {
+                    stack.getEntities(selector).forEach(entity -> consumer.accept(entity, integer));
+                });
+            }
+
+            /**
+             * 実行によって得られた整数をブロックに関連付けて格納します。
+             * @param input 座標
+             * @param consumer 格納する関数
+             * @return that.that
+             */
+            public @NotNull Execute block(@NotNull String input, @NotNull BiConsumer<Block, Integer> consumer) {
+                return store.register(target, (stack, integer) -> {
+                    final Location location = stack.readCoordinates(input).withWorld(stack.getDimension());
+                    final Block block = stack.getDimension().getBlockAt(location);
+                    consumer.accept(block, integer);
+                });
+            }
+
+            /**
+             * 実行によって得られた整数をスコアボードに格納します。
+             * @param scoreHolder スコアホルダー
+             * @param objectiveId 格納するオブジェクト
+             * @return that.that
+             */
+            public @NotNull Execute score(@NotNull ScoreHolder scoreHolder, @NotNull String objectiveId) {
+                return store.register(target, (stack, integer) -> {
+                    scoreHolder.setScore(objectiveId, stack, integer);
+                });
+            }
+
+            /**
+             * 実行によって得られた整数を使用できるコールバックを登録します。
+             * @param resultConsumer コールバック
+             * @return that.that
+             */
+            public @NotNull Execute consume(@NotNull ResultConsumer resultConsumer) {
+                return store.register(target, resultConsumer);
+            }
         }
     }
 
