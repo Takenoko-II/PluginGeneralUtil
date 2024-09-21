@@ -888,7 +888,7 @@ public class Execute {
         /**
          * サブサブコマンドresult
          */
-        public final DestinationProvider result = new DestinationProvider(this, StoreTarget.SUCCESS);
+        public final DestinationProvider result = new DestinationProvider(this, StoreTarget.RESULT);
 
         /**
          * サブサブコマンドsuccess
