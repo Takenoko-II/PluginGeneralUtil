@@ -11,7 +11,6 @@ import org.bukkit.World;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -103,27 +102,27 @@ public class SourceStack {
         return resultCallback;
     }
 
-    void write(@NotNull Entity executor) {
+    protected void write(@NotNull Entity executor) {
         this.executor = executor;
     }
 
-    void write(@NotNull World dimension) {
+    protected void write(@NotNull World dimension) {
         this.dimension = dimension;
     }
 
-    void write(@NotNull Vector3Builder location) {
+    protected void write(@NotNull Vector3Builder location) {
         this.location.x(location.x()).y(location.y()).z(location.z());
     }
 
-    void write(@NotNull DualAxisRotationBuilder rotation) {
+    protected void write(@NotNull DualAxisRotationBuilder rotation) {
         this.rotation.yaw(rotation.yaw()).pitch(rotation.pitch());
     }
 
-    void write(@NotNull EntityAnchorType anchor) {
+    protected void write(@NotNull EntityAnchorType anchor) {
         this.anchor = new EntityAnchor(anchor, this);
     }
 
-    void write(@NotNull StoreTarget storeTarget, @NotNull ResultConsumer resultConsumer) {
+    protected void write(@NotNull StoreTarget storeTarget, @NotNull ResultConsumer resultConsumer) {
         this.resultCallback = this.resultCallback.chain(storeTarget, (successful, returnValue) -> {
             resultConsumer.accept(copy(), returnValue);
         });

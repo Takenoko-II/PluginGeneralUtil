@@ -3,7 +3,7 @@ package com.gmail.subnokoii78.util.execute;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * {@link Execute.GuardSubCommandIfUnless#blocks(String, String, String, ScanMode)}の引数に用いられる、範囲内のブロックの比較に際してのオプション
+ * {@link Execute.GuardSubCommand#blocks(String, String, String, ScanMode)}の引数に用いられる、範囲内のブロックの比較に際してのオプション
  */
 public enum ScanMode {
     /**

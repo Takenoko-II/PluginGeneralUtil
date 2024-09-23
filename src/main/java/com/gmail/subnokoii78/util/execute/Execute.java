@@ -32,14 +32,14 @@ import java.util.function.Predicate;
  * <br>executeコマンドのようにプラグインの処理を記述するためのクラス
  */
 public class Execute {
-    private final List<SourceStack> stacks = new ArrayList<>();
+    protected final List<SourceStack> stacks = new ArrayList<>();
 
-    private @NotNull Execute redirect(Consumer<SourceStack> modifier) {
+    protected @NotNull Execute redirect(Consumer<SourceStack> modifier) {
         stacks.forEach(modifier);
         return this;
     }
 
-    private @NotNull Execute fork(Function<SourceStack, List<SourceStack>> modifier) {
+    protected @NotNull Execute fork(Function<SourceStack, List<SourceStack>> modifier) {
         final List<SourceStack> newStacks = new ArrayList<>();
         for (final SourceStack stack : stacks) {
             newStacks.addAll(modifier.apply(stack.copy()));
@@ -64,10 +64,10 @@ public class Execute {
         this.stacks.add(new SourceStack());
     }
 
-    public static abstract class MultiFunctionalSubCommand {
-        protected final Execute execute;
+    protected static abstract class SubCommand<T extends Execute> {
+        protected final T execute;
 
-        private MultiFunctionalSubCommand(@NotNull Execute execute) {
+        protected SubCommand(@NotNull T execute) {
             this.execute = execute;
         }
     }
@@ -95,7 +95,7 @@ public class Execute {
      * @return this
      */
     public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
-        return as(selector.newSelector());
+        return as(selector.build());
     }
 
     /**
@@ -123,7 +123,7 @@ public class Execute {
      * @return this
      */
     public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector.Provider<T> selector) {
-        return at(selector.newSelector());
+        return at(selector.build());
     }
 
     /**
@@ -131,7 +131,7 @@ public class Execute {
      */
     public final Positioned positioned = new Positioned(this);
 
-    public static final class Positioned extends MultiFunctionalSubCommand {
+    public static final class Positioned extends SubCommand<Execute> {
         private Positioned(@NotNull Execute execute) {
             super(execute);
         }
@@ -171,7 +171,7 @@ public class Execute {
          * @return that
          */
         public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
-            return as(selector.newSelector());
+            return as(selector.build());
         }
 
         /**
@@ -194,7 +194,7 @@ public class Execute {
      */
     public final Rotated rotated = new Rotated(this);
 
-    public static final class Rotated extends MultiFunctionalSubCommand {
+    public static final class Rotated extends SubCommand<Execute> {
         private Rotated(@NotNull Execute execute) {
             super(execute);
         }
@@ -231,7 +231,7 @@ public class Execute {
          * @return that
          */
         public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
-            return as(selector.newSelector());
+            return as(selector.build());
         }
     }
 
@@ -240,7 +240,7 @@ public class Execute {
      */
     public final Facing facing = new Facing(this);
 
-    public static final class Facing extends MultiFunctionalSubCommand {
+    public static final class Facing extends SubCommand<Execute> {
         private Facing(@NotNull Execute execute) {
             super(execute);
         }
@@ -286,7 +286,7 @@ public class Execute {
          * @return that
          */
         public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Provider<T> selector, @NotNull EntityAnchorType anchor) {
-            return entity(selector.newSelector(), anchor);
+            return entity(selector.build(), anchor);
         }
     }
 
@@ -331,14 +331,14 @@ public class Execute {
      * @param toggle ifまたはunless
      * @return ifまたはunless
      */
-    public @NotNull GuardSubCommandIfUnless ifOrUnless(@NotNull IfUnless toggle) {
-        return new GuardSubCommandIfUnless(this, toggle);
+    public @NotNull GuardSubCommand ifOrUnless(@NotNull IfUnless toggle) {
+        return new GuardSubCommand(this, toggle);
     }
 
-    public static final class GuardSubCommandIfUnless extends MultiFunctionalSubCommand {
+    public static final class GuardSubCommand extends SubCommand<Execute> {
         private final IfUnless toggle;
 
-        private GuardSubCommandIfUnless(@NotNull Execute execute, @NotNull IfUnless toggle) {
+        private GuardSubCommand(@NotNull Execute execute, @NotNull IfUnless toggle) {
             super(execute);
             this.toggle = toggle;
         }
@@ -361,7 +361,7 @@ public class Execute {
          * @return that
          */
         public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Provider<T> selector) {
-            return entity(selector.newSelector());
+            return entity(selector.build());
         }
 
         /**
@@ -508,9 +508,9 @@ public class Execute {
         public final Items items = new Items(this);
 
         public static final class Items {
-            private final GuardSubCommandIfUnless ifUnless;
+            private final GuardSubCommand ifUnless;
 
-            private Items(@NotNull GuardSubCommandIfUnless ifUnless) {
+            private Items(@NotNull GuardSubCommand ifUnless) {
                 this.ifUnless = ifUnless;
             }
 
@@ -553,7 +553,7 @@ public class Execute {
              * @return that
              */
             public <T> @NotNull Execute entity(@NotNull EntitySelector.Provider<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlots<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
-                return entity(selector.newSelector(), itemSlots, predicate);
+                return entity(selector.build(), itemSlots, predicate);
             }
 
             /**
@@ -605,7 +605,7 @@ public class Execute {
      */
     public final On on = new On(this);
 
-    public static final class On extends MultiFunctionalSubCommand {
+    public static final class On extends SubCommand<Execute> {
         private On(@NotNull Execute execute) {
             super(execute);
         }
@@ -818,7 +818,7 @@ public class Execute {
      */
     public final Run run = new Run(this);
 
-    public static final class Run extends MultiFunctionalSubCommand {
+    public static final class Run extends SubCommand<Execute> {
         private final Set<BiConsumer<SourceStack, Throwable>> catchers = new HashSet<>();
 
         private Run(@NotNull Execute execute) {
@@ -866,6 +866,7 @@ public class Execute {
 
         /**
          * エラーを原因に実行が失敗したときに呼び出されるコールバックを登録します。
+         * <br>この関数は{@link Execute.Run#callback(Function)}が発生した例外を握り潰してしまうため用意されています。
          * @param catcher コールバック
          * @return this
          */
@@ -880,7 +881,7 @@ public class Execute {
      */
     public final Store store = new Store(this);
 
-    public static final class Store extends MultiFunctionalSubCommand {
+    public static final class Store extends SubCommand<Execute> {
         private Store(@NotNull Execute execute) {
             super(execute);
         }
@@ -896,11 +897,7 @@ public class Execute {
         public final DestinationProvider success = new DestinationProvider(this, StoreTarget.SUCCESS);
 
         private @NotNull Execute register(@NotNull StoreTarget target, @NotNull ResultConsumer resultConsumer) {
-            execute.stacks.forEach(stack -> {
-                stack.write(target, resultConsumer);
-            });
-
-            return execute;
+            return execute.redirect(stack -> stack.write(target, resultConsumer));
         }
 
         public static final class DestinationProvider {

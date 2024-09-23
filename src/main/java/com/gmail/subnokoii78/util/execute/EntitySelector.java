@@ -12,7 +12,7 @@ import java.util.*;
  * @param <T> @pや@aは{@link Player}、@eや@nは{@link Entity}、@sは暫定で{@link Entity}
  */
 public final class EntitySelector<T extends Entity> {
-    private final List<SelectorArgument<T>> modifiers = new ArrayList<>();
+    private final List<SelectorArgument> modifiers = new ArrayList<>();
 
     private final Provider<T> provider;
 
@@ -25,7 +25,7 @@ public final class EntitySelector<T extends Entity> {
      * @return @p, @n, @e[limit=1]などはtrue
      */
     public boolean isSingle() {
-        for (final SelectorArgument<T> modifier : modifiers) {
+        for (final SelectorArgument modifier : modifiers) {
             if (modifier.getId().equals(SelectorArgument.LIMIT.getId())) {
                 return true;
             }
@@ -40,23 +40,35 @@ public final class EntitySelector<T extends Entity> {
      * @param value セレクター引数に渡す値
      * @return thisをそのまま返す
      */
-    public <U> @NotNull EntitySelector<T> argument(@NotNull SelectorArgument.Builder<? extends Entity, U> modifier, @NotNull U value) {
-        // ここだけ気に入らん
-        modifiers.add((SelectorArgument<T>) modifier.build(value));
+    public <U> @NotNull EntitySelector<T> arg(@NotNull SelectorArgument.Builder<U> modifier, @NotNull U value) {
+        modifiers.add(modifier.build(value));
+        modifiers.sort((a, b) -> b.getPriority() - a.getPriority());
+        return this;
+    }
+
+    /**
+     * セレクターに引数を追加します。
+     * @param modifier セレクター引数の種類
+     * @param value セレクター引数に渡す値
+     * @return thisをそのまま返す
+     */
+    public <U> @NotNull EntitySelector<T> notArg(@NotNull SelectorArgument.Builder<U> modifier, @NotNull U value) {
+        modifiers.add(SelectorArgument.NOT.build(modifier.build(value)));
         modifiers.sort((a, b) -> b.getPriority() - a.getPriority());
         return this;
     }
 
     private @NotNull List<T> modifier(@NotNull List<T> entities, @NotNull SourceStack stack) {
         final SourceStack copy = stack.copy();
-        List<T> out = entities;
+        List<Entity> out = entities.stream().map(entity -> (Entity) entity).toList();
 
         // xyz -> sort -> limit
-        for (final SelectorArgument<T> modifier : modifiers) {
+        for (final SelectorArgument modifier : modifiers) {
             out = modifier.modify(out, copy);
         }
 
-        return out;
+        // out(List<Entity>)はentities(List<T>)をフィルターしたりソートしたものなのでここのキャストでエラーが起こることはない
+        return (List<T>) out;
     }
 
     @NotNull List<T> getEntities(@NotNull SourceStack stack) {
@@ -192,7 +204,7 @@ public final class EntitySelector<T extends Entity> {
         /**
          * 新しくセレクターを作成します。
          */
-        public @NotNull EntitySelector<T> newSelector() {
+        public @NotNull EntitySelector<T> build() {
             return new EntitySelector<>(this);
         }
     }

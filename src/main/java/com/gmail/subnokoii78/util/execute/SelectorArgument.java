@@ -19,21 +19,35 @@ import java.util.function.BiPredicate;
 
 /**
  * セレクター引数を表現するクラス
- * @param <T> {@link EntitySelector}の型パラメーターに一致する型
  */
-public abstract class SelectorArgument<T extends Entity> {
+public abstract class SelectorArgument {
     private SelectorArgument() {}
 
-    abstract @NotNull List<T> modify(@NotNull List<T> entities, @NotNull SourceStack stack);
+    abstract @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack);
 
     abstract int getPriority();
 
     abstract @NotNull String getId();
 
+    static final Builder<SelectorArgument> NOT = new Builder<>() {
+        @Override
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull SelectorArgument argument) {
+            final List<Entity> selected = argument.modify(entities, stack);
+            return entities.stream()
+                .filter(entity -> !selected.contains(entity))
+                .toList();
+        }
+
+        @Override
+        public @NotNull String getId() {
+            return "!";
+        }
+    };
+
     /**
      * セレクター引数x=
      */
-    public static final Builder<Entity, Double> X = new Builder<>(3) {
+    public static final Builder<Double> X = new Builder<>(3) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Double argument) {
             stack.write(stack.getPosition().x(argument));
@@ -49,7 +63,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数y=
      */
-    public static final Builder<Entity, Double> Y = new Builder<>(3) {
+    public static final Builder<Double> Y = new Builder<>(3) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Double argument) {
             stack.write(stack.getPosition().y(argument));
@@ -65,7 +79,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数z=
      */
-    public static final Builder<Entity, Double> Z = new Builder<>(3) {
+    public static final Builder<Double> Z = new Builder<>(3) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Double argument) {
             stack.write(stack.getPosition().z(argument));
@@ -81,7 +95,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数type=
      */
-    public static final Builder<Entity, EntityType> TYPE = new Builder<>() {
+    public static final Builder<EntityType> TYPE = new Builder<>() {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull EntityType argument) {
             return entities.stream()
@@ -98,7 +112,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数name=
      */
-    public static final Builder<Entity, String> NAME = new Builder<>() {
+    public static final Builder<String> NAME = new Builder<>() {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull String argument) {
             return entities.stream()
@@ -126,7 +140,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数tag=
      */
-    public static final Builder<Entity, String> TAG = new Builder<>() {
+    public static final Builder<String> TAG = new Builder<>() {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull String argument) {
             return entities.stream()
@@ -143,7 +157,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数distance=
      */
-    public static final Builder<Entity, DistanceRange> DISTANCE = new Builder<>() {
+    public static final Builder<DistanceRange> DISTANCE = new Builder<>() {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull DistanceRange argument) {
             return entities.stream()
@@ -163,7 +177,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数sort=
      */
-    public static final Builder<Entity, SelectorSortOrder> SORT = new Builder<>(2) {
+    public static final Builder<SelectorSortOrder> SORT = new Builder<>(2) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull SelectorSortOrder argument) {
             return argument.sort(entities, stack);
@@ -178,7 +192,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数dx=, dy=, dz=を一つにしたもの(各軸の範囲の最小値は1ではなく0)
      */
-    public static final Builder<Entity, Vector3Builder> DXYZ = new Builder<>() {
+    public static final Builder<Vector3Builder> DXYZ = new Builder<>() {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Vector3Builder argument) {
             final BoundingBox box = BoundingBox.of(
@@ -202,11 +216,16 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数gamemode=
      */
-    public static final Builder<Player, GameMode> GAMEMODE = new Builder<>() {
+    public static final Builder<GameMode> GAMEMODE = new Builder<>() {
         @Override
-        @NotNull List<Player> modify(@NotNull List<Player> entities, @NotNull SourceStack stack, @NotNull GameMode argument) {
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull GameMode argument) {
             return entities.stream()
-                .filter(player -> player.getGameMode().equals(argument))
+                .filter(entity -> {
+                    if (entity instanceof Player player) {
+                        return player.getGameMode().equals(argument);
+                    }
+                    else return false;
+                })
                 .toList();
         }
 
@@ -219,11 +238,16 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数level=
      */
-    public static final Builder<Player, LevelRange> LEVEL = new Builder<>() {
+    public static final Builder<LevelRange> LEVEL = new Builder<>() {
         @Override
-        @NotNull List<Player> modify(@NotNull List<Player> entities, @NotNull SourceStack stack, @NotNull LevelRange argument) {
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull LevelRange argument) {
             return entities.stream()
-                .filter(player -> argument.min() <= player.getLevel() && player.getLevel() <= argument.max())
+                .filter(entity -> {
+                    if (entity instanceof Player player) {
+                        return argument.min() <= player.getLevel() && player.getLevel() <= argument.max();
+                    }
+                    else return false;
+                })
                 .toList();
         }
 
@@ -236,7 +260,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数x_rotation=
      */
-    public static final Builder<Entity, RotationRange> X_ROTATION = new Builder<>() {
+    public static final Builder<RotationRange> X_ROTATION = new Builder<>() {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull RotationRange argument) {
             return entities.stream()
@@ -253,7 +277,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数y_rotation=
      */
-    public static final Builder<Entity, RotationRange> Y_ROTATION = new Builder<>() {
+    public static final Builder<RotationRange> Y_ROTATION = new Builder<>() {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull RotationRange argument) {
             return entities.stream()
@@ -270,7 +294,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数team=
      */
-    public static final Builder<Entity, Team> TEAM = new Builder<>() {
+    public static final Builder<Team> TEAM = new Builder<>() {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Team argument) {
             return entities.stream()
@@ -287,20 +311,22 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数advancements=
      */
-    public static final Builder<Player, Map<Advancement, Boolean>> ADVANCEMENTS = new Builder<>() {
+    public static final Builder<Map<Advancement, Boolean>> ADVANCEMENTS = new Builder<>() {
         @Override
-        @NotNull
-        List<Player> modify(@NotNull List<Player> entities, @NotNull SourceStack stack, @NotNull Map<Advancement, Boolean> argument) {
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Map<Advancement, Boolean> argument) {
             return entities.stream()
-                .filter(player -> {
-                    for (final Advancement advancement : argument.keySet()) {
-                        final boolean flag = argument.get(advancement);
-                        if (player.getAdvancementProgress(advancement).isDone() != flag) {
-                            return false;
+                .filter(entity -> {
+                    if (entity instanceof Player player) {
+                        for (final Advancement advancement : argument.keySet()) {
+                            final boolean flag = argument.get(advancement);
+                            if (player.getAdvancementProgress(advancement).isDone() != flag) {
+                                return false;
+                            }
                         }
-                    }
 
-                    return true;
+                        return true;
+                    }
+                    else return false;
                 })
                 .toList();
         }
@@ -314,7 +340,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数scores=
      */
-    public static final Builder<Entity, Map<String, ScoreRange>> SCORES = new Builder<>() {
+    public static final Builder<Map<String, ScoreRange>> SCORES = new Builder<>() {
         @Override
         @NotNull
         List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Map<String, ScoreRange> argument) {
@@ -345,7 +371,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * セレクター引数limit=
      */
-    public static final Builder<Entity, Integer> LIMIT = new Builder<>(1) {
+    public static final Builder<Integer> LIMIT = new Builder<>(1) {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Integer argument) {
             return entities.subList(0, argument);
@@ -360,7 +386,7 @@ public abstract class SelectorArgument<T extends Entity> {
     /**
      * 任意の条件に一致することを条件とするセレクター引数
      */
-    public static final Builder<Entity, BiPredicate<Entity, SourceStack>> PREDICATE = new Builder<>() {
+    public static final Builder<BiPredicate<Entity, SourceStack>> PREDICATE = new Builder<>() {
         @Override
         @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull BiPredicate<Entity, SourceStack> argument) {
             return entities.stream()
@@ -376,10 +402,9 @@ public abstract class SelectorArgument<T extends Entity> {
 
     /**
      * 新しくセレクター引数を生成するためのクラス
-     * @param <T> {@link EntitySelector}の型パラメーターに一致する型
      * @param <U> セレクター引数に渡される値の型
      */
-    public static abstract class Builder<T extends Entity, U> {
+    public static abstract class Builder<U> {
         private final int priority;
 
         private Builder(int priority) {
@@ -390,7 +415,7 @@ public abstract class SelectorArgument<T extends Entity> {
             this.priority = 0;
         }
 
-        abstract @NotNull List<T> modify(@NotNull List<T> entities, @NotNull SourceStack stack, @NotNull U argument);
+        abstract @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull U argument);
 
         /**
          * セレクター引数のIDを取得します。
@@ -399,12 +424,12 @@ public abstract class SelectorArgument<T extends Entity> {
         public abstract @NotNull String getId();
 
         @NotNull
-        SelectorArgument<T> build(@NotNull U value) {
-            final Builder<T, U> that = this;
+        SelectorArgument build(@NotNull U value) {
+            final Builder<U> that = this;
 
-            return new SelectorArgument<>() {
+            return new SelectorArgument() {
                 @Override
-                @NotNull List<T> modify(@NotNull List<T> entities, @NotNull SourceStack stack) {
+                @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack) {
                     return that.modify(entities, stack, value);
                 }
 
