@@ -1,11 +1,17 @@
 package com.gmail.subnokoii78.util.event;
 
+import com.gmail.subnokoii78.util.execute.ExecuteSender;
+import com.gmail.subnokoii78.util.execute.SourceStack;
+import com.gmail.subnokoii78.util.file.json.JSONObject;
+import com.gmail.subnokoii78.util.file.json.JSONParser;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.Plugin;
@@ -67,15 +73,15 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
             storages.put(clazz, this);
         }
 
-        public long getTime(Player player) {
+        private long getTime(Player player) {
             return timeStorage.getOrDefault(player, 0L);
         }
 
-        public void setTime(Player player) {
+        private void setTime(Player player) {
             timeStorage.put(player, System.currentTimeMillis());
         }
 
-        public static <T extends Event> EventFiredTimeStorage<T> getStorage(Class<T> clazz) {
+        private static <T extends Event> EventFiredTimeStorage<T> getStorage(Class<T> clazz) {
             if (storages.containsKey(clazz)) {
                 return (EventFiredTimeStorage<T>) storages.get(clazz);
             }
@@ -113,8 +119,8 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
 
             if (event.getAction().isRightClick()) {
                 EventFiredTimeStorage.getStorage(PlayerInteractEvent.class).setTime(player);
-                getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player));
-                getRegistry(CustomEventType.PLAYER_RIGHT_CLICK).call(new PlayerRightClickEvent(player));
+                getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player, event));
+                getRegistry(CustomEventType.PLAYER_RIGHT_CLICK).call(new PlayerRightClickEvent(player, event));
                 return;
             }
 
@@ -126,13 +132,30 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
             // 右クリックと同時のとき発火しない
             else if (System.currentTimeMillis() - interactEventTime < 50L) return;
 
-            getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player));
-            getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(player));
+            getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player, event));
+            getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(player, event));
         }
 
         @EventHandler
         public void onPrePlayerAttack(PrePlayerAttackEntityEvent event) {
-            getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(event.getPlayer()));
+            getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(event.getPlayer(), event));
+        }
+
+        @EventHandler
+        public void onEntityTeleport(EntityTeleportEvent event) {
+            final Entity entity = event.getEntity();
+            if (!entity.getScoreboardTags().contains("plugin_api:messenger")) return;
+
+            final SourceStack stack = new SourceStack(ExecuteSender.of(entity));
+
+            for (final String tag : entity.getScoreboardTags()) {
+                if (!tag.startsWith("plugin_api:json_message")) continue;
+
+                final String message = tag.replaceFirst("^plugin_api:json_message\\s+", "");
+                final JSONObject jsonObject = new JSONParser(message).parseObject();
+
+                getRegistry(CustomEventType.DATA_PACK_MESSAGE_RECEIVE).call(new DataPackMessageReceiveEvent(stack, jsonObject));
+            }
         }
     }
 }

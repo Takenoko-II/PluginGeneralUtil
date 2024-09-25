@@ -16,4 +16,6 @@ public class CustomEventType<T extends CustomEvent> {
     public static final CustomEventType<PlayerLeftClickEvent> PLAYER_LEFT_CLICK = new CustomEventType<>(PlayerLeftClickEvent.class);
 
     public static final CustomEventType<PlayerRightClickEvent> PLAYER_RIGHT_CLICK = new CustomEventType<>(PlayerRightClickEvent.class);
+
+    public static final CustomEventType<DataPackMessageReceiveEvent> DATA_PACK_MESSAGE_RECEIVE = new CustomEventType<>(DataPackMessageReceiveEvent.class);
 }
