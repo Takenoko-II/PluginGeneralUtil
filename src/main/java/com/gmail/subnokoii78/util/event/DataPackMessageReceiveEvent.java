@@ -24,6 +24,11 @@ public class DataPackMessageReceiveEvent implements CustomEvent {
         return message;
     }
 
+    @Override
+    public CustomEventType<?> getType() {
+        return CustomEventType.DATA_PACK_MESSAGE_RECEIVE;
+    }
+
     public static void sendDataPackMessage(SourceStack source, JSONObject message) {
         final Entity sender = source.getDimension().spawnEntity(source.getAsBukkitLocation(), EntityType.MARKER);
         sender.addScoreboardTag("plugin_api:messenger");

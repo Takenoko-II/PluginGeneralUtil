@@ -119,7 +119,7 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
 
             if (event.getAction().isRightClick()) {
                 EventFiredTimeStorage.getStorage(PlayerInteractEvent.class).setTime(player);
-                getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player, event));
+                getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player, event, false));
                 getRegistry(CustomEventType.PLAYER_RIGHT_CLICK).call(new PlayerRightClickEvent(player, event));
                 return;
             }
@@ -132,13 +132,19 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
             // 右クリックと同時のとき発火しない
             else if (System.currentTimeMillis() - interactEventTime < 50L) return;
 
-            getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player, event));
-            getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(player, event));
+            getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player, event, true));
+
+            if (event.getClickedBlock() == null) {
+                getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(event.getPlayer(), event));
+            }
+            else {
+                getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(event.getPlayer(), event.getClickedBlock(), event));
+            }
         }
 
         @EventHandler
         public void onPrePlayerAttack(PrePlayerAttackEntityEvent event) {
-            getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(event.getPlayer(), event));
+            getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(event.getPlayer(), event.getAttacked(), event));
         }
 
         @EventHandler
