@@ -60,7 +60,7 @@ public final class FoodComponent extends ItemStackComponent {
         return this;
     }
 
-    public Map<PotionContent, Float> effects() {
+    public Map<PotionContent, Float> getEffects() {
         final Map<PotionContent, Float> map = new HashMap<>();
 
         itemMeta.getFood()
@@ -92,7 +92,7 @@ public final class FoodComponent extends ItemStackComponent {
         return this;
     }
 
-    public FoodComponent effects(@NotNull Map<PotionContent, Float> map) {
+    public FoodComponent setEffects(@NotNull Map<PotionContent, Float> map) {
         map.keySet().forEach(content -> itemMeta.getFood().addEffect(content.toBukkit(), map.get(content)));
         return this;
     }

@@ -3,6 +3,7 @@ package com.gmail.subnokoii78.util.file.json;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -11,7 +12,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
         super(new ArrayList<>());
     }
 
-    public JSONArray(@NotNull List<Object> list) {
+    public JSONArray(@NotNull Collection<?> list) {
         super(new ArrayList<>(list));
     }
 

@@ -2,7 +2,6 @@ package com.gmail.subnokoii78.util.itemstack.components;
 
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.ArmorMeta;
-import org.bukkit.inventory.meta.ColorableArmorMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.jetbrains.annotations.NotNull;

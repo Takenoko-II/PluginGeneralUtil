@@ -3,6 +3,7 @@ package com.gmail.subnokoii78.util.file.json;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -14,7 +15,7 @@ public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T>
         this.type = type;
     }
 
-    public TypedJSONArray(@NotNull JSONValueType<T> type, @NotNull List<T> list) {
+    public TypedJSONArray(@NotNull JSONValueType<T> type, @NotNull Collection<T> list) {
         super(new ArrayList<>(list));
         this.type = type;
     }
