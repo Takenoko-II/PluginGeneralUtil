@@ -147,24 +147,34 @@ public final class PaperVelocityManager implements PluginMessageListener {
         customPluginMessageReceivers.add(callback);
     }
 
-    public ContainerUI getServerSelector() {
-        return new ContainerUI(Component.text("Battle of Apostolos"), 1)
+    public void openServerSelector(@NotNull Player player) {
+        new ContainerUI(Component.text("Battle of Apostolos"), 1)
             .set(1, new ItemButton(Material.NETHER_STAR)
                 .name(Component.text("Game").color(NamedTextColor.AQUA))
                 .addLore(Component.text("ゲームサーバーに接続する").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false))
-                .onClick(event -> transfer(event.getPlayer(), BoAServerType.GAME))
+                .onClick(event -> {
+                    event.playClickingSound();
+                    event.closeUI();
+                    transfer(event.getPlayer(), BoAServerType.GAME);
+                })
             )
             .set(3, new ItemButton(Material.PAPER)
                 .name(Component.text("Lobby").color(NamedTextColor.GOLD))
                 .addLore(Component.text("ロビーサーバーに接続する").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false))
                 .glint(true)
-                .onClick(event -> transfer(event.getPlayer(), BoAServerType.LOBBY))
+                .onClick(event -> {
+                    event.playClickingSound();
+                    event.closeUI();
+                    transfer(event.getPlayer(), BoAServerType.LOBBY);
+                })
             )
             .set(5, new ItemButton(Material.COMMAND_BLOCK)
                 .name(Component.text("Development").color(NamedTextColor.GOLD))
                 .addLore(Component.text("開発サーバーに接続する").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false))
                 .glint(true)
                 .onClick(event -> {
+                    event.playClickingSound();
+                    event.closeUI();
                     if (event.getPlayer().isOp()) {
                         transfer(event.getPlayer(), BoAServerType.DEVELOPMENT);
                     }
@@ -178,9 +188,12 @@ public final class PaperVelocityManager implements PluginMessageListener {
                 .addLore(Component.text("スポーン地点に戻る").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false))
                 .onClick(event -> {
                     final Location spawnPoint = event.getPlayer().getRespawnLocation();
+                    event.closeUI();
                     event.getPlayer().teleport(spawnPoint == null ? event.getPlayer().getWorld().getSpawnLocation() : spawnPoint);
+                    event.playClickingSound();
                 })
-            );
+            )
+            .open(player);
     }
 
     public static PaperVelocityManager register(@NotNull Plugin plugin) {

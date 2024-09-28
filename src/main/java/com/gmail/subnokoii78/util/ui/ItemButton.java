@@ -3,6 +3,7 @@ package com.gmail.subnokoii78.util.ui;
 import com.gmail.subnokoii78.util.itemstack.components.ComponentItemStackBuilder;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,7 +18,7 @@ public class ItemButton {
 
     protected final UUID id = UUID.randomUUID();
 
-    protected final Set<Consumer<ItemButtonClickEvent>> listenerSet = new HashSet<>();
+    private final Set<Consumer<ItemButtonClickEvent>> listenerSet = new HashSet<>();
 
     private int amount = 1;
 
