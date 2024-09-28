@@ -73,7 +73,7 @@ public abstract class JSONValueType<T> {
 
                 for (final Object key : map.keySet()) {
                     if (key instanceof String string) {
-                        object.put(string, map.get(key));
+                        object.put(string, map.get(string));
                     }
                     else {
                         throw new IllegalArgumentException("A key of Map is not a string");
@@ -150,7 +150,7 @@ public abstract class JSONValueType<T> {
     public static final JSONValueType<JSONNull> NULL = new JSONValueType<>() {
         @Override
         protected JSONNull get(Object value) {
-            if (value == null) return new JSONNull();
+            if (value == null) return JSONNull.NULL;
             else throw new IllegalArgumentException("value is not a null value");
         }
 

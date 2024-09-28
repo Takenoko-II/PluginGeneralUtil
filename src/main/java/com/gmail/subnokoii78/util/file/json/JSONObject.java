@@ -44,12 +44,7 @@ public final class JSONObject extends JSONValue<Map<String, Object>> {
     }
 
     public void set(@NotNull String key, Object value) {
-        if (value instanceof JSONValue<?> jsonValue) {
-            this.value.put(key, jsonValue.value);
-            return;
-        }
-
-        this.value.put(key, value);
+        this.value.put(key, JSONValueType.of(value).get(value));
     }
 
     public void delete(@NotNull String key) {

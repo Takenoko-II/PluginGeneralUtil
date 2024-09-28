@@ -86,6 +86,9 @@ Xorshift128を実装したクラス
 ### [RealTimeScheduler](src/main/java/com/gmail/subnokoii78/util/schedule/RealTimeScheduler.java)
 現実時間を使用するスケジューラ
 
+### [AbstractGameTickScheduler](src/main/java/com/gmail/subnokoii78/util/schedule/AbstractGameTickScheduler.java)
+ゲームティックを使用するスケジューラ
+
 ## other パッケージ
 ### [TupleT](src/main/java/com/gmail/subnokoii78/util/other/TupleT.java)
 長さ2の配列のクラス
@@ -167,3 +170,19 @@ executeコマンドの送信者を表すクラス
 
 ### [SourceStack](src/main/java/com/gmail/subnokoii78/util/execute/SourceStack.java)
 Executeオブジェクト内部で操作される、コマンドの実行文脈1つ分を表現するクラス
+
+## event パッケージ
+
+### [CustomEvent](src/main/java/com/gmail/subnokoii78/util/event/CustomEvent.java)
+カスタムイベントのインターフェース
+
+### [CancellableCustomEvent](src/main/java/com/gmail/subnokoii78/util/event/CancellableCustomEvent.java)
+キャンセル可能なカスタムイベントの抽象クラス
+
+### [CustomEventType](src/main/java/com/gmail/subnokoii78/util/event/CustomEventType.java)
+カスタムイベントの種類
+
+### [CustomEventHandlerRegistry](src/main/java/com/gmail/subnokoii78/util/event/CustomEventHandlerRegistry.java)
+カスタムイベントのリスナーを登録するためのクラス
+
+その他のファイルはCustomEventを継承したクラス

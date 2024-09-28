@@ -3,10 +3,7 @@ package com.gmail.subnokoii78.util.file.json;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class JSONParser {
     private final String text;

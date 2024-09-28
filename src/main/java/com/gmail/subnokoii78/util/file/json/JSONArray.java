@@ -49,21 +49,11 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
             throw new IllegalArgumentException("そのインデックスは使用できません");
         }
 
-        if (value instanceof JSONValue<?> jsonValue) {
-            this.value.add(index, jsonValue.value);
-            return;
-        }
-
-        this.value.add(index, value);
+        this.value.add(JSONValueType.of(value).get(value));
     }
 
     public void add(Object value) {
-        if (value instanceof JSONValue<?> jsonValue) {
-            this.value.add(jsonValue.value);
-            return;
-        }
-
-        this.value.add(value);
+        this.value.add(JSONValueType.of(value).get(value));
     }
 
     public void set(int index, Object value) {
@@ -71,12 +61,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
             throw new IllegalArgumentException("そのインデックスは使用できません");
         }
 
-        if (value instanceof JSONValue<?> jsonValue) {
-            this.value.set(index, jsonValue.value);
-            return;
-        }
-
-        this.value.set(index, value);
+        this.value.set(index, JSONValueType.of(value).get(value));
     }
 
     public void delete(int index) {
