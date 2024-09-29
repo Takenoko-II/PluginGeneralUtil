@@ -1,6 +1,8 @@
 package com.gmail.subnokoii78.util.event;
 
+import com.gmail.subnokoii78.util.execute.EntitySelector;
 import com.gmail.subnokoii78.util.execute.ExecuteSender;
+import com.gmail.subnokoii78.util.execute.SelectorArgument;
 import com.gmail.subnokoii78.util.execute.SourceStack;
 import com.gmail.subnokoii78.util.file.json.JSONObject;
 import com.gmail.subnokoii78.util.file.json.JSONParser;
@@ -11,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -150,17 +153,19 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
         @EventHandler
         public void onEntityTeleport(EntityTeleportEvent event) {
             final Entity entity = event.getEntity();
-            if (!entity.getScoreboardTags().contains("plugin_api:messenger")) return;
+            if (!entity.getScoreboardTags().contains("plugin_api.messenger")) return;
 
-            final SourceStack stack = new SourceStack(ExecuteSender.of(entity));
+            final EntitySelector<Entity> selector = EntitySelector.E.build().arg(SelectorArgument.TAG, "plugin_api.target");
+
+            final Set<Entity> entities = new HashSet<>(new SourceStack(ExecuteSender.of(entity)).getEntities(selector));
 
             for (final String tag : entity.getScoreboardTags()) {
-                if (!tag.startsWith("plugin_api:json_message")) continue;
+                if (!tag.startsWith("plugin_api.json_message")) continue;
 
-                final String message = tag.replaceFirst("^plugin_api:json_message\\s+", "");
+                final String message = tag.replaceFirst("^plugin_api.json_message\\s+", "");
                 final JSONObject jsonObject = new JSONParser(message).parseObject();
 
-                getRegistry(CustomEventType.DATA_PACK_MESSAGE_RECEIVE).call(new DataPackMessageReceiveEvent(stack, jsonObject));
+                getRegistry(CustomEventType.DATA_PACK_MESSAGE_RECEIVE).call(new DataPackMessageReceiveEvent(entity, entities, jsonObject));
             }
         }
     }

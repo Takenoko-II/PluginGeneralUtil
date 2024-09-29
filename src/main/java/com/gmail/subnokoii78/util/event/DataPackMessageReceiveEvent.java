@@ -1,23 +1,29 @@
 package com.gmail.subnokoii78.util.event;
 
-import com.gmail.subnokoii78.util.execute.SourceStack;
 import com.gmail.subnokoii78.util.file.json.JSONObject;
-import com.gmail.subnokoii78.util.file.json.JSONSerializer;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
+
+import java.util.Set;
 
 public class DataPackMessageReceiveEvent implements CustomEvent {
-    private final SourceStack stack;
+    private final Entity sender;
+
+    private final Set<Entity> entities;
 
     private final JSONObject message;
 
-    protected DataPackMessageReceiveEvent(SourceStack stack, JSONObject message) {
-        this.stack = stack;
+    protected DataPackMessageReceiveEvent(Entity sender, Set<Entity> entities, JSONObject message) {
+        this.sender = sender;
+        this.entities = entities;
         this.message = message;
     }
 
-    public SourceStack getSource() {
-        return stack;
+    public Entity getSender() {
+        return sender;
+    }
+
+    public Set<Entity> getEntities() {
+        return entities;
     }
 
     public JSONObject getMessage() {
@@ -29,11 +35,8 @@ public class DataPackMessageReceiveEvent implements CustomEvent {
         return CustomEventType.DATA_PACK_MESSAGE_RECEIVE;
     }
 
-    public static void sendDataPackMessage(SourceStack source, JSONObject message) {
-        final Entity sender = source.getDimension().spawnEntity(source.getAsBukkitLocation(), EntityType.MARKER);
-        sender.addScoreboardTag("plugin_api:messenger");
-        sender.addScoreboardTag("plugin_api:json_message " + new JSONSerializer(message).serialize());
-        sender.teleport(source.getAsBukkitLocation());
-        sender.remove();
-    }
+    // summon marker ~ ~ ~ {Tags: ['plugin_api.messenger', 'plugin_api.json_message {"key":"value"}']}
+    // tag ターゲット add plugin_api.target
+    // tp @e[tag=plugin_api.messenger,limit=1] ~ ~ ~
+    // kill @e[tag=plugin_api.messenger]
 }
