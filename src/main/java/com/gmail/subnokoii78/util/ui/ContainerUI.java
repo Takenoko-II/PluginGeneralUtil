@@ -1,13 +1,17 @@
 package com.gmail.subnokoii78.util.ui;
 
+import com.gmail.subnokoii78.util.command.PluginDebugger;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
@@ -18,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class ContainerUI {
     private final TextComponent name;
@@ -27,6 +32,8 @@ public class ContainerUI {
     private final Map<Integer, ItemButton> buttons = new HashMap<>();
 
     private final Set<Inventory> inventories = new HashSet<>();
+
+    private final Set<Consumer<Player>> onCloseEventListenerSet = new HashSet<>();
 
     public ContainerUI(@NotNull TextComponent name, int maxColumn) {
         this.name = name;
@@ -91,17 +98,45 @@ public class ContainerUI {
         return this;
     }
 
+    public @NotNull ContainerUI onClose(@NotNull Consumer<Player> listener) {
+        onCloseEventListenerSet.add(listener);
+        return this;
+    }
+
     public void open(@NotNull Player player) {
+        if (!isValid()) {
+            throw new IllegalStateException("This instance is invalid");
+        }
+
         final Inventory inventory = Bukkit.createInventory(null, getSize(), name);
 
         for (int i = 0; i < getSize(); i++) {
             if (!buttons.containsKey(i)) continue;
-            inventory.setItem(i, buttons.get(i).build());
+
+            final ItemButton button = buttons.get(i);
+
+            if (button instanceof ItemButtonCreator creator) {
+                inventory.setItem(i, creator.create(player).build());
+            }
+            else {
+                inventory.setItem(i, button.build());
+            }
         }
 
         inventories.add(inventory);
         player.closeInventory();
         player.openInventory(inventory);
+    }
+
+    public boolean isValid() {
+        return instances.contains(this);
+    }
+
+    public void freeUpMemory() {
+        buttons.clear();
+        inventories.forEach(Inventory::close);
+        inventories.clear();
+        instances.remove(this);
     }
 
     private static final Set<ContainerUI> instances = new HashSet<>();
@@ -127,14 +162,12 @@ public class ContainerUI {
                     break;
                 }
             }
-
-            System.out.println(instances.size());
         }
 
         @EventHandler
         public void onMove(InventoryMoveItemEvent event) {
             for (final ContainerUI ui : instances) {
-                if (ui.inventories.contains(event.getDestination())) {
+                if (ui.inventories.contains(event.getInitiator())) {
                     event.setCancelled(true);
                     break;
                 }
@@ -143,9 +176,12 @@ public class ContainerUI {
 
         @EventHandler
         public void onClose(InventoryCloseEvent event) {
+            if (!(event.getPlayer() instanceof Player player)) return;
+
             for (ContainerUI ui : instances) {
                 if (ui.inventories.contains(event.getInventory())) {
                     ui.inventories.remove(event.getInventory());
+                    ui.onCloseEventListenerSet.forEach(listener -> listener.accept(player));
                     break;
                 }
             }
@@ -159,6 +195,36 @@ public class ContainerUI {
             if (initialized) return;
             initialized = true;
             Bukkit.getServer().getPluginManager().registerEvents(INSTANCE, plugin);
+
+            PluginDebugger.INSTANCE.register("instanceCount", ctx -> {
+                ctx.getSource().getSender().sendMessage("instanceCount: " + instances.size());
+                instances.forEach(instance -> {
+                    ctx.getSource().getSender().sendMessage("inventoryCount: " + instance.inventories.size());
+                });
+                return 1;
+            });
+
+            final ContainerUI ui = new ContainerUI(Component.text("test"), 1)
+                .add(new ItemButtonCreator() {
+                    @NotNull
+                    @Override
+                    public ItemButton create(@NotNull Player player) {
+                        final Material material = player.getEquipment().getItem(EquipmentSlot.HAND).getType();
+                        if (material.equals(Material.AIR)) {
+                            return new ItemButton(Material.APPLE);
+                        }
+                        return new ItemButton(material);
+                    }
+                })
+                .add(new ItemButton(Material.PAPER));
+
+            PluginDebugger.INSTANCE.register("openTestUI", ctx -> {
+                if (ctx.getSource().getSender() instanceof Player player) {
+                    ui.open(player);
+                    return 1;
+                }
+                return 0;
+            });
         }
     }
 }

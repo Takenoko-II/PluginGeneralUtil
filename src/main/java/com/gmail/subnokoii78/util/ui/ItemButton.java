@@ -1,7 +1,6 @@
 package com.gmail.subnokoii78.util.ui;
 
 import com.gmail.subnokoii78.util.itemstack.components.ComponentItemStackBuilder;
-import com.gmail.subnokoii78.util.itemstack.components.ItemStackComponentType;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
