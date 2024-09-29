@@ -45,13 +45,12 @@ public final class RecipesComponent extends ItemStackComponent {
         }
     }
 
-    public void addRecipes(String recipe) {
-        final NamespacedKey key = NamespacedKey.fromString(recipe);
-
-        if (key == null) return;
-
-        if (itemMeta instanceof KnowledgeBookMeta) {
-            ((KnowledgeBookMeta) itemMeta).addRecipe(key);
+    public void addRecipes(String... recipes) {
+        if (itemMeta instanceof KnowledgeBookMeta knowledgeBookMeta) {
+            Arrays.stream(recipes)
+                .map(NamespacedKey::fromString)
+                .filter(Objects::nonNull)
+                .forEach(knowledgeBookMeta::addRecipe);
         }
     }
 

@@ -1,9 +1,9 @@
 package com.gmail.subnokoii78.util.ui;
 
 import com.gmail.subnokoii78.util.itemstack.components.ComponentItemStackBuilder;
+import com.gmail.subnokoii78.util.itemstack.components.ItemStackComponentType;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,6 +46,10 @@ public class ItemButton {
             throw new IllegalArgumentException("個数としては範囲外の値です");
         }
 
+        if (amount > 1) {
+            itemStackBuilder.maxDamage().disable();
+        }
+
         this.amount = amount;
         return this;
     }
@@ -57,6 +61,15 @@ public class ItemButton {
 
     public @NotNull ItemButton customModelData(int data) {
         itemStackBuilder.customModelData().setCustomModelData(data);
+        return this;
+    }
+
+    public @NotNull ItemButton damage(float rate) throws IllegalStateException {
+        if (amount > 1) {
+            throw new IllegalStateException("耐久力の表示はアイテムの個数が1のときのみ利用できます");
+        }
+        itemStackBuilder.maxDamage().setMaxDamage(100);
+        itemStackBuilder.damage().setDamage((int) rate * 100);
         return this;
     }
 

@@ -1,9 +1,14 @@
 package com.gmail.subnokoii78.util.event;
 
 import com.gmail.subnokoii78.util.file.json.JSONObject;
+import com.gmail.subnokoii78.util.file.json.JSONValueType;
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class DataPackMessageReceiveEvent implements CustomEvent {
     private final Entity sender;
@@ -39,4 +44,31 @@ public class DataPackMessageReceiveEvent implements CustomEvent {
     // tag ターゲット add plugin_api.target
     // tp @e[tag=plugin_api.messenger,limit=1] ~ ~ ~
     // kill @e[tag=plugin_api.messenger]
+
+    public static final class DataPackMessageReceiverRegistry {
+        public static final DataPackMessageReceiverRegistry INSTANCE = new DataPackMessageReceiverRegistry();
+
+        private DataPackMessageReceiverRegistry() {
+            CustomEventHandlerRegistry.register(CustomEventType.DATA_PACK_MESSAGE_RECEIVE, this::onReceive);
+        }
+
+        private final Map<String, Consumer<DataPackMessageReceiveEvent>> receiverMap = new HashMap<>();
+
+        private void onReceive(@NotNull DataPackMessageReceiveEvent event) {
+            if (!event.message.has("id")) return;
+            else if (!event.message.getTypeOf("id").equals(JSONValueType.STRING)) return;
+            final String id = event.message.get("id", JSONValueType.STRING);
+
+            for (final String receiverId : receiverMap.keySet()) {
+                if (receiverId.equals(id)) {
+                    receiverMap.get(id).accept(event);
+                    break;
+                }
+            }
+        }
+
+        public void register(@NotNull String id, @NotNull Consumer<DataPackMessageReceiveEvent> receiver) {
+            receiverMap.put(id, receiver);
+        }
+    }
 }

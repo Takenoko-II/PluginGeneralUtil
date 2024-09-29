@@ -56,7 +56,7 @@ public class PotionButton extends ItemButton {
 
     @Override
     protected @NotNull ItemStack build() {
-        itemStackBuilder.potionContents().setShowInTooltip(false);
+        itemStackBuilder.hideAdditionalTooltip().enable();
         return super.build();
     }
 

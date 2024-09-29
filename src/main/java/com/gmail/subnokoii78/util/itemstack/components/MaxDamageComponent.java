@@ -11,29 +11,34 @@ public final class MaxDamageComponent extends ItemStackComponent {
 
     @Override
     public boolean isEnabled() {
-        if (itemMeta instanceof Damageable) {
-            return ((Damageable) itemMeta).hasMaxDamage();
+        if (itemMeta instanceof Damageable damageable) {
+            return damageable.hasMaxDamage();
         }
         else return false;
     }
 
     @Override
     public void disable() {
-        if (itemMeta instanceof Damageable) {
-            ((Damageable) itemMeta).setMaxDamage(null);
+        if (itemMeta instanceof Damageable damageable) {
+            damageable.setMaxDamage(null);
         }
     }
 
-    public Integer getMaxDamage() {
-        if (itemMeta instanceof Damageable) {
-            return ((Damageable) itemMeta).getMaxDamage();
+    public int getMaxDamage() {
+        if (itemMeta instanceof Damageable damageable) {
+            if (isEnabled()) return damageable.getMaxDamage();
+            else return 0;
         }
-        else return null;
+        else return 0;
     }
 
-    public void setMaxDamage(int damage) {
-        if (itemMeta instanceof Damageable) {
-            ((Damageable) itemMeta).setMaxDamage(damage);
+    public void setMaxDamage(int damage) throws IllegalStateException {
+        if (itemMeta.getMaxStackSize() > 1) {
+            throw new IllegalStateException("アイテムの最大スタック数は1である必要があります");
+        }
+
+        if (itemMeta instanceof Damageable damageable) {
+            damageable.setMaxDamage(damage);
         }
     }
 

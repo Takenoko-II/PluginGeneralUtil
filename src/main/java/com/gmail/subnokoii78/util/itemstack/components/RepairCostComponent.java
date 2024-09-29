@@ -12,8 +12,8 @@ public final class RepairCostComponent extends ItemStackComponent {
 
     @Override
     public boolean isEnabled() {
-        if (itemMeta instanceof Repairable) {
-            return ((Repairable) itemMeta).hasRepairCost();
+        if (itemMeta instanceof Repairable repairable) {
+            return repairable.hasRepairCost();
         }
         else return false;
     }

@@ -11,29 +11,30 @@ public final class DamageComponent extends ItemStackComponent {
 
     @Override
     public boolean isEnabled() {
-        if (itemMeta instanceof Damageable) {
-            return ((Damageable) itemMeta).hasDamage();
+        if (itemMeta instanceof Damageable damageable) {
+            return damageable.hasDamage();
         }
         else return false;
     }
 
     @Override
     public void disable() {
-        if (itemMeta instanceof Damageable) {
-            ((Damageable) itemMeta).setDamage(0);
+        if (itemMeta instanceof Damageable damageable) {
+            damageable.setDamage(0);
         }
     }
 
-    public Integer getDamage() {
-        if (itemMeta instanceof Damageable) {
-            return ((Damageable) itemMeta).getDamage();
+    public int getDamage() {
+        if (itemMeta instanceof Damageable damageable) {
+            if (isEnabled()) return damageable.getDamage();
+            else return 0;
         }
-        else return null;
+        else return 0;
     }
 
     public void setDamage(int damage) {
-        if (itemMeta instanceof Damageable) {
-            ((Damageable) itemMeta).setDamage(damage);
+        if (itemMeta instanceof Damageable damageable) {
+            damageable.setDamage(damage);
         }
     }
 

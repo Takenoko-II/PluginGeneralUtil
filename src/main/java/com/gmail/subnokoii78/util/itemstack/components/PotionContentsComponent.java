@@ -2,7 +2,6 @@ package com.gmail.subnokoii78.util.itemstack.components;
 
 import com.gmail.subnokoii78.util.itemstack.PotionContent;
 import org.bukkit.Color;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffectType;
@@ -10,7 +9,7 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class PotionContentsComponent extends TooltipShowable {
+public final class PotionContentsComponent extends ItemStackComponent {
     private PotionContentsComponent(@NotNull ItemMeta itemMeta) {
         super(itemMeta);
     }
@@ -96,19 +95,7 @@ public final class PotionContentsComponent extends TooltipShowable {
     }
 
     @Override
-    public boolean getShowInTooltip() {
-        return !itemMeta.hasItemFlag(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
-    }
-
-    @Override
-    public void setShowInTooltip(boolean flag) {
-        if (flag) itemMeta.removeItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
-        else itemMeta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
-    }
-
-    @Override
     public @NotNull String getComponentId() {
         return "minecraft:potion_contents";
     }
-
 }
