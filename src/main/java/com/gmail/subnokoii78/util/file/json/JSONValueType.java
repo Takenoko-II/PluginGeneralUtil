@@ -12,17 +12,30 @@ public abstract class JSONValueType<T> {
 
     public static JSONValueType<?> of(Object value) {
         return switch (value) {
+            case JSONValue<?> jsonValue -> of(jsonValue.value);
             case Boolean ignored -> BOOLEAN;
             case Number ignored -> NUMBER;
             case String ignored -> STRING;
             case Map<?, ?> ignored -> OBJECT;
             case Collection<?> ignored -> ARRAY;
-            case JSONValue<?> jsonValue -> of(jsonValue.value);
             case null -> NULL;
             default -> {
                 if (value.getClass().isArray()) yield ARRAY;
                 else throw new IllegalArgumentException("渡された値はjsonで使用できない型です: " + value.getClass().getName());
             }
+        };
+    }
+
+    public static void checkIsValid(Object value) throws IllegalArgumentException {
+        switch (value) {
+            case JSONValue<?> ignored: break;
+            case Boolean ignored: break;
+            case Number ignored: break;
+            case String ignored: break;
+            case Map<?, ?> ignored: break;
+            case Collection<?> ignored: break;
+            case null: break;
+            default: if (!value.getClass().isArray()) throw new IllegalArgumentException("その型の値はJSON構造オブジェクトに使用できません: " + value.getClass().getName());
         };
     }
 
@@ -82,7 +95,7 @@ public abstract class JSONValueType<T> {
 
                 return new JSONObject(object);
             }
-            else throw new IllegalArgumentException("value is not a json object value");
+            else throw new IllegalArgumentException("value is not a json object value: " + value.getClass().getName());
         }
 
         @Override

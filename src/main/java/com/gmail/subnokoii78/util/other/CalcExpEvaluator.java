@@ -8,7 +8,7 @@ import java.util.function.*;
 public final class CalcExpEvaluator {
     private static final Set<Character> IGNORED = Set.of(' ', '\n');
 
-    private static final Set<Character> SIGNS = Set.of('+', '-');
+    private static final List<Character> SIGNS = List.of('+', '-');
 
     private static final Set<Character> INTEGERS = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
 
@@ -20,8 +20,7 @@ public final class CalcExpEvaluator {
 
     private static final char PARENTHESIS_END = ')';
 
-    private final Map<Character, BinaryOperator<Double>> MONOMIAL_OPERATORS = Map.of(
-        '^', Math::pow,
+    private final Map<Character, BinaryOperator<Double>> MONOMIAL_OPERATORS = new HashMap<>(Map.of(
         '*', (a, b) -> a * b,
         '/', (a, b) -> {
             if (a == 0 && b == 0) {
@@ -37,11 +36,15 @@ public final class CalcExpEvaluator {
 
             return a % b;
         }
-    );
+    ));
 
     private final Map<Character, BinaryOperator<Double>> POLYNOMIAL_OPERATORS = new HashMap<>(Map.of(
         '+', Double::sum,
         '-', (a, b) -> a - b
+    ));
+
+    private final Map<Character, BinaryOperator<Double>> FACTOR_OPERATORS = new HashMap<>(Map.of(
+        '^', Math::pow
     ));
 
     private final Map<Character, DoubleUnaryOperator> NUMBER_SUFFIX_OPERATOR = new HashMap<>(Map.of(
@@ -66,7 +69,7 @@ public final class CalcExpEvaluator {
         }
     ));
 
-    private final Map<String, Supplier<Double>> ZERO_ARGUMENT_FUNCTIONS = new HashMap<>();
+    private final Map<String, DoubleSupplier> ZERO_ARGUMENT_FUNCTIONS = new HashMap<>();
 
     private final Map<String, DoubleUnaryOperator> SINGLE_ARGUMENT_FUNCTIONS = new HashMap<>();
 
@@ -131,16 +134,22 @@ public final class CalcExpEvaluator {
         if (SIGNS.contains(init)) {
             stringBuilder.append(init);
             beforeWhitespace();
+
+            if (isOver()) {
+                throw new CalcExpEvalException("符号の後には数が必要です");
+            }
         }
         else {
             location--;
         }
 
+        final char futureNext = expression.charAt(location);
+
         if (isZeroArgFunction()) {
             final var function = getZeroArgFunction();
             final var args = arguments();
             if (!args.isEmpty()) throw new CalcExpEvalException("関数の引数の数は0つが要求されています");
-            stringBuilder.append(function.get());
+            stringBuilder.append(function.getAsDouble());
         }
         else if (isSingleArgFunction()) {
             final var function = getSingleArgFunction();
@@ -157,19 +166,16 @@ public final class CalcExpEvaluator {
         else if (isConst()) {
             stringBuilder.append(getConst());
         }
-        else if (SIGNS.contains(expression.charAt(location)) || expression.charAt(location) == PARENTHESIS_START) {
-            final var val = polynomial();
-            if (val == 0) return 0;
+        else if (SIGNS.contains(futureNext) || futureNext == PARENTHESIS_START) {
+            final double value = polynomial();
 
-            if (val > 0) stringBuilder.append(val);
-            else if (stringBuilder.charAt(0) == SIGNS.stream().toList().getFirst()) {
-                return val;
-            }
-            else if (stringBuilder.charAt(0) == SIGNS.stream().toList().get(1)) {
-                return -val;
+            if (stringBuilder.isEmpty()) {
+                stringBuilder.append(value);
             }
             else {
-                throw new CalcExpEvalException("never happen?");
+                final char sign = stringBuilder.charAt(0);
+                stringBuilder.deleteCharAt(0);
+                stringBuilder.append(mergeSign(sign, value));
             }
         }
         else {
@@ -201,16 +207,25 @@ public final class CalcExpEvaluator {
         }
     }
 
+    private double mergeSign(char sign, double value) {
+        if (SIGNS.get(0).equals(sign)) {
+            return value;
+        }
+        else if (SIGNS.get(1).equals(sign)) {
+            return -value;
+        }
+        else {
+            throw new CalcExpEvalException("無効な符号です: " + sign);
+        }
+    }
+
     private double monomial() {
-        double value = factor();
+        double value = operateIfSuffix(factor());
 
         while (!isOver()) {
             final char current = next();
             if (MONOMIAL_OPERATORS.containsKey(current)) {
-                value = MONOMIAL_OPERATORS.get(current).apply(value, factor());
-            }
-            else if (NUMBER_SUFFIX_OPERATOR.containsKey(current)) {
-                value = NUMBER_SUFFIX_OPERATOR.get(current).applyAsDouble(value);
+                value = MONOMIAL_OPERATORS.get(current).apply(value, operateIfSuffix(factor()));
             }
             else {
                 location--;
@@ -238,6 +253,25 @@ public final class CalcExpEvaluator {
         return value;
     }
 
+    private double operateIfSuffix(double num) {
+        if (!isOver()) {
+            final char current2 = next();
+            if (NUMBER_SUFFIX_OPERATOR.containsKey(current2)) {
+                return NUMBER_SUFFIX_OPERATOR.get(current2).applyAsDouble(num);
+            }
+            else if (FACTOR_OPERATORS.containsKey(current2)) {
+                final double obj = polynomial();
+                return FACTOR_OPERATORS.get(current2).apply(num, obj);
+            }
+            else {
+                location--;
+                return num;
+            }
+        }
+
+        return num;
+    }
+
     private double factor() {
         final char current = next();
 
@@ -250,7 +284,8 @@ public final class CalcExpEvaluator {
         }
         else {
             location--;
-            final var num = number();
+            double num = number();
+
             if (Double.isNaN(num)) {
                 throw new CalcExpEvalException("関数または定数からNaNが出力されました");
             }
@@ -321,7 +356,7 @@ public final class CalcExpEvaluator {
         return false;
     }
 
-    private Supplier<Double> getZeroArgFunction() {
+    private DoubleSupplier getZeroArgFunction() {
         final String str = expression.substring(location);
 
         for (final String name : ZERO_ARGUMENT_FUNCTIONS.keySet()) {
@@ -390,13 +425,15 @@ public final class CalcExpEvaluator {
         }
     }
 
-    private void checkDefined(@NotNull String name) {
-        if (
-            ZERO_ARGUMENT_FUNCTIONS.containsKey(name)
+    public boolean isDefined(@NotNull String name) {
+        return ZERO_ARGUMENT_FUNCTIONS.containsKey(name)
             || SINGLE_ARGUMENT_FUNCTIONS.containsKey(name)
             || DOUBLE_ARGUMENTS_FUNCTIONS.containsKey(name)
-            || CONSTANTS.containsKey(name)
-        ) {
+            || CONSTANTS.containsKey(name);
+    }
+
+    private void throwIfDefined(@NotNull String name) {
+        if (isDefined(name)) {
             throw new IllegalArgumentException("その名前は既に使用されています: " + name);
         }
     }
@@ -410,24 +447,38 @@ public final class CalcExpEvaluator {
         return value;
     }
 
-    public void define(@NotNull String name, @NotNull Supplier<Double> function) {
-        checkDefined(name);
+    public void define(@NotNull String name, @NotNull DoubleSupplier function) {
+        throwIfDefined(name);
         ZERO_ARGUMENT_FUNCTIONS.put(name, function);
     }
 
     public void define(@NotNull String name, @NotNull DoubleUnaryOperator function) {
-        checkDefined(name);
+        throwIfDefined(name);
         SINGLE_ARGUMENT_FUNCTIONS.put(name, function);
     }
 
     public void define(@NotNull String name, @NotNull BinaryOperator<Double> function) {
-        checkDefined(name);
+        throwIfDefined(name);
         DOUBLE_ARGUMENTS_FUNCTIONS.put(name, function);
     }
 
     public void define(@NotNull String name, double constant) {
-        checkDefined(name);
+        throwIfDefined(name);
         CONSTANTS.put(name, constant);
+    }
+
+    public void undefine(@NotNull String name) {
+        if (isDefined(name)) {
+            ZERO_ARGUMENT_FUNCTIONS.remove(name);
+            SINGLE_ARGUMENT_FUNCTIONS.remove(name);
+            DOUBLE_ARGUMENTS_FUNCTIONS.remove(name);
+            CONSTANTS.remove(name);
+        }
+    }
+
+    @Override
+    public @NotNull String toString() {
+        return "<CalcExpEvaluator>";
     }
 
     public static @NotNull CalcExpEvaluator getDefaultEvaluator() {

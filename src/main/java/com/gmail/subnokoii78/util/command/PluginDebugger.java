@@ -18,9 +18,9 @@ public class PluginDebugger {
 
     private final Map<String, Function<CommandContext<CommandSourceStack>, Integer>> functionMap = new HashMap<>();
 
-    public void init(@NotNull Commands dispatcher) {
+    public void init(@NotNull String name, @NotNull Commands dispatcher) {
         dispatcher.register(
-            Commands.literal("debugger")
+            Commands.literal(name)
                 .then(
                     functionId()
                         .executes(ctx -> {
