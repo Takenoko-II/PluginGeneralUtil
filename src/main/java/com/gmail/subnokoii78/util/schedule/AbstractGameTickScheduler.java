@@ -76,7 +76,7 @@ public abstract class AbstractGameTickScheduler implements Scheduler {
             throw new IllegalArgumentException("間隔0は危険です");
         }
 
-        return issue(runnable -> runnable.runTaskTimer(getPlugin(), interval, 0L));
+        return issue(runnable -> runnable.runTaskTimer(getPlugin(), 0L, interval));
     }
 
     public int runInterval() {
