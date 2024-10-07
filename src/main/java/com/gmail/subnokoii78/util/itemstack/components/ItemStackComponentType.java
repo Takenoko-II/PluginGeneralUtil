@@ -1,6 +1,6 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Constructor;
@@ -13,24 +13,25 @@ import java.util.Set;
  * コンポーネントタイプを表現するクラス
  * @param <T> コンポーネントクラス
  */
-public final class ItemStackComponentType<T extends ItemStackComponent> {
+public class ItemStackComponentType<T extends ItemStackComponent> {
     private final Class<T> clazz;
 
     private static final Map<Class<? extends ItemStackComponent>, ItemStackComponentType<? extends ItemStackComponent>> types = new HashMap<>();
 
-    private ItemStackComponentType(Class<T> type) {
-        this.clazz = type;
-
-        if (!types.containsKey(type)) {
-            types.put(type, this);
+    protected ItemStackComponentType(Class<T> type) {
+        if (types.containsKey(type)) {
+            throw new IllegalArgumentException("既に作成されています");
         }
+
+        this.clazz = type;
+        types.put(type, this);
     }
 
-    @NotNull T getInstance(ItemMeta itemMeta) {
+    @NotNull T getInstance(ItemStack itemStack) {
         try {
-            final Constructor<T> constructor = clazz.getDeclaredConstructor(ItemMeta.class);
+            final Constructor<T> constructor = clazz.getDeclaredConstructor(ItemStack.class);
             constructor.setAccessible(true);
-            return constructor.newInstance(itemMeta);
+            return constructor.newInstance(itemStack);
         }
         catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new InvalidComponentTypeException("コンポーネントの取得に失敗しました", e);

@@ -1,29 +1,33 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class MaxStackSizeComponent extends ItemStackComponent {
-    private MaxStackSizeComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private MaxStackSizeComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return itemMeta.hasMaxStackSize();
+        return itemStack.getItemMeta().hasMaxStackSize();
     }
 
     @Override
     public void disable() {
-        itemMeta.setMaxStackSize(null);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setMaxStackSize(null);
+        });
     }
 
     public int getMaxStackSize() {
-        return itemMeta.getMaxStackSize();
+        return itemStack.getItemMeta().getMaxStackSize();
     }
 
     public void setMaxStackSize(int stackSize) {
-        itemMeta.setMaxStackSize(stackSize);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setMaxStackSize(stackSize);
+        });
     }
 
     @Override

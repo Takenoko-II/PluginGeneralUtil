@@ -36,7 +36,7 @@ public class ItemButton {
     }
 
     public @NotNull ItemButton setLore(@NotNull List<TextComponent> components) {
-        itemStackBuilder.lore().setLore(components.toArray(TextComponent[]::new));
+        itemStackBuilder.lore().setLore(components);
         return this;
     }
 

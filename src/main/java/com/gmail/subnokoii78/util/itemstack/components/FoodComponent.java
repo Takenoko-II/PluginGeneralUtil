@@ -1,7 +1,7 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
 import com.gmail.subnokoii78.util.itemstack.PotionContent;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.components.FoodComponent.FoodEffect;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -10,60 +10,70 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public final class FoodComponent extends ItemStackComponent {
-    private FoodComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private FoodComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return itemMeta.hasFood();
+        return itemStack.getItemMeta().hasFood();
     }
 
     @Override
     public void disable() {
-        itemMeta.setFood(null);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setFood(null);
+        });
     }
 
     public int nutrition() {
-        return itemMeta.getFood().getNutrition();
+        return itemStack.getItemMeta().getFood().getNutrition();
     }
 
     public FoodComponent nutrition(int value) {
-        itemMeta.getFood().setNutrition(value);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.getFood().setNutrition(value);
+        });
         return this;
     }
 
     public float saturation() {
-        return itemMeta.getFood().getSaturation();
+        return itemStack.getItemMeta().getFood().getSaturation();
     }
 
     public FoodComponent saturation(float value) {
-        itemMeta.getFood().setSaturation(value);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.getFood().setSaturation(value);
+        });
         return this;
     }
 
     public int eatTicks() {
-        return (int) Math.floor(itemMeta.getFood().getEatSeconds() * 20);
+        return (int) Math.floor(itemStack.getItemMeta().getFood().getEatSeconds() * 20);
     }
 
     public FoodComponent eatTicks(int ticks) {
-        itemMeta.getFood().setEatSeconds(((float) ticks) / 20f);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.getFood().setEatSeconds(((float) ticks) / 20f);
+        });
         return this;
     }
 
     public boolean canAlwaysEat() {
-        return itemMeta.getFood().canAlwaysEat();
+        return itemStack.getItemMeta().getFood().canAlwaysEat();
     }
 
     public FoodComponent canAlwaysEat(boolean flag) {
-        itemMeta.getFood().setCanAlwaysEat(flag);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.getFood().setCanAlwaysEat(flag);
+        });
         return this;
     }
 
     public Map<PotionContent, Float> getEffects() {
         final Map<PotionContent, Float> map = new HashMap<>();
 
-        itemMeta.getFood()
+        itemStack.getItemMeta().getFood()
             .getEffects()
             .stream()
             .forEach(foodEffect -> {
@@ -78,22 +88,28 @@ public final class FoodComponent extends ItemStackComponent {
     }
 
     public FoodComponent addEffect(@NotNull PotionContent effect, float probability) {
-        itemMeta.getFood().addEffect(effect.toBukkit(), probability);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.getFood().addEffect(effect.toBukkit(), probability);
+        });
         return this;
     }
 
     public FoodComponent removeEffect(@NotNull PotionEffectType type) {
-        final List<FoodEffect> effects = new ArrayList<>(itemMeta.getFood().getEffects());
-        itemMeta.getFood().setEffects(
-            effects.stream()
-                .filter(effect -> !effect.getEffect().getType().equals(type))
-                .toList()
-        );
+        itemMetaModifier(itemMeta -> {
+            final List<FoodEffect> effects = new ArrayList<>(itemMeta.getFood().getEffects());
+            itemMeta.getFood().setEffects(
+                effects.stream()
+                    .filter(effect -> !effect.getEffect().getType().equals(type))
+                    .toList()
+            );
+        });
         return this;
     }
 
     public FoodComponent setEffects(@NotNull Map<PotionContent, Float> map) {
-        map.keySet().forEach(content -> itemMeta.getFood().addEffect(content.toBukkit(), map.get(content)));
+        itemMetaModifier(itemMeta -> {
+            map.keySet().forEach(content -> itemMeta.getFood().addEffect(content.toBukkit(), map.get(content)));
+        });
         return this;
     }
 

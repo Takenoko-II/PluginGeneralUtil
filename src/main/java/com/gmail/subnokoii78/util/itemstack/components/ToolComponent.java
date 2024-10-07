@@ -1,48 +1,52 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
 import org.bukkit.Material;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 public final class ToolComponent extends ItemStackComponent {
-    private ToolComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private ToolComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return itemMeta.hasTool();
+        return itemStack.getItemMeta().hasTool();
     }
 
     public int damagePerBlock() {
-        return itemMeta.getTool().getDamagePerBlock();
+        return itemStack.getItemMeta().getTool().getDamagePerBlock();
     }
 
     public void damagePerBlock(int damage) {
-        itemMeta.getTool().setDamagePerBlock(damage);
+        itemStack.getItemMeta().getTool().setDamagePerBlock(damage);
     }
 
     public float defaultMiningSpeed() {
-        return itemMeta.getTool().getDefaultMiningSpeed();
+        return itemStack.getItemMeta().getTool().getDefaultMiningSpeed();
     }
 
     public void defaultMiningSpeed(float speed) {
-        itemMeta.getTool().setDefaultMiningSpeed(speed);
+        itemStack.getItemMeta().getTool().setDefaultMiningSpeed(speed);
     }
 
-    public Set<org.bukkit.inventory.meta.components.ToolComponent.ToolRule> getRules() {
-        return new HashSet<>(itemMeta.getTool().getRules());
+    public @NotNull Set<org.bukkit.inventory.meta.components.ToolComponent.ToolRule> getRules() {
+        return Set.copyOf(itemStack.getItemMeta().getTool().getRules());
     }
 
     public void addRule(Collection<Material> blocks, float speed, boolean isCorrectForDrops) {
-        itemMeta.getTool().addRule(blocks, speed, isCorrectForDrops);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.getTool().addRule(blocks, speed, isCorrectForDrops);
+        });
     }
 
     @Override
     public void disable() {
-        itemMeta.setTool(null);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setTool(null);
+        });
     }
 
     @NotNull

@@ -1,11 +1,12 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 public final class EnchantmentGlintOverrideComponent extends ItemStackComponent {
-    private EnchantmentGlintOverrideComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private EnchantmentGlintOverrideComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
@@ -15,15 +16,19 @@ public final class EnchantmentGlintOverrideComponent extends ItemStackComponent 
 
     @Override
     public void disable() {
-        itemMeta.setEnchantmentGlintOverride(null);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setEnchantmentGlintOverride(null);
+        });
     }
 
     public boolean getGlintOverride() {
-        return itemMeta.getEnchantmentGlintOverride();
+        return itemStack.getItemMeta().getEnchantmentGlintOverride();
     }
 
     public void setGlintOverride(boolean flag) {
-        itemMeta.setEnchantmentGlintOverride(flag);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setEnchantmentGlintOverride(flag);
+        });
     }
 
     @Override

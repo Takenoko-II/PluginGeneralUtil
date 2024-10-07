@@ -10,8 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class DyedColorComponent extends TooltipShowable {
-    private DyedColorComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private DyedColorComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
@@ -20,45 +20,31 @@ public final class DyedColorComponent extends TooltipShowable {
     }
 
     public @Nullable Color getColor() {
-        if (itemMeta instanceof LeatherArmorMeta) {
-            return ((LeatherArmorMeta) itemMeta).getColor();
-        }
-        else return null;
+        return itemMetaDataSupplier(LeatherArmorMeta.class, LeatherArmorMeta::getColor);
     }
 
     public boolean hasColor() {
-        if (itemMeta instanceof LeatherArmorMeta) {
-            return !((LeatherArmorMeta) itemMeta).getColor().equals(DyedColorComponent.getDefaultLeatherColor());
-        }
-        else return false;
+        return itemMetaDataSupplier(LeatherArmorMeta.class, leatherArmorMeta -> {
+            return leatherArmorMeta.getColor().equals(DyedColorComponent.getDefaultLeatherColor());
+        }, false);
     }
 
-    public void setColor(Color color) {
-        if (color == null) {
-            throw new IllegalArgumentException();
-        }
-
-        if (itemMeta instanceof LeatherArmorMeta) {
-            ((LeatherArmorMeta) itemMeta).setColor(color);
-        }
+    public void setColor(@NotNull Color color) {
+        itemMetaModifier(LeatherArmorMeta.class, leatherArmorMeta -> {
+            leatherArmorMeta.setColor(color);
+        });
     }
 
     @Override
     public void disable() {
-        if (itemMeta instanceof LeatherArmorMeta) {
-            ((LeatherArmorMeta) itemMeta).setColor(null);
-        }
+        itemMetaModifier(LeatherArmorMeta.class, leatherArmorMeta -> {
+            leatherArmorMeta.setColor(null);
+        });
     }
 
     @Override
-    public boolean getShowInTooltip() {
-        return !itemMeta.hasItemFlag(ItemFlag.HIDE_DYE);
-    }
-
-    @Override
-    public void setShowInTooltip(boolean flag) {
-        if (flag) itemMeta.removeItemFlags(ItemFlag.HIDE_DYE);
-        else itemMeta.addItemFlags(ItemFlag.HIDE_DYE);
+    public @NotNull ItemFlag getItemFlag() {
+        return ItemFlag.HIDE_DYE;
     }
 
     public static Color getDefaultLeatherColor() {

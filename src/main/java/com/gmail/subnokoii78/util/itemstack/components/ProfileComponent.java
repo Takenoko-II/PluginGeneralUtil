@@ -1,13 +1,14 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
 import org.bukkit.OfflinePlayer;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class ProfileComponent extends ItemStackComponent {
-    private ProfileComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private ProfileComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
@@ -15,31 +16,25 @@ public final class ProfileComponent extends ItemStackComponent {
         return hasOwner();
     }
 
-    public OfflinePlayer getOwner() {
-        if (itemMeta instanceof SkullMeta) {
-            return ((SkullMeta) itemMeta).getOwningPlayer();
-        }
-        else return null;
+    public @Nullable OfflinePlayer getOwner() {
+        return itemMetaDataSupplier(SkullMeta.class, SkullMeta::getOwningPlayer);
     }
 
     public boolean hasOwner() {
-        if (itemMeta instanceof SkullMeta) {
-            return ((SkullMeta) itemMeta).hasOwner();
-        }
-        else return false;
+        return itemMetaDataSupplier(SkullMeta.class, SkullMeta::hasOwner, false);
     }
 
-    public void setOwner(OfflinePlayer player) {
-        if (itemMeta instanceof SkullMeta) {
-            ((SkullMeta) itemMeta).setOwningPlayer(player);
-        }
+    public void setOwner(@NotNull OfflinePlayer player) {
+        itemMetaModifier(SkullMeta.class, skullMeta -> {
+            skullMeta.setOwningPlayer(player);
+        });
     }
 
     @Override
     public void disable() {
-        if (itemMeta instanceof SkullMeta) {
-            ((SkullMeta) itemMeta).setOwningPlayer(null);
-        }
+        itemMetaModifier(SkullMeta.class, skullMeta -> {
+            skullMeta.setOwningPlayer(null);
+        });
     }
 
     @Override

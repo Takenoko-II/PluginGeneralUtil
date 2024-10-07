@@ -1,17 +1,15 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
 import org.bukkit.NamespacedKey;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.KnowledgeBookMeta;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public final class RecipesComponent extends ItemStackComponent {
-    private RecipesComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private RecipesComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
@@ -20,45 +18,42 @@ public final class RecipesComponent extends ItemStackComponent {
     }
 
     public boolean hasRecipes() {
-        if (itemMeta instanceof KnowledgeBookMeta) {
-            return ((KnowledgeBookMeta) itemMeta).hasRecipes();
-        }
-        else return false;
+        return itemMetaDataSupplier(KnowledgeBookMeta.class, KnowledgeBookMeta::hasRecipes, false);
     }
 
-    public boolean hasRecipe(String recipe) {
-        return List.of(getRecipe()).contains(recipe);
+    public boolean hasRecipe(@NotNull NamespacedKey recipe) {
+        return getRecipes().contains(recipe);
     }
 
-    public String[] getRecipe() {
-        if (itemMeta instanceof KnowledgeBookMeta) {
-            return ((KnowledgeBookMeta) itemMeta).getRecipes().stream().map(NamespacedKey::asString).toArray(String[]::new);
-        }
-        else return new String[0];
+    public @NotNull Set<NamespacedKey> getRecipes() {
+        return itemMetaDataSupplier(KnowledgeBookMeta.class, knowledgeBookMeta -> {
+            return Set.copyOf(knowledgeBookMeta.getRecipes());
+        }, Set.of());
     }
 
-    public void setRecipes(String... recipes) {
-        final NamespacedKey[] array = Arrays.stream(recipes).map(NamespacedKey::fromString).filter(Objects::nonNull).toArray(NamespacedKey[]::new);
-
-        if (itemMeta instanceof KnowledgeBookMeta) {
-            ((KnowledgeBookMeta) itemMeta).setRecipes(List.of(array));
-        }
+    public void setRecipes(@NotNull Set<NamespacedKey> recipes) {
+        itemMetaModifier(KnowledgeBookMeta.class, knowledgeBookMeta -> {
+            knowledgeBookMeta.setRecipes(List.copyOf(recipes));
+        });
     }
 
-    public void addRecipes(String... recipes) {
-        if (itemMeta instanceof KnowledgeBookMeta knowledgeBookMeta) {
-            Arrays.stream(recipes)
-                .map(NamespacedKey::fromString)
-                .filter(Objects::nonNull)
-                .forEach(knowledgeBookMeta::addRecipe);
-        }
+    public void addRecipe(@NotNull NamespacedKey recipe) {
+        itemMetaModifier(KnowledgeBookMeta.class, knowledgeBookMeta -> {
+            knowledgeBookMeta.addRecipe(recipe);
+        });
+    }
+
+    public void removeRecipe(@NotNull NamespacedKey recipe) {
+        itemMetaModifier(KnowledgeBookMeta.class, knowledgeBookMeta -> {
+            final Set<NamespacedKey> recipes = getRecipes();
+            recipes.remove(recipe);
+            knowledgeBookMeta.setRecipes(List.copyOf(recipes));
+        });
     }
 
     @Override
     public void disable() {
-        if (itemMeta instanceof KnowledgeBookMeta) {
-            ((KnowledgeBookMeta) itemMeta).setRecipes(List.of());
-        }
+        setRecipes(Set.of());
     }
 
     @Override

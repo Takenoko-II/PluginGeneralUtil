@@ -1,33 +1,38 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class CustomModelDataComponent extends ItemStackComponent {
-    private CustomModelDataComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private CustomModelDataComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return itemMeta.hasCustomModelData();
+        return itemStack.getItemMeta().hasCustomModelData();
     }
 
     public @Nullable Integer getData() {
-        if (itemMeta.hasCustomModelData()) {
-            return itemMeta.getCustomModelData();
+        if (itemStack.getItemMeta().hasCustomModelData()) {
+            return itemStack.getItemMeta().getCustomModelData();
         }
         else return null;
     }
 
     public void setCustomModelData(int data) {
-        itemMeta.setCustomModelData(data);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setCustomModelData(data);
+        });
     }
 
     @Override
     public void disable() {
-        itemMeta.setCustomModelData(null);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setCustomModelData(null);
+        });
     }
 
     @Override

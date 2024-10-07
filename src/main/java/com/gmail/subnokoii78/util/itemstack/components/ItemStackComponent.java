@@ -1,19 +1,55 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 public abstract class ItemStackComponent {
     /**
-     * このコンポーネントを保持する{@link ItemMeta}
+     * このコンポーネントを保持する{@link ItemStack}
      */
-    protected final ItemMeta itemMeta;
+    protected final ItemStack itemStack;
 
     /**
-     * {@link ItemMeta}をもとにこのコンポーネントを操作するインスタンスを作成します。
-     * @param itemMeta このコンポーネントを保持するItemMeta
+     * {@link ItemStack}をもとにこのコンポーネントを操作するインスタンスを作成します。
+     * @param itemStack このコンポーネントを保持する{@link ItemStack}
      */
-    protected ItemStackComponent(@NotNull ItemMeta itemMeta) {
-        this.itemMeta = itemMeta;
+    protected ItemStackComponent(@NotNull ItemStack itemStack) {
+        this.itemStack = itemStack;
+    }
+
+    protected void itemMetaModifier(@NotNull Consumer<ItemMeta> modifier) {
+        final ItemMeta itemMeta = itemStack.getItemMeta();
+        modifier.accept(itemMeta);
+        itemStack.setItemMeta(itemMeta);
+    }
+
+    protected <T extends ItemMeta> void itemMetaModifier(@NotNull Class<T> clazz, Consumer<T> modifier) {
+        final ItemMeta itemMeta = itemStack.getItemMeta();
+        if (clazz.isInstance(itemMeta)) {
+            modifier.accept(clazz.cast(itemMeta));
+            itemStack.setItemMeta(itemMeta);
+        }
+    }
+
+    protected <T extends ItemMeta, U> @Nullable U itemMetaDataSupplier(@NotNull Class<T> clazz, Function<T, U> modifier) {
+        final ItemMeta itemMeta = itemStack.getItemMeta();
+        if (clazz.isInstance(itemMeta)) {
+            return modifier.apply(clazz.cast(itemMeta));
+        }
+        else return null;
+    }
+
+    protected <T extends ItemMeta, U> @NotNull U itemMetaDataSupplier(@NotNull Class<T> clazz, Function<T, U> modifier, @NotNull U defaultValue) {
+        final ItemMeta itemMeta = itemStack.getItemMeta();
+        if (clazz.isInstance(itemMeta)) {
+            return modifier.apply(clazz.cast(itemMeta));
+        }
+        else return defaultValue;
     }
 
     /**

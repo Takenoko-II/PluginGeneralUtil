@@ -16,8 +16,6 @@ import java.util.Set;
 public final class ComponentItemStackBuilder {
     private final ItemStack itemStack;
 
-    private final ItemMeta itemMeta;
-
     /**
      * アイテムタイプから新しくアイテムを作成します。
      * @param type アイテムタイプ
@@ -25,9 +23,8 @@ public final class ComponentItemStackBuilder {
      */
     public ComponentItemStackBuilder(Material type) {
         itemStack = new ItemStack(type);
-        itemMeta = itemStack.getItemMeta();
 
-        if (itemMeta == null) {
+        if (itemStack.getItemMeta() == null) {
             throw new IllegalArgumentException("このアイテムタイプはItemMetaを持っていません");
         }
     }
@@ -39,9 +36,8 @@ public final class ComponentItemStackBuilder {
      */
     public ComponentItemStackBuilder(ItemStack itemStack) {
         this.itemStack = itemStack.clone();
-        this.itemMeta = itemStack.getItemMeta();
 
-        if (itemMeta == null) {
+        if (itemStack.getItemMeta() == null) {
             throw new IllegalArgumentException("このアイテムタイプはItemMetaを持っていません");
         }
     }
@@ -51,7 +47,6 @@ public final class ComponentItemStackBuilder {
      * @return ItemStackBuilder
      */
     public @NotNull ItemStackBuilder toItemStackBuilder() {
-        itemStack.setItemMeta(itemMeta);
         return ItemStackBuilder.from(itemStack.clone());
     }
 
@@ -61,7 +56,7 @@ public final class ComponentItemStackBuilder {
      * @return 対応するコンポーネント
      */
     public <T extends ItemStackComponent> @NotNull T getComponent(ItemStackComponentType<T> type) {
-        return type.getInstance(itemMeta);
+        return type.getInstance(itemStack);
     }
 
     /**
@@ -72,7 +67,7 @@ public final class ComponentItemStackBuilder {
         final Set<ItemStackComponent> components = new HashSet<>();
 
         for (final ItemStackComponentType<?> type : ItemStackComponentType.values()) {
-            final ItemStackComponent component = type.getInstance(itemMeta);
+            final ItemStackComponent component = type.getInstance(itemStack);
             if (component.isEnabled()) components.add(component);
         }
 
@@ -84,7 +79,7 @@ public final class ComponentItemStackBuilder {
      */
     public void disableAllComponents() {
         for (final ItemStackComponentType<?> type : ItemStackComponentType.values()) {
-            type.getInstance(itemMeta).disable();
+            type.getInstance(itemStack).disable();
         }
     }
 

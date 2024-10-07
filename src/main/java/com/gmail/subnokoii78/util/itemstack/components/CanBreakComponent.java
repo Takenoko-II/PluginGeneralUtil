@@ -1,12 +1,12 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
 import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class CanBreakComponent extends TooltipShowable {
-    private CanBreakComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private CanBreakComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
@@ -26,13 +26,7 @@ public final class CanBreakComponent extends TooltipShowable {
     }
 
     @Override
-    public boolean getShowInTooltip() {
-        return !itemMeta.hasItemFlag(ItemFlag.HIDE_DESTROYS);
-    }
-
-    @Override
-    void setShowInTooltip(boolean flag) {
-        if (flag) itemMeta.removeItemFlags(ItemFlag.HIDE_DESTROYS);
-        else itemMeta.addItemFlags(ItemFlag.HIDE_DESTROYS);
+    protected @NotNull ItemFlag getItemFlag() {
+        return ItemFlag.HIDE_DESTROYS;
     }
 }

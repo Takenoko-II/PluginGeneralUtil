@@ -1,58 +1,56 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
 import net.kyori.adventure.text.Component;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public final class LoreComponent extends ItemStackComponent {
-    private LoreComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private LoreComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return itemMeta.hasLore();
+        return itemStack.getItemMeta().hasLore();
     }
 
     @Override
     public void disable() {
-        itemMeta.lore(null);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.lore(null);
+        });
     }
 
-    public Component[] getLore() {
-        final List<Component> list = Objects.requireNonNullElse(itemMeta.lore(), new ArrayList<>());
-
-        return list.toArray(Component[]::new);
+    public @NotNull List<? extends Component> getLore() {
+        final List<Component> lore = itemStack.getItemMeta().lore();
+        return lore == null ? List.of() : lore;
     }
 
-    public void setLore(Component[] array) {
-        itemMeta.lore(List.of(array));
+    public void setLore(@NotNull List<? extends Component> lore) {
+        itemMetaModifier(itemMeta -> {
+            itemMeta.lore(lore);
+        });
     }
 
-    public void addLore(int index, Component component) {
-        final List<Component> components = new ArrayList<>(Arrays.asList(getLore()));
+    public void addLore(int index, @NotNull Component component) {
+        final List<Component> components = new ArrayList<>(getLore());
         components.add(index, component);
-
-        itemMeta.lore(components);
+        setLore(components);
     }
 
-    public void addLore(Component component) {
-        final List<Component> components = new ArrayList<>(Arrays.asList(getLore()));
+    public void addLore(@NotNull Component component) {
+        final List<Component> components = new ArrayList<>(getLore());
         components.add(component);
-
-        itemMeta.lore(components);
+        setLore(components);
     }
 
     public void removeLore(int index) {
-        final List<Component> components = Arrays.asList(getLore());
+        final List<Component> components = new ArrayList<>(getLore());
         components.remove(index);
-
-        itemMeta.lore(components);
+        setLore(components);
     }
 
     @Override

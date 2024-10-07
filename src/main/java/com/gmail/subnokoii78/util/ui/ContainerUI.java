@@ -65,6 +65,10 @@ public class ContainerUI {
     }
 
     public @NotNull ContainerUI set(int slot, @Nullable ItemButton button) throws IllegalArgumentException {
+        if (!isValid()) {
+            throw new IllegalStateException("This instance is invalid");
+        }
+
         if (getSize() <= slot) {
             throw new IllegalArgumentException("範囲外のスロットが渡されました");
         }
@@ -75,11 +79,19 @@ public class ContainerUI {
     }
 
     public @NotNull ContainerUI add(@NotNull ItemButton button) throws IllegalStateException {
+        if (!isValid()) {
+            throw new IllegalStateException("This instance is invalid");
+        }
+
         buttons.put(getFirstEmptySlot(), button);
         return this;
     }
 
     public @NotNull ContainerUI fillRow(int index, @NotNull ItemButton button) {
+        if (!isValid()) {
+            throw new IllegalStateException("This instance is invalid");
+        }
+
         for (int i = index * 9; i < index * 9 + 9; i++) {
             set(i, button);
         }
@@ -87,6 +99,10 @@ public class ContainerUI {
     }
 
     public @NotNull ContainerUI fillColumn(int index, @NotNull ItemButton button) {
+        if (!isValid()) {
+            throw new IllegalStateException("This instance is invalid");
+        }
+
         for (int i = 0; i < maxColumn; i++) {
             set(i * 9 + index, button);
         }
@@ -94,11 +110,19 @@ public class ContainerUI {
     }
 
     public @NotNull ContainerUI clear() {
+        if (!isValid()) {
+            throw new IllegalStateException("This instance is invalid");
+        }
+
         buttons.clear();
         return this;
     }
 
     public @NotNull ContainerUI onClose(@NotNull Consumer<Player> listener) {
+        if (!isValid()) {
+            throw new IllegalStateException("This instance is invalid");
+        }
+
         onCloseEventListenerSet.add(listener);
         return this;
     }

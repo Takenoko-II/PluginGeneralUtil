@@ -6,17 +6,17 @@ import com.google.common.collect.Multimap;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class AttributeModifiersComponent extends TooltipShowable {
-    private AttributeModifiersComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private AttributeModifiersComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return itemMeta.hasAttributeModifiers();
+        return itemStack.getItemMeta().hasAttributeModifiers();
     }
 
     @Override
@@ -27,7 +27,7 @@ public final class AttributeModifiersComponent extends TooltipShowable {
     }
 
     public TypedAttributeModifier[] getModifiers() {
-        final Multimap<Attribute, AttributeModifier> map = itemMeta.getAttributeModifiers();
+        final Multimap<Attribute, AttributeModifier> map = itemStack.getItemMeta().getAttributeModifiers();
 
         if (map == null) {
             return new TypedAttributeModifier[0];
@@ -43,30 +43,32 @@ public final class AttributeModifiersComponent extends TooltipShowable {
             map.put(modifier.getType(), modifier.toBukkit());
         }
 
-        itemMeta.setAttributeModifiers(map);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setAttributeModifiers(map);
+        });
     }
 
     public void addModifier(TypedAttributeModifier modifier) {
-        itemMeta.addAttributeModifier(modifier.getType(), modifier.toBukkit());
+        itemMetaModifier(itemMeta -> {
+            itemMeta.addAttributeModifier(modifier.getType(), modifier.toBukkit());
+        });
     }
 
     public void removeModifier(TypedAttributeModifier modifier) {
-        itemMeta.removeAttributeModifier(modifier.getType(), modifier.toBukkit());
+        itemMetaModifier(itemMeta -> {
+            itemMeta.removeAttributeModifier(modifier.getType(), modifier.toBukkit());
+        });
     }
 
     public void removeModifiers(Attribute type) {
-        itemMeta.removeAttributeModifier(type);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.removeAttributeModifier(type);
+        });
     }
 
     @Override
-    public boolean getShowInTooltip() {
-        return !itemMeta.hasItemFlag(ItemFlag.HIDE_ATTRIBUTES);
-    }
-
-    @Override
-    public void setShowInTooltip(boolean flag) {
-        if (flag) itemMeta.removeItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-        else itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+    protected @NotNull ItemFlag getItemFlag() {
+        return ItemFlag.HIDE_ATTRIBUTES;
     }
 
     @Override

@@ -2,51 +2,50 @@ package com.gmail.subnokoii78.util.itemstack.components;
 
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
 public final class EnchantmentsComponent extends TooltipShowable {
-    private EnchantmentsComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private EnchantmentsComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return itemMeta.hasEnchants();
+        return itemStack.getItemMeta().hasEnchants();
     }
 
     public Map<Enchantment, Integer> getEnchantments() {
-        return itemMeta.getEnchants();
+        return itemStack.getItemMeta().getEnchants();
     }
 
     public void addEnchantment(Enchantment enchantment, int level) {
-        itemMeta.addEnchant(enchantment, level, true);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.addEnchant(enchantment, level, true);
+        });
     }
 
     public void removeEnchantment(Enchantment enchantment) {
-        itemMeta.removeEnchant(enchantment);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.removeEnchant(enchantment);
+        });
     }
 
     public boolean hasEnchantment(Enchantment enchantment) {
-        return itemMeta.hasEnchant(enchantment);
+        return itemStack.getItemMeta().hasEnchant(enchantment);
     }
 
     @Override
     public void disable() {
-        itemMeta.removeEnchantments();
+        itemMetaModifier(ItemMeta::removeEnchantments);
     }
 
     @Override
-    public boolean getShowInTooltip() {
-        return !itemMeta.hasItemFlag(ItemFlag.HIDE_ENCHANTS);
-    }
-
-    @Override
-    public void setShowInTooltip(boolean flag) {
-        if (flag) itemMeta.removeItemFlags(ItemFlag.HIDE_ENCHANTS);
-        else itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+    protected @NotNull ItemFlag getItemFlag() {
+        return ItemFlag.HIDE_ENCHANTS;
     }
 
     @Override

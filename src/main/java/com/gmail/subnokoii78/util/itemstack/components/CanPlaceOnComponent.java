@@ -1,12 +1,12 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
 import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class CanPlaceOnComponent extends TooltipShowable {
-    private CanPlaceOnComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private CanPlaceOnComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     public boolean isEnabled() {
@@ -25,13 +25,7 @@ public final class CanPlaceOnComponent extends TooltipShowable {
     }
 
     @Override
-    public boolean getShowInTooltip() {
-        return !itemMeta.hasItemFlag(ItemFlag.HIDE_DESTROYS);
-    }
-
-    @Override
-    void setShowInTooltip(boolean flag) {
-        if (flag) itemMeta.removeItemFlags(ItemFlag.HIDE_DESTROYS);
-        else itemMeta.addItemFlags(ItemFlag.HIDE_DESTROYS);
+    protected @NotNull ItemFlag getItemFlag() {
+        return ItemFlag.HIDE_PLACED_ON;
     }
 }

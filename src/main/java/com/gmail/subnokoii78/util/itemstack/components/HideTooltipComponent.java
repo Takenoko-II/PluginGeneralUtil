@@ -1,25 +1,29 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class HideTooltipComponent extends ItemStackComponent {
-    private HideTooltipComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private HideTooltipComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return itemMeta.isHideTooltip();
+        return itemStack.getItemMeta().isHideTooltip();
     }
 
     @Override
     public void disable() {
-        itemMeta.setHideTooltip(false);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setHideTooltip(false);
+        });
     }
 
     public void enable() {
-        itemMeta.setHideTooltip(true);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setHideTooltip(true);
+        });
     }
 
     @NotNull

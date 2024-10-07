@@ -1,25 +1,29 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class FireResistantComponent extends ItemStackComponent {
-    private FireResistantComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private FireResistantComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return itemMeta.isFireResistant();
+        return itemStack.getItemMeta().isFireResistant();
     }
 
     @Override
     public void disable() {
-        itemMeta.setFireResistant(false);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setFireResistant(false);
+        });
     }
 
     public void enable() {
-        itemMeta.setFireResistant(true);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setFireResistant(true);
+        });
     }
 
     @Override

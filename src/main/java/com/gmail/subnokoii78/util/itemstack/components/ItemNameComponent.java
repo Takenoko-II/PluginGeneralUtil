@@ -1,34 +1,38 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
 import net.kyori.adventure.text.TextComponent;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class ItemNameComponent extends ItemStackComponent {
-    private ItemNameComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private ItemNameComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return itemMeta.hasItemName();
+        return itemStack.getItemMeta().hasItemName();
     }
 
     @Override
     public void disable() {
-        itemMeta.itemName(null);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.itemName(null);
+        });
     }
 
     public @Nullable TextComponent getItemName() {
         if (isEnabled()) {
-            return (TextComponent) itemMeta.itemName();
+            return (TextComponent) itemStack.getItemMeta().itemName();
         }
         else return null;
     }
 
     public void setItemName(TextComponent component) {
-        itemMeta.itemName(component);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.itemName(component);
+        });
     }
 
     @Override

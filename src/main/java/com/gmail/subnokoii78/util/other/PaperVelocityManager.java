@@ -14,6 +14,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import org.bukkit.*;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -195,6 +197,16 @@ public final class PaperVelocityManager implements PluginMessageListener {
 
     public void openServerSelector(@NotNull Player player) {
         SERVER_SELECTOR.open(player);
+    }
+
+    public void sendDataPackMessage(@NotNull Location location, @NotNull Set<Entity> targets, @NotNull JSONObject message) {
+        final Entity messenger = location.getWorld().spawnEntity(location, EntityType.MARKER);
+        messenger.addScoreboardTag("plugin_api.messenger");
+        messenger.addScoreboardTag("plugin_api.json_message" + ' ' + new JSONSerializer(message).serialize());
+        targets.forEach(target -> target.addScoreboardTag("plugin_api.target"));
+        messenger.teleport(location);
+        targets.forEach(target -> target.removeScoreboardTag("plugin_api.target"));
+        messenger.remove();
     }
 
     public static PaperVelocityManager register(@NotNull Plugin plugin) {

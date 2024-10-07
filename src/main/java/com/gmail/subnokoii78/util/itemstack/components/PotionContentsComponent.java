@@ -2,96 +2,89 @@ package com.gmail.subnokoii78.util.itemstack.components;
 
 import com.gmail.subnokoii78.util.itemstack.PotionContent;
 import org.bukkit.Color;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 public final class PotionContentsComponent extends ItemStackComponent {
-    private PotionContentsComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private PotionContentsComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        if (itemMeta instanceof PotionMeta) {
-            return ((PotionMeta) itemMeta).hasCustomEffects();
-        }
-        else return false;
+        return itemMetaDataSupplier(PotionMeta.class, PotionMeta::hasCustomEffects, false);
     }
 
-    public PotionContent[] getContents() {
-        if (itemMeta instanceof PotionMeta) {
-            if (((PotionMeta) itemMeta).hasCustomEffects()) {
-                return ((PotionMeta) itemMeta).getCustomEffects()
-                .stream().map(PotionContent::fromBukkit).toArray(PotionContent[]::new);
+    public @NotNull Set<PotionContent> getContents() {
+        return itemMetaDataSupplier(PotionMeta.class, potionMeta -> {
+            if (isEnabled()) {
+                return potionMeta.getCustomEffects()
+                    .stream()
+                    .map(PotionContent::fromBukkit)
+                    .collect(Collectors.toSet());
             }
-            else if (((PotionMeta) itemMeta).getBasePotionType() != null) {
-                return ((PotionMeta) itemMeta).getBasePotionType().getPotionEffects()
-                .stream().map(PotionContent::fromBukkit).toArray(PotionContent[]::new);
+            else if (potionMeta.getBasePotionType() != null) {
+                return potionMeta.getBasePotionType()
+                    .getPotionEffects()
+                    .stream()
+                    .map(PotionContent::fromBukkit)
+                    .collect(Collectors.toSet());
             }
-            else return new PotionContent[0];
-        }
-        else return new PotionContent[0];
+            else return Set.of();
+        }, Set.of());
     }
 
-    public boolean hasContent(PotionEffectType type) {
-        if (itemMeta instanceof PotionMeta) {
-            return ((PotionMeta) itemMeta).hasCustomEffect(type) || ((PotionMeta) itemMeta).hasBasePotionType();
-        }
-        else return false;
+    public boolean hasContent(@NotNull PotionEffectType type) {
+        return itemMetaDataSupplier(PotionMeta.class, potionMeta -> {
+            return potionMeta.hasCustomEffect(type) || potionMeta.hasBasePotionType();
+        }, false);
     }
 
-    public void addContent(PotionContent effect) {
-        if (itemMeta instanceof PotionMeta) {
-            ((PotionMeta) itemMeta).addCustomEffect(effect.toBukkit(), false);
-        }
+    public void addContent(@NotNull PotionContent effect) {
+        itemMetaModifier(PotionMeta.class, potionMeta -> {
+            potionMeta.addCustomEffect(effect.toBukkit(), false);
+        });
     }
 
     public @Nullable PotionType getBasePotion() {
-        if (itemMeta instanceof PotionMeta) {
-            return ((PotionMeta) itemMeta).getBasePotionType();
-        }
-        else return null;
+        return itemMetaDataSupplier(PotionMeta.class, PotionMeta::getBasePotionType);
     }
 
-    public void setBasePotion(PotionType type) {
-        if (itemMeta instanceof PotionMeta) {
-            ((PotionMeta) itemMeta).setBasePotionType(type);
-        }
+    public void setBasePotion(@NotNull PotionType type) {
+        itemMetaModifier(PotionMeta.class, potionMeta -> {
+            potionMeta.setBasePotionType(type);
+        });
     }
 
-    public void removeContents(PotionEffectType type) {
-        if (itemMeta instanceof PotionMeta) {
-            ((PotionMeta) itemMeta).removeCustomEffect(type);
-        }
+    public void removeContent(@NotNull PotionEffectType type) {
+        itemMetaModifier(PotionMeta.class, potionMeta -> {
+            potionMeta.removeCustomEffect(type);
+        });
     }
 
     public @Nullable Color getColor() {
-        if (itemMeta instanceof PotionMeta) {
-            return ((PotionMeta) itemMeta).getColor();
-        }
-        else return null;
+        return itemMetaDataSupplier(PotionMeta.class, PotionMeta::getColor);
     }
 
-    public void setColor(Color color) {
-        if (color == null) {
-            throw new IllegalArgumentException();
-        }
-
-        if (itemMeta instanceof PotionMeta) {
-            ((PotionMeta) itemMeta).setColor(color);
-        }
+    public void setColor(@NotNull Color color) {
+        itemMetaModifier(PotionMeta.class, potionMeta -> {
+            potionMeta.setColor(color);
+        });
     }
 
     @Override
     public void disable() {
-        if (itemMeta instanceof PotionMeta) {
-            ((PotionMeta) itemMeta).clearCustomEffects();
-            ((PotionMeta) itemMeta).setBasePotionType(null);
-        }
+        itemMetaModifier(PotionMeta.class, potionMeta -> {
+            potionMeta.setBasePotionType(null);
+            potionMeta.clearCustomEffects();
+        });
     }
 
     @Override

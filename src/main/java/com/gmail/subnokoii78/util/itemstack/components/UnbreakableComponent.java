@@ -1,41 +1,35 @@
 package com.gmail.subnokoii78.util.itemstack.components;
 
 import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class UnbreakableComponent extends TooltipShowable {
-    private UnbreakableComponent(@NotNull ItemMeta itemMeta) {
-        super(itemMeta);
+    private UnbreakableComponent(@NotNull ItemStack itemStack) {
+        super(itemStack);
     }
 
     @Override
     public boolean isEnabled() {
-        return getUnbreakable();
+        return itemStack.getItemMeta().isUnbreakable();
     }
 
     @Override
     public void disable() {
-        itemMeta.setUnbreakable(false);
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setUnbreakable(false);
+        });
     }
 
-    public boolean getUnbreakable() {
-        return itemMeta.isUnbreakable();
-    }
-
-    public void setUnbreakable(boolean flag) {
-        itemMeta.setUnbreakable(flag);
-    }
-
-    @Override
-    public boolean getShowInTooltip() {
-        return !itemMeta.hasItemFlag(ItemFlag.HIDE_UNBREAKABLE);
+    public void enable() {
+        itemMetaModifier(itemMeta -> {
+            itemMeta.setUnbreakable(true);
+        });
     }
 
     @Override
-    public void setShowInTooltip(boolean flag) {
-        if (flag) itemMeta.removeItemFlags(ItemFlag.HIDE_UNBREAKABLE);
-        else itemMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+    public @NotNull ItemFlag getItemFlag() {
+        return ItemFlag.HIDE_UNBREAKABLE;
     }
 
     @Override
