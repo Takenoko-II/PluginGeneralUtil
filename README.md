@@ -165,7 +165,7 @@ all/maskedを区別する列挙型
 ### [DistanceRange](src/main/java/com/gmail/subnokoii78/util/execute/DistanceRange.java)
 正の倍精度浮動小数点数の範囲
 
-### [ExecuteSender](src/main/java/com/gmail/subnokoii78/util/execute/ExecuteSender.java)
+### [SourceOrigin](src/main/java/com/gmail/subnokoii78/util/execute/SourceOrigin.java)
 executeコマンドの送信者を表すクラス
 
 ### [SourceStack](src/main/java/com/gmail/subnokoii78/util/execute/SourceStack.java)

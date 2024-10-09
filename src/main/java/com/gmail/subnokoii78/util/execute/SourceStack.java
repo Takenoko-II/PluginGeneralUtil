@@ -11,6 +11,7 @@ import org.bukkit.World;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.intellij.lang.annotations.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
  * executeコマンドにおける単一の実行文脈を表現するクラス
  */
 public class SourceStack {
-    private final ExecuteSender<?> sender;
+    private final SourceOrigin<?> sender;
 
     private Entity executor = null;
 
@@ -39,14 +40,14 @@ public class SourceStack {
      * 初期状態のソーススタックを生成します。
      */
     public SourceStack() {
-        this(ExecuteSender.of(Bukkit.getServer()));
+        this(SourceOrigin.of(Bukkit.getServer()));
     }
 
     /**
      * 引数に渡されたオブジェクトをコマンドの送信者としてソーススタックを生成します。
      * @param sender 送信者
      */
-    public SourceStack(@NotNull ExecuteSender<?> sender) {
+    public SourceStack(@NotNull SourceOrigin<?> sender) {
         this.sender = sender;
     }
 
@@ -54,7 +55,7 @@ public class SourceStack {
      * コマンドの送信者(実行者)を取得します。
      * @return 送信者
      */
-    public ExecuteSender<?> getSender() {
+    public SourceOrigin<?> getSender() {
         return sender;
     }
 

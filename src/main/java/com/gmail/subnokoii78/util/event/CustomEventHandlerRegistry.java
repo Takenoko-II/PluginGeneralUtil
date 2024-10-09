@@ -1,7 +1,7 @@
 package com.gmail.subnokoii78.util.event;
 
 import com.gmail.subnokoii78.util.execute.EntitySelector;
-import com.gmail.subnokoii78.util.execute.ExecuteSender;
+import com.gmail.subnokoii78.util.execute.SourceOrigin;
 import com.gmail.subnokoii78.util.execute.SelectorArgument;
 import com.gmail.subnokoii78.util.execute.SourceStack;
 import com.gmail.subnokoii78.util.file.json.JSONObject;
@@ -13,7 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.EntityTeleportEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -157,7 +156,7 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
 
             final EntitySelector<Entity> selector = EntitySelector.E.build().arg(SelectorArgument.TAG, "plugin_api.target");
 
-            final Set<Entity> entities = new HashSet<>(new SourceStack(ExecuteSender.of(entity)).getEntities(selector));
+            final Set<Entity> entities = new HashSet<>(new SourceStack(SourceOrigin.of(entity)).getEntities(selector));
 
             for (final String tag : entity.getScoreboardTags()) {
                 if (!tag.startsWith("plugin_api.json_message")) continue;
