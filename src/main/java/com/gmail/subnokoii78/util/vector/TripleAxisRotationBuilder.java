@@ -111,9 +111,8 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
     @Override
     @Destructive
     public @NotNull TripleAxisRotationBuilder invert() {
-        final var rot = getDirection3d().invert().getRotation2d();
-        yaw(rot.yaw());
-        pitch(rot.pitch());
+        yaw(yaw + 180);
+        pitch(-pitch);
         return this;
     }
 
@@ -124,10 +123,12 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
     }
 
     @Override
-    public @NotNull String format(@NotNull String format) {
-        final String yaw = String.format("%.2f", this.yaw);
-        final String pitch = String.format("%.2f", this.pitch);
-        final String roll = String.format("%.2f", this.roll);
+    public @NotNull String format(@NotNull String format, int digits) {
+        final String floatFormat = "%." + digits + "f";
+
+        final String yaw = String.format(floatFormat, this.yaw);
+        final String pitch = String.format(floatFormat, this.pitch);
+        final String roll = String.format(floatFormat, this.roll);
 
         return format
             .replaceAll("\\$x", yaw)
@@ -141,7 +142,7 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
 
     @Override
     public @NotNull String toString() {
-        return format("($x, $y, $z)");
+        return format("($x, $y, $z)", 2);
     }
 
     @Override

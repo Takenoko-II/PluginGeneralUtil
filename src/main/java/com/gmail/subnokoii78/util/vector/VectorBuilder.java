@@ -1,8 +1,6 @@
 package com.gmail.subnokoii78.util.vector;
 
 import com.gmail.subnokoii78.util.function.TriFunction;
-import org.bukkit.Bukkit;
-import org.bukkit.Particle;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiFunction;
@@ -85,7 +83,7 @@ public interface VectorBuilder<T extends VectorBuilder<T, U>, U extends Number> 
      * このベクトルを形式に従って文字列化します。
      * @return 文字列化されたベクトル
      */
-    @NotNull String format(@NotNull String format);
+    @NotNull String format(@NotNull String format, int digits);
 
     /**
      * このベクトルを文字列化します。
@@ -105,8 +103,4 @@ public interface VectorBuilder<T extends VectorBuilder<T, U>, U extends Number> 
      * @return components.every(v => v === 0);
      */
     boolean isZero();
-
-    static void spawnFlameParticle(@NotNull Vector3Builder vector3Builder) {
-        Bukkit.getWorlds().getFirst().spawnParticle(Particle.FLAME, vector3Builder.withWorld(Bukkit.getWorlds().getFirst()), 1, 0, 0, 0, 0);
-    }
 }

@@ -5,6 +5,10 @@ import com.gmail.subnokoii78.util.file.json.JSONObject;
 import com.gmail.subnokoii78.util.file.json.JSONSerializer;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ScoreComponent;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -322,7 +326,8 @@ public class SourceStack {
      */
     public @NotNull JSONObject getAsJSONObject() {
         final JSONObject jsonObject = new JSONObject();
-        jsonObject.set("sender", sender.getName());
+
+        jsonObject.set("sender", JSONComponentSerializer.json().serialize(sender.getName()));
         jsonObject.set("executor", hasExecutor() ? executor.getName() : "null");
         final JSONArray loc = new JSONArray();
         loc.add(location.x());
@@ -348,8 +353,8 @@ public class SourceStack {
         final String common = String.format(
             "in %s positioned %s rotated %s",
             VanillaDimensionProvider.get(dimension).getId(),
-            location.format("$c $c $c"),
-            rotation.format("$c $c")
+            location.format("$c $c $c", 5),
+            rotation.format("$c $c", 5)
         );
 
         final String commandString;

@@ -342,24 +342,26 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
      * @return 文字列化されたベクトル
      */
     @Override
-    public @NotNull String format(@NotNull String format) {
-        final String x = String.format("%.2f", x());
-        final String y = String.format("%.2f", y());
-        final String z = String.format("%.2f", z());
+    public @NotNull String format(@NotNull String format, int digits) {
+        final String doubleFormat = "%." + digits + "f";
+
+        final String __x__ = String.format(doubleFormat, x);
+        final String __y__ = String.format(doubleFormat, y);
+        final String __z__ = String.format(doubleFormat, z);
 
         return format
-        .replaceAll("\\$x", x)
-        .replaceAll("\\$y", y)
-        .replaceAll("\\$z", z)
-        .replaceFirst("\\$c", x)
-        .replaceFirst("\\$c", y)
-        .replaceFirst("\\$c", z)
-        .replaceAll("\\$c", "");
+            .replaceAll("\\$x", __x__)
+            .replaceAll("\\$y", __y__)
+            .replaceAll("\\$z", __z__)
+            .replaceFirst("\\$c", __x__)
+            .replaceFirst("\\$c", __y__)
+            .replaceFirst("\\$c", __z__)
+            .replaceAll("\\$c", "");
     }
 
     @Override
     public @NotNull String toString() {
-        return format("($x, $y, $z)");
+        return format("($x, $y, $z)", 2);
     }
 
     @Override

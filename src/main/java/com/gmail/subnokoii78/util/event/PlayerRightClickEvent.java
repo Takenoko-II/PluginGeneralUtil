@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.jetbrains.annotations.NotNull;
 
 public class PlayerRightClickEvent extends PlayerClickEvent {
     private final Action action;
@@ -54,7 +55,7 @@ public class PlayerRightClickEvent extends PlayerClickEvent {
     }
 
     @Override
-    public CustomEventType<?> getType() {
+    public @NotNull CustomEventType<?> getType() {
         return CustomEventType.PLAYER_RIGHT_CLICK;
     }
 

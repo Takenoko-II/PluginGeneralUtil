@@ -128,9 +128,8 @@ public class DualAxisRotationBuilder implements VectorBuilder<DualAxisRotationBu
     @Override
     @Destructive
     public @NotNull DualAxisRotationBuilder invert() {
-        final var rot = getDirection3d().invert().getRotation2d();
-        yaw(rot.yaw);
-        pitch(rot.pitch);
+        yaw(yaw + 180f);
+        pitch(-pitch);
         return this;
     }
 
@@ -141,21 +140,23 @@ public class DualAxisRotationBuilder implements VectorBuilder<DualAxisRotationBu
     }
 
     @Override
-    public @NotNull String format(@NotNull String format) {
-        final String yawStr = String.format("%.2f", yaw());
-        final String pitchStr = String.format("%.2f", pitch());
+    public @NotNull String format(@NotNull String format, int digits) {
+        final String floatFormat = "%." + digits + "f";
+
+        final String yaw = String.format(floatFormat, this.yaw);
+        final String pitch = String.format(floatFormat, this.pitch);
 
         return format
-        .replaceAll("\\$x", yawStr)
-        .replaceAll("\\$y", pitchStr)
-        .replaceFirst("\\$c", yawStr)
-        .replaceFirst("\\$c", pitchStr)
-        .replaceAll("\\$c", "");
+            .replaceAll("\\$x", yaw)
+            .replaceAll("\\$y", pitch)
+            .replaceFirst("\\$c", yaw)
+            .replaceFirst("\\$c", pitch)
+            .replaceAll("\\$c", "");
     }
 
     @Override
     public @NotNull String toString() {
-        return format("($x, $y)");
+        return format("($x, $y)", 2);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.gmail.subnokoii78.util.event;
 
 import org.bukkit.event.Cancellable;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class CancellableCustomEvent implements CustomEvent {
     private final Cancellable event;
@@ -14,5 +15,5 @@ public abstract class CancellableCustomEvent implements CustomEvent {
     }
 
     @Override
-    public abstract CustomEventType<?> getType();
+    public abstract @NotNull CustomEventType<?> getType();
 }

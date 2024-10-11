@@ -2,6 +2,7 @@ package com.gmail.subnokoii78.util.event;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.jetbrains.annotations.NotNull;
 
 public class PlayerClickEvent extends CancellableCustomEvent {
     private final Player player;
@@ -27,7 +28,7 @@ public class PlayerClickEvent extends CancellableCustomEvent {
     }
 
     @Override
-    public CustomEventType<?> getType() {
+    public @NotNull CustomEventType<?> getType() {
         return CustomEventType.PLAYER_CLICK;
     }
 }

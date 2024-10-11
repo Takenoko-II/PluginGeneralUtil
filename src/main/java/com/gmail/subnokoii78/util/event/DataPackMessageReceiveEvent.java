@@ -36,7 +36,7 @@ public class DataPackMessageReceiveEvent implements CustomEvent {
     }
 
     @Override
-    public CustomEventType<?> getType() {
+    public @NotNull CustomEventType<?> getType() {
         return CustomEventType.DATA_PACK_MESSAGE_RECEIVE;
     }
 
