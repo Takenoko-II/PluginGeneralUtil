@@ -209,6 +209,11 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
     public double getAngleBetween(@NotNull Vector3Builder other) {
         final double p = this.dot(other) / (length() * other.length());
 
+        // 浮動小数点数の誤差のため
+        if (Math.abs(p) > 1d) {
+            return 0;
+        }
+
         return Math.acos(p) * 180 / Math.PI;
     }
 

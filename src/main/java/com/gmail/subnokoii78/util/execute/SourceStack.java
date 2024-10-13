@@ -5,17 +5,14 @@ import com.gmail.subnokoii78.util.file.json.JSONObject;
 import com.gmail.subnokoii78.util.file.json.JSONSerializer;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.ScoreComponent;
-import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
-import org.intellij.lang.annotations.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,6 +50,20 @@ public class SourceStack {
      */
     public SourceStack(@NotNull SourceOrigin<?> sender) {
         this.sender = sender;
+        sender.callOrigin(Entity.class, entity -> {
+            write(entity);
+            write(entity.getWorld());
+            write(Vector3Builder.from(entity));
+            write(DualAxisRotationBuilder.from(entity));
+            return null;
+        });
+
+        sender.callOrigin(Block.class, block -> {
+            write(block.getWorld());
+            write(Vector3Builder.from(block.getLocation()));
+            write(DualAxisRotationBuilder.from(block.getLocation()));
+            return null;
+        });
     }
 
     /**

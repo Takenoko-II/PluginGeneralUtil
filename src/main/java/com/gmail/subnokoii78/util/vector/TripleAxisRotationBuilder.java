@@ -111,8 +111,9 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
     @Override
     @Destructive
     public @NotNull TripleAxisRotationBuilder invert() {
-        yaw(yaw + 180);
-        pitch(-pitch);
+        final DualAxisRotationBuilder rotation = getRotation2d().invert();
+        yaw = rotation.yaw();
+        pitch = rotation.pitch();
         return this;
     }
 
@@ -193,8 +194,12 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
     public static final class LocalAxisProviderE extends Vector3Builder.LocalAxisProvider {
         private final double[][] matrix;
 
+        private final TripleAxisRotationBuilder rotation;
+
         private LocalAxisProviderE(TripleAxisRotationBuilder rotation) {
             super(rotation.getDirection3d());
+
+            this.rotation = rotation;
 
             final double radian = rotation.roll * Math.PI / 180;
             final double sin = Math.sin(radian);
@@ -205,9 +210,21 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
             final double z = axis.z();
 
             this.matrix = new double[][]{
-                new double[]{cos + x * x * (1 - cos), x * y * (1 - cos) - z * sin, x * z * (1 - cos) + y * sin},
-                new double[]{y * x * (1 - cos) + z * sin, cos + y * y * (1 - cos), y * z * (1 - cos) - x * sin},
-                new double[]{z * x * (1 - cos) - y * sin, z * y * (1 - cos) + x * sin, cos + z * z * (1 - cos)}
+                new double[]{
+                    cos + x * x * (1 - cos),
+                    x * y * (1 - cos) - z * sin,
+                    x * z * (1 - cos) + y * sin
+                },
+                new double[]{
+                    y * x * (1 - cos) + z * sin,
+                    cos + y * y * (1 - cos),
+                    y * z * (1 - cos) - x * sin
+                },
+                new double[]{
+                    z * x * (1 - cos) - y * sin,
+                    z * y * (1 - cos) + x * sin,
+                    cos + z * z * (1 - cos)
+                }
             };
         }
 
@@ -223,7 +240,7 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
         }
 
         public @NotNull Vector3Builder getY() {
-            return rotate(super.getY());
+            return getZ().cross(getX());
         }
 
         public @NotNull Vector3Builder getZ() {

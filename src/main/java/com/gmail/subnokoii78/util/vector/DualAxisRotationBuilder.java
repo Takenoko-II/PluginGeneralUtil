@@ -128,8 +128,9 @@ public class DualAxisRotationBuilder implements VectorBuilder<DualAxisRotationBu
     @Override
     @Destructive
     public @NotNull DualAxisRotationBuilder invert() {
-        yaw(yaw + 180f);
-        pitch(-pitch);
+        final DualAxisRotationBuilder rotation = getDirection3d().invert().getRotation2d();
+        yaw = rotation.yaw();
+        pitch = rotation.pitch();
         return this;
     }
 
