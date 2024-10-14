@@ -321,8 +321,10 @@ public final class TiltedBoundingBox {
         final BoundingBox box = entity.getBoundingBox();
 
         final TiltedBoundingBox instance = new TiltedBoundingBox()
-            .size(new Vector3Builder(box.getWidthX(), box.getHeight(), box.getWidthZ()))
+            .size(new Vector3Builder(box.getWidthX(), box.getHeight() * 2, box.getWidthZ()))
             .put(entity.getLocation());
+
+        // instance.showOutline(Color.BLUE);
 
         return isCollides(instance);
     }
