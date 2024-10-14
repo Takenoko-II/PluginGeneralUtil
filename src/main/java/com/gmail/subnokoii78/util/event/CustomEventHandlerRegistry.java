@@ -162,9 +162,14 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
                 if (!tag.startsWith("plugin_api.json_message")) continue;
 
                 final String message = tag.replaceFirst("^plugin_api\\.json_message\\s+", "");
-                final JSONObject jsonObject = new JSONParser(message).parseObject();
 
-                getRegistry(CustomEventType.DATA_PACK_MESSAGE_RECEIVE).call(new DataPackMessageReceiveEvent(entity, entities, jsonObject));
+                try {
+                    final JSONObject jsonObject = new JSONParser(message).parseObject();
+                    getRegistry(CustomEventType.DATA_PACK_MESSAGE_RECEIVE).call(new DataPackMessageReceiveEvent(entity, entities, jsonObject));
+                }
+                catch (RuntimeException e) {
+                    return;
+                }
             }
         }
     }

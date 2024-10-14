@@ -1,19 +1,11 @@
 package com.gmail.subnokoii78.util.vector;
 
-import com.gmail.subnokoii78.util.shape.ParticleSpawner;
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.Particle;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.BoundingBox;
-import org.bukkit.util.RayTraceResult;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -45,12 +37,15 @@ import java.util.stream.Collectors;
  *               佛祖保佑         永无BUG
  */
 
+/**
+ * オイラー角を用いて自由に傾けることができる当たり判定のボックス
+ */
 public final class TiltedBoundingBox {
-    private final double width;
+    private double width;
 
-    private final double height;
+    private double height;
 
-    private final double depth;
+    private double depth;
 
     private final TripleAxisRotationBuilder rotation = new TripleAxisRotationBuilder();
 
@@ -58,47 +53,148 @@ public final class TiltedBoundingBox {
 
     private final Vector3Builder center = new Vector3Builder();
 
-    public TiltedBoundingBox() {
-        width = 1d;
-        height = 1d;
-        depth = 1d;
-    }
-
+    /**
+     * 大きさを指定してボックスを作成します。
+     * @param width 横の長さ
+     * @param height 縦の長さ
+     * @param depth 奥行きの長さ
+     */
     public TiltedBoundingBox(double width, double height, double depth) {
         this.width = width;
         this.height = height;
         this.depth = depth;
     }
 
-    public void put(@NotNull World world, @NotNull Vector3Builder location) {
-        this.world = world;
-        center.x(location.x());
-        center.y(location.y());
-        center.z(location.z());
+    /**
+     * 1^3の立方体のボックスを作成します。
+     */
+    public TiltedBoundingBox() {
+        this(1d, 1d, 1d);
     }
 
-    public void rotate(@NotNull TripleAxisRotationBuilder rotation) {
-        this.rotation.add(rotation);
+    /**
+     * {@link Location}を使用してディメンション、座標、回転を一度に変更します。
+     * <br>回転のロール角は0に設定されます。
+     * @param location Bukkit API の {@link Location}
+     * @return this
+     */
+    public @NotNull TiltedBoundingBox put(@NotNull Location location) {
+        return dimension(location.getWorld())
+        .center(Vector3Builder.from(location))
+        .rotation(TripleAxisRotationBuilder.from(DualAxisRotationBuilder.from(location)));
     }
 
-    public boolean isInside(Vector3Builder vector3) {
-        final TripleAxisRotationBuilder.LocalAxisProviderE axes = rotation.getLocalAxisProviderE();
-        final Vector3Builder x = axes.getX().length(width / 2);
-        final Vector3Builder y = axes.getY().length(height / 2);
-        final Vector3Builder z = axes.getZ().length(depth / 2);
+    /**
+     * ボックスの設置されているディメンションを取得します。
+     * @return ディメンション
+     */
+    public @NotNull World dimension() {
+        return world;
+    }
 
-        final Vector3Builder[] locations = new Vector3Builder[]{
-            center.copy().add(z), // forward
-            center.copy().subtract(z), // back
-            center.copy().add(x), // right
-            center.copy().subtract(x), // left
-            center.copy().add(y), // up
-            center.copy().subtract(y) // down
-        };
+    /**
+     * ボックスのディメンションを変更します。
+     * @param dimension ディメンション
+     * @return this
+     */
+    public @NotNull TiltedBoundingBox dimension(@NotNull World dimension) {
+        world = dimension;
+        return this;
+    }
+
+    /**
+     * ボックスの中心座標を取得します。
+     * @return 中心座標
+     */
+    public @NotNull Vector3Builder center() {
+        return center.copy();
+    }
+
+    /**
+     * ボックスの中心座標を移動させます。
+     * @param center 中心座標
+     * @return this
+     */
+    public @NotNull TiltedBoundingBox center(@NotNull Vector3Builder center) {
+        this.center
+            .x(center.x())
+            .y(center.y())
+            .z(center.z());
+        return this;
+    }
+
+    /**
+     * ボックスの回転を取得します。
+     * @return 回転
+     */
+    public @NotNull TripleAxisRotationBuilder rotation() {
+        return rotation.copy();
+    }
+
+    /**
+     * ボックスの回転を上書きします。
+     * @param rotation 回転
+     * @return this
+     */
+    public @NotNull TiltedBoundingBox rotation(@NotNull TripleAxisRotationBuilder rotation) {
+        this.rotation
+            .yaw(rotation.yaw())
+            .pitch(rotation.pitch())
+            .roll(rotation.roll());
+        return this;
+    }
+
+    /**
+     * ボックスの大きさを取得します。
+     * @return 大きさ
+     */
+    public @NotNull Vector3Builder size() {
+        return new Vector3Builder(width, height, depth);
+    }
+
+    /**
+     * ボックスの大きさを変更します。
+     * @param size 大きさ
+     * @return this
+     */
+    public @NotNull TiltedBoundingBox size(@NotNull Vector3Builder size) {
+        width = size.x();
+        height = size.y();
+        depth = size.z();
+        return this;
+    }
+
+    /**
+     * {@link Location}として諸々の情報を一度に取得します。
+     * @return {@link Location}
+     */
+    public @NotNull Location getAsBukkitLocation() {
+        return new Location(world, center.x(), center.y(), center.z(), rotation.yaw(), rotation.pitch());
+    }
+
+    /**
+     * 座標がボックス内部にあるかどうかをテストします。
+     * @param point　座標
+     * @return 内部ならtrue
+     */
+    public boolean isInside(@NotNull Vector3Builder point) {
+        final TripleAxisRotationBuilder.LocalAxisProviderE providerE = rotation.getLocalAxisProviderE();
+        final Vector3Builder x = providerE.getX().length(width / 2);
+        final Vector3Builder y = providerE.getY().length(height / 2);
+        final Vector3Builder z = providerE.getZ().length(depth / 2);
+
+        final Set<Vector3Builder> locations = Set.of(
+            center().add(z), // forward
+            center().subtract(z), // back
+            center().add(x), // right
+            center().subtract(x), // left
+            center().add(y), // up
+            center().subtract(y) // down
+        );
 
         for (final Vector3Builder location : locations) {
             final Vector3Builder directionToCenter = location.getDirectionTo(center);
-            final Vector3Builder directionToPoint = location.getDirectionTo(vector3);
+            final Vector3Builder directionToPoint = location.getDirectionTo(point);
 
             if (directionToCenter.dot(directionToPoint) < 0) {
                 return false;
@@ -108,26 +204,37 @@ public final class TiltedBoundingBox {
         return true;
     }
 
-    public @NotNull Set<Vector3Builder> getCorners() {
+    /**
+     * ボックスの8つの頂点座標をすべて取得します。
+     * @return 頂点の絶対座標の {@link Set}
+     */
+    public @NotNull Set<Vector3Builder> getCornerPoints() {
         final TripleAxisRotationBuilder.LocalAxisProviderE providerE = rotation.getLocalAxisProviderE();
         final Vector3Builder x = providerE.getX().length(width / 2);
         final Vector3Builder y = providerE.getY().length(height / 2);
         final Vector3Builder z = providerE.getZ().length(depth / 2);
 
         return Set.of(
-            center.copy().subtract(x).subtract(y).subtract(z),
-            center.copy().add(x).subtract(y).subtract(z),
-            center.copy().subtract(x).add(y).subtract(z),
-            center.copy().subtract(x).subtract(y).add(z),
-            center.copy().add(x).add(y).subtract(z),
-            center.copy().subtract(x).add(y).add(z),
-            center.copy().add(x).subtract(y).add(z),
-            center.copy().add(x).add(y).add(z)
+            center().subtract(x).subtract(y).subtract(z),
+            center().add(x).subtract(y).subtract(z),
+            center().subtract(x).add(y).subtract(z),
+            center().subtract(x).subtract(y).add(z),
+            center().add(x).add(y).subtract(z),
+            center().subtract(x).add(y).add(z),
+            center().add(x).subtract(y).add(z),
+            center().add(x).add(y).add(z)
         );
     }
 
+    /**
+     * このボックスが他のボックスに衝突しているかどうかをテストします。
+     * @param other 他のボックス
+     * @return 衝突していればtrue
+     */
     public boolean isCollides(@NotNull TiltedBoundingBox other) {
         if (!world.equals(other.world)) return false;
+
+        // Separating Axis Theorem (SAT: 分離軸定理)
 
         final var providerA = rotation.getLocalAxisProviderE();
         final var providerB = other.rotation.getLocalAxisProviderE();
@@ -151,9 +258,9 @@ public final class TiltedBoundingBox {
         );
 
         // Aの頂点座標
-        final Set<Vector3Builder> cornersA = getCorners();
+        final Set<Vector3Builder> cornersA = getCornerPoints();
         // Bの頂点座標
-        final Set<Vector3Builder> cornersB = other.getCorners();
+        final Set<Vector3Builder> cornersB = other.getCornerPoints();
 
         // あとで使うレコード
         record Range(double min, double max) {
@@ -205,20 +312,22 @@ public final class TiltedBoundingBox {
         return true;
     }
 
+    /**
+     * このボックスが特定のエンティティに衝突しているかどうかをテストします。
+     * @param entity エンティティ
+     * @return 衝突していればtrue
+     */
     public boolean isCollides(@NotNull Entity entity) {
         final BoundingBox box = entity.getBoundingBox();
 
-        final TiltedBoundingBox instance = new TiltedBoundingBox(
-            box.getWidthX(),
-            box.getHeight(),
-            box.getWidthZ()
-        );
-
-        instance.put(entity.getWorld(), Vector3Builder.from(box.getCenter()));
+        final TiltedBoundingBox instance = new TiltedBoundingBox()
+            .size(new Vector3Builder(box.getWidthX(), box.getHeight(), box.getWidthZ()))
+            .put(entity.getLocation());
 
         return isCollides(instance);
     }
 
+/*
     @Deprecated
     private boolean getIsIntersectingBySeparatingAxisTheorem(BoundingBox box) {
         final TripleAxisRotationBuilder.LocalAxisProviderE axes = rotation.getLocalAxisProviderE();
@@ -324,65 +433,6 @@ public final class TiltedBoundingBox {
         return false;
     }
 
-    private void outline(Consumer<Vector3Builder> consumer) {
-        final TripleAxisRotationBuilder.LocalAxisProviderE axes = rotation.getLocalAxisProviderE();
-        final Vector3Builder x = axes.getX().length(width / 2);
-        final Vector3Builder y = axes.getY().length(height / 2);
-        final Vector3Builder z = axes.getZ().length(depth / 2);
-
-        final Vector3Builder $000 = center.copy().subtract(x).subtract(y).subtract(z);
-        final Vector3Builder $100 = center.copy().add(x).subtract(y).subtract(z);
-        final Vector3Builder $010 = center.copy().subtract(x).add(y).subtract(z);
-        final Vector3Builder $001 = center.copy().subtract(x).subtract(y).add(z);
-        final Vector3Builder $110 = center.copy().add(x).add(y).subtract(z);
-        final Vector3Builder $011 = center.copy().subtract(x).add(y).add(z);
-        final Vector3Builder $101 = center.copy().add(x).subtract(y).add(z);
-        final Vector3Builder $111 = center.copy().add(x).add(y).add(z);
-
-        for (int i = 0; i < 10; i++) {
-            consumer.accept($000.lerp($100, i / 10f));
-            consumer.accept($000.lerp($010, i / 10f));
-            consumer.accept($000.lerp($001, i / 10f));
-            consumer.accept($101.lerp($100, i / 10f));
-            consumer.accept($101.lerp($111, i / 10f));
-            consumer.accept($101.lerp($001, i / 10f));
-            consumer.accept($110.lerp($010, i / 10f));
-            consumer.accept($110.lerp($100, i / 10f));
-            consumer.accept($110.lerp($111, i / 10f));
-            consumer.accept($011.lerp($010, i / 10f));
-            consumer.accept($011.lerp($001, i / 10f));
-            consumer.accept($011.lerp($111, i / 10f));
-        }
-
-        consumer.accept(center.copy());
-        consumer.accept(center.copy().add(x.length(3d)));
-        consumer.accept(center.copy().add(y.length(3d)));
-        consumer.accept(center.copy().add(z.length(3d)));
-    }
-
-    public void showOutline() {
-        showOutline(Color.WHITE);
-    }
-
-    public void showOutline(@NotNull Color color) {
-        outline(v -> world.spawnParticle(
-            Particle.DUST,
-            v.withWorld(world),
-            1,
-            0.0, 0.0, 0.0,
-            0.01,
-            new Particle.DustOptions(color, 0.5f)
-        ));
-
-        getCorners().forEach(corner -> {
-            new ParticleSpawner<>(Particle.END_ROD, null)
-                .place(world, corner)
-                .speed(0)
-                .count(1)
-                .spawn();
-        });
-    }
-
     @Deprecated
     public Entity[] getIntersection() {
         return world.getEntities()
@@ -398,12 +448,89 @@ public final class TiltedBoundingBox {
         .stream().filter(entity -> isIntersectingBox(entity.getBoundingBox(), rayCount))
         .toArray(Entity[]::new);
     }
+*/
 
-    @ApiStatus.Experimental
-    public @NotNull Set<Entity> getIntersectingEntitiesBySAT() {
+    /**
+     * ボックスの外枠の座標それぞれにおいて関数を呼び出します。
+     * @param callback コールバック
+     */
+    public void outline(@NotNull Consumer<Vector3Builder> callback) {
+        final TripleAxisRotationBuilder.LocalAxisProviderE axes = rotation.getLocalAxisProviderE();
+        final Vector3Builder x = axes.getX().length(width / 2);
+        final Vector3Builder y = axes.getY().length(height / 2);
+        final Vector3Builder z = axes.getZ().length(depth / 2);
+
+        final Vector3Builder $000 = center.copy().subtract(x).subtract(y).subtract(z);
+        final Vector3Builder $100 = center.copy().add(x).subtract(y).subtract(z);
+        final Vector3Builder $010 = center.copy().subtract(x).add(y).subtract(z);
+        final Vector3Builder $001 = center.copy().subtract(x).subtract(y).add(z);
+        final Vector3Builder $110 = center.copy().add(x).add(y).subtract(z);
+        final Vector3Builder $011 = center.copy().subtract(x).add(y).add(z);
+        final Vector3Builder $101 = center.copy().add(x).subtract(y).add(z);
+        final Vector3Builder $111 = center.copy().add(x).add(y).add(z);
+
+        for (int i = 0; i < 10; i++) {
+            callback.accept($000.lerp($100, i / 10f));
+            callback.accept($000.lerp($010, i / 10f));
+            callback.accept($000.lerp($001, i / 10f));
+            callback.accept($101.lerp($100, i / 10f));
+            callback.accept($101.lerp($111, i / 10f));
+            callback.accept($101.lerp($001, i / 10f));
+            callback.accept($110.lerp($010, i / 10f));
+            callback.accept($110.lerp($100, i / 10f));
+            callback.accept($110.lerp($111, i / 10f));
+            callback.accept($011.lerp($010, i / 10f));
+            callback.accept($011.lerp($001, i / 10f));
+            callback.accept($011.lerp($111, i / 10f));
+        }
+    }
+
+    /**
+     * 範囲の外枠をdustパーティクルで描画します。
+     * @param color パーティクルの色
+     */
+    public void showOutline(@NotNull Color color) {
+        outline(v -> {
+            world.spawnParticle(
+                Particle.DUST,
+                v.withWorld(world),
+                1,
+                0.0, 0.0, 0.0,
+                0.01,
+                new Particle.DustOptions(color, 0.5f)
+            );
+        });
+
+        getCornerPoints().forEach(corner -> {
+            world.spawnParticle(
+                Particle.END_ROD,
+                corner.withWorld(world),
+                1,
+                0.0, 0.0, 0.0,
+                0.01
+            );
+        });
+    }
+
+    /**
+     * 範囲の外枠を白色のdustパーティクルで描画します。
+     */
+    public void showOutline() {
+        showOutline(Color.WHITE);
+    }
+
+    /**
+     * このボックスに衝突しているエンティティをすべて取得します。
+     * @return 衝突しているエンティティの {@link Set}
+     */
+    public @NotNull Set<Entity> getCollidingEntities() {
         return world.getEntities()
             .stream()
             .filter(this::isCollides)
             .collect(Collectors.toSet());
+    }
+
+    static {
+        new TiltedBoundingBox();
     }
 }

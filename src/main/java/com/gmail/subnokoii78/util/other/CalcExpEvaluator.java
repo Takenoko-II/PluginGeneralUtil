@@ -1,9 +1,18 @@
 package com.gmail.subnokoii78.util.other;
 
+import com.gmail.subnokoii78.util.random.Xorshift128;
+import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class CalcExpEvaluator {
     private static final Set<Character> IGNORED = Set.of(' ', '\n');
@@ -444,6 +453,11 @@ public final class CalcExpEvaluator {
         final double value = polynomial();
         checkExtra();
         location = 0;
+
+        if (Double.isNaN(value)) {
+            throw new CalcExpEvalException("式からNaNが出力されました");
+        }
+
         return value;
     }
 
@@ -467,6 +481,79 @@ public final class CalcExpEvaluator {
         CONSTANTS.put(name, constant);
     }
 
+    public <T> void define(@NotNull String name, @NotNull Class<T> clazz, @Nullable T object) {
+        final Predicate<Class<?>> classChecker = (__clazz__) -> {
+            return __clazz__.equals(Double.class)
+                || __clazz__.equals(double.class);
+        };
+
+        for (final Field field : clazz.getFields()) {
+            try {
+                field.setAccessible(true);
+                final Object value = field.get(object);
+                if (value instanceof Number number) {
+                    define(name + "." + field.getName(), number.doubleValue());
+                }
+            }
+            catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("NEVER HAPPENS");
+            }
+        }
+
+        for (final Method method : clazz.getMethods()) {
+            if (!classChecker.test(method.getReturnType())) continue;
+
+            final String id = name + "." + method.getName();
+
+            method.setAccessible(true);
+
+            if (isDefined(id)) undefine(id);
+
+            switch (method.getParameterCount()) {
+                case 0:
+                    define(id, () -> {
+                        try {
+                            return (double) method.invoke(object);
+                        }
+                        catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeException("NEVER HAPPENS");
+                        }
+                    });
+                    break;
+                case 1:
+                    if (!classChecker.test(method.getParameterTypes()[0])) continue;
+
+                    define(id, x -> {
+                        try {
+                            return (double) method.invoke(object, x);
+                        }
+                        catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeException("NEVER HAPPENS");
+                        }
+                    });
+
+                    break;
+                case 2:
+                    if (!classChecker.test(method.getParameterTypes()[0]) || !classChecker.test(method.getParameterTypes()[1])) {
+                        continue;
+                    }
+
+                    define(id, (x, y) -> {
+                        try {
+                            return (double) method.invoke(object, x, y);
+                        }
+                        catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeException("NEVER HAPPENS");
+                        }
+                    });
+
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
     public void undefine(@NotNull String name) {
         if (isDefined(name)) {
             ZERO_ARGUMENT_FUNCTIONS.remove(name);
@@ -485,9 +572,9 @@ public final class CalcExpEvaluator {
         final CalcExpEvaluator evaluator = new CalcExpEvaluator();
 
         evaluator.define("NaN", Double.NaN);
-        evaluator.define("pi", Math.PI);
-        evaluator.define("e", Math.E);
-        evaluator.define("infinity", Double.POSITIVE_INFINITY);
+        evaluator.define("PI", Math.PI);
+        evaluator.define("E", Math.E);
+        evaluator.define("Infinity", Double.POSITIVE_INFINITY);
 
         evaluator.define("random", Math::random);
 
