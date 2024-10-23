@@ -6,8 +6,11 @@ import com.gmail.subnokoii78.util.execute.SelectorArgument;
 import com.gmail.subnokoii78.util.execute.SourceStack;
 import com.gmail.subnokoii78.util.file.json.JSONObject;
 import com.gmail.subnokoii78.util.file.json.JSONParser;
+import com.gmail.subnokoii78.util.schedule.GameTickScheduler;
+import com.gmail.subnokoii78.util.schedule.RealTimeScheduler;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -62,12 +65,12 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
         getRegistry(type).listeners.clear();
     }
 
-    private static final class EventFiredTimeStorage<T extends Event> {
-        private static final Map<Class<? extends Event>, EventFiredTimeStorage<? extends Event>> storages = new HashMap<>();
+    private static final class EventFiredTimeStorage {
+        private static final Map<Class<? extends Event>, EventFiredTimeStorage> storages = new HashMap<>();
 
         private final Map<Player, Long> timeStorage = new HashMap<>();
 
-        private EventFiredTimeStorage(Class<T> clazz) {
+        private EventFiredTimeStorage(Class<? extends Event> clazz) {
             if (storages.containsKey(clazz)) {
                 throw new IllegalArgumentException();
             }
@@ -83,12 +86,12 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
             timeStorage.put(player, System.currentTimeMillis());
         }
 
-        private static <T extends Event> EventFiredTimeStorage<T> getStorage(Class<T> clazz) {
+        private static <T extends Event> EventFiredTimeStorage getStorage(Class<T> clazz) {
             if (storages.containsKey(clazz)) {
-                return (EventFiredTimeStorage<T>) storages.get(clazz);
+                return storages.get(clazz);
             }
             else {
-                return new EventFiredTimeStorage<>(clazz);
+                return new EventFiredTimeStorage(clazz);
             }
         }
     }
@@ -111,7 +114,6 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
 
         @EventHandler
         public void onPlayerDropItem(PlayerDropItemEvent event) {
-            // デフォルトでPlayerInteractEventよりも早く呼び出される
             EventFiredTimeStorage.getStorage(PlayerDropItemEvent.class).setTime(event.getPlayer());
         }
 
@@ -121,27 +123,32 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
 
             if (event.getAction().isRightClick()) {
                 EventFiredTimeStorage.getStorage(PlayerInteractEvent.class).setTime(player);
-                getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player, event, false));
+                getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player, event, PlayerClickEvent.Click.RIGHT));
                 getRegistry(CustomEventType.PLAYER_RIGHT_CLICK).call(new PlayerRightClickEvent(player, event));
                 return;
             }
 
-            final long dropEventTime = EventFiredTimeStorage.getStorage(PlayerDropItemEvent.class).getTime(player);
-            final long interactEventTime = EventFiredTimeStorage.getStorage(PlayerInteractEvent.class).getTime(player);
+            new RealTimeScheduler(() -> {
+                final long dropEventTime = EventFiredTimeStorage.getStorage(PlayerDropItemEvent.class).getTime(player);
+                final long interactEventTime = EventFiredTimeStorage.getStorage(PlayerInteractEvent.class).getTime(player);
 
-            // ドロップと同時のとき発火しない
-            if (System.currentTimeMillis() - dropEventTime < 50L) return;
-            // 右クリックと同時のとき発火しない
-            else if (System.currentTimeMillis() - interactEventTime < 50L) return;
+                System.out.println("drop delta: " + (System.currentTimeMillis() - dropEventTime));
 
-            getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player, event, true));
+                // ドロップと同時のとき発火しない
+                if (System.currentTimeMillis() - dropEventTime < 50L) return;
+                // 右クリックと同時のとき発火しない
+                else if (System.currentTimeMillis() - interactEventTime < 50L) return;
 
-            if (event.getClickedBlock() == null) {
-                getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(event.getPlayer(), event));
-            }
-            else {
-                getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(event.getPlayer(), event.getClickedBlock(), event));
-            }
+                new GameTickScheduler(() -> {
+                    getRegistry(CustomEventType.PLAYER_CLICK).call(new PlayerClickEvent(player, event, PlayerClickEvent.Click.LEFT));
+                    if (event.getClickedBlock() == null) {
+                        getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(event.getPlayer(), event));
+                    }
+                    else {
+                        getRegistry(CustomEventType.PLAYER_LEFT_CLICK).call(new PlayerLeftClickEvent(event.getPlayer(), event.getClickedBlock(), event));
+                    }
+                }).runTimeout();
+            }).runTimeout(8L);
         }
 
         @EventHandler
@@ -152,20 +159,25 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
         @EventHandler
         public void onEntityTeleport(EntityTeleportEvent event) {
             final Entity entity = event.getEntity();
-            if (!entity.getScoreboardTags().contains("plugin_api.messenger")) return;
+            final Set<String> tags = entity.getScoreboardTags();
+
+            if (!tags.contains("plugin_api.messenger")) return;
 
             final EntitySelector<Entity> selector = EntitySelector.E.build().arg(SelectorArgument.TAG, "plugin_api.target");
+            final Set<Entity> targets = new HashSet<>(new SourceStack(SourceOrigin.of(entity)).getEntities(selector));
 
-            final Set<Entity> entities = new HashSet<>(new SourceStack(SourceOrigin.of(entity)).getEntities(selector));
+            final Location location = Objects.requireNonNullElse(event.getTo(), event.getFrom());
 
-            for (final String tag : entity.getScoreboardTags()) {
+            entity.remove();
+
+            for (final String tag : tags) {
                 if (!tag.startsWith("plugin_api.json_message")) continue;
 
                 final String message = tag.replaceFirst("^plugin_api\\.json_message\\s+", "");
 
                 try {
                     final JSONObject jsonObject = new JSONParser(message).parseObject();
-                    getRegistry(CustomEventType.DATA_PACK_MESSAGE_RECEIVE).call(new DataPackMessageReceiveEvent(entity, entities, jsonObject));
+                    getRegistry(CustomEventType.DATA_PACK_MESSAGE_RECEIVE).call(new DataPackMessageReceiveEvent(location, targets, jsonObject));
                 }
                 catch (RuntimeException e) {
                     return;

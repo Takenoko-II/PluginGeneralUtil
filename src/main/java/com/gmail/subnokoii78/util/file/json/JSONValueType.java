@@ -81,6 +81,8 @@ public abstract class JSONValueType<T> {
     public static final JSONValueType<JSONObject> OBJECT = new JSONValueType<>() {
         @Override
         protected JSONObject get(Object value) {
+            if (value instanceof JSONObject jsonObject) return jsonObject;
+
             if (value instanceof Map<?, ?> map) {
                 final Map<String, Object> object = new HashMap<>();
 
@@ -107,6 +109,8 @@ public abstract class JSONValueType<T> {
     public static final JSONValueType<JSONArray> ARRAY = new JSONValueType<>() {
         @Override
         protected JSONArray get(Object value) {
+            if (value instanceof JSONArray jsonArray) return jsonArray;
+
             return switch (value) {
                 case boolean[] array -> {
                     final List<Object> list = new ArrayList<>();
@@ -163,6 +167,8 @@ public abstract class JSONValueType<T> {
     public static final JSONValueType<JSONNull> NULL = new JSONValueType<>() {
         @Override
         protected JSONNull get(Object value) {
+            if (value instanceof JSONNull jsonNull) return jsonNull;
+
             if (value == null) return JSONNull.NULL;
             else throw new IllegalArgumentException("value is not a null value");
         }

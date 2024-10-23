@@ -1,18 +1,13 @@
 package com.gmail.subnokoii78.util.other;
 
-import com.gmail.subnokoii78.util.random.Xorshift128;
-import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.function.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public final class CalcExpEvaluator {
     private static final Set<Character> IGNORED = Set.of(' ', '\n');
@@ -269,7 +264,7 @@ public final class CalcExpEvaluator {
                 return NUMBER_SUFFIX_OPERATOR.get(current2).applyAsDouble(num);
             }
             else if (FACTOR_OPERATORS.containsKey(current2)) {
-                final double obj = polynomial();
+                final double obj = factor();
                 return FACTOR_OPERATORS.get(current2).apply(num, obj);
             }
             else {
@@ -482,10 +477,7 @@ public final class CalcExpEvaluator {
     }
 
     public <T> void define(@NotNull String name, @NotNull Class<T> clazz, @Nullable T object) {
-        final Predicate<Class<?>> classChecker = (__clazz__) -> {
-            return __clazz__.equals(Double.class)
-                || __clazz__.equals(double.class);
-        };
+        final Predicate<Class<?>> classChecker = (__clazz__) -> __clazz__.equals(Double.class) || __clazz__.equals(double.class);
 
         for (final Field field : clazz.getFields()) {
             try {
@@ -573,6 +565,7 @@ public final class CalcExpEvaluator {
 
         evaluator.define("NaN", Double.NaN);
         evaluator.define("PI", Math.PI);
+        evaluator.define("TAU", Math.TAU);
         evaluator.define("E", Math.E);
         evaluator.define("Infinity", Double.POSITIVE_INFINITY);
 
@@ -593,6 +586,7 @@ public final class CalcExpEvaluator {
         evaluator.define("exp", Math::exp);
         evaluator.define("to_degrees", Math::toDegrees);
         evaluator.define("to_radians", Math::toRadians);
+        evaluator.define("log10", Math::log10);
 
         evaluator.define("log", (a, b) -> Math.log(b) / Math.log(a));
         evaluator.define("atan2", Math::atan2);

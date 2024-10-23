@@ -7,28 +7,29 @@ import org.jetbrains.annotations.NotNull;
 public class PlayerClickEvent extends CancellableCustomEvent {
     private final Player player;
 
-    private final boolean isLeft;
+    private final Click click;
 
-    protected PlayerClickEvent(Player player, Cancellable event, boolean isLeft) {
+    protected PlayerClickEvent(@NotNull Player player, @NotNull Cancellable event, @NotNull Click click) {
         super(event);
         this.player = player;
-        this.isLeft = isLeft;
+        this.click = click;
     }
 
-    public Player getPlayer() {
+    public @NotNull Player getPlayer() {
         return player;
     }
 
-    public boolean isLeftClick() {
-        return isLeft;
-    }
-
-    public boolean isRightClick() {
-        return !isLeft;
+    public @NotNull Click getClick() {
+        return click;
     }
 
     @Override
-    public @NotNull CustomEventType<?> getType() {
+    public @NotNull CustomEventType<? extends PlayerClickEvent> getType() {
         return CustomEventType.PLAYER_CLICK;
+    }
+
+    public enum Click {
+        RIGHT,
+        LEFT
     }
 }

@@ -13,49 +13,49 @@ public class PlayerLeftClickEvent extends PlayerClickEvent {
 
     private final Entity entity;
 
-    protected PlayerLeftClickEvent(Player player, Cancellable event) {
-        super(player, event, true);
+    protected PlayerLeftClickEvent(@NotNull Player player, @NotNull Cancellable event) {
+        super(player, event, Click.LEFT);
         this.action = Action.SWING_AIR;
         block = null;
         entity = null;
     }
 
-    protected PlayerLeftClickEvent(Player player, Block block, Cancellable event) {
-        super(player, event, true);
+    protected PlayerLeftClickEvent(@NotNull Player player, @NotNull Block block, @NotNull Cancellable event) {
+        super(player, event, Click.LEFT);
         this.action = Action.BLOCK_HIT;
         this.block = block;
         entity = null;
     }
 
-    protected PlayerLeftClickEvent(Player player, Entity entity, Cancellable event) {
-        super(player, event, true);
+    protected PlayerLeftClickEvent(@NotNull Player player, @NotNull Entity entity, @NotNull Cancellable event) {
+        super(player, event, Click.LEFT);
         this.action = Action.ENTITY_HIT;
         block = null;
         this.entity = entity;
     }
 
-    public Action getAction() {
+    public @NotNull Action getAction() {
         return action;
     }
 
-    public Block getClickedBlock() throws IllegalStateException {
-        if (action.equals(Action.BLOCK_HIT)) {
-            return block;
+    public @NotNull Block getClickedBlock() throws IllegalStateException {
+        if (block == null) {
+            throw new IllegalStateException("ブロックをクリックしていません");
         }
 
-        throw new IllegalStateException();
+        return block;
     }
 
-    public Entity getClickedEntity() throws IllegalStateException {
-        if (action.equals(Action.ENTITY_HIT)) {
-            return entity;
+    public @NotNull Entity getClickedEntity() throws IllegalStateException {
+        if (entity == null) {
+            throw new IllegalStateException("エンティティをクリックしていません");
         }
 
-        throw new IllegalStateException();
+        return entity;
     }
 
     @Override
-    public @NotNull CustomEventType<?> getType() {
+    public @NotNull CustomEventType<? extends PlayerLeftClickEvent> getType() {
         return CustomEventType.PLAYER_LEFT_CLICK;
     }
 

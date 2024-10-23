@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 public abstract class CancellableCustomEvent implements CustomEvent {
     private final Cancellable event;
 
-    protected CancellableCustomEvent(Cancellable event) {
+    protected CancellableCustomEvent(@NotNull Cancellable event) {
         this.event = event;
     }
 
@@ -15,5 +15,5 @@ public abstract class CancellableCustomEvent implements CustomEvent {
     }
 
     @Override
-    public abstract @NotNull CustomEventType<?> getType();
+    public abstract @NotNull CustomEventType<? extends CancellableCustomEvent> getType();
 }

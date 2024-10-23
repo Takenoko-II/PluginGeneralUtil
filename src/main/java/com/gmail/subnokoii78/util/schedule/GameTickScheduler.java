@@ -14,23 +14,40 @@ import java.util.function.Function;
 /**
  * tick単位で遅延をかけて処理を実行するためのクラス
  */
-public abstract class AbstractGameTickScheduler implements Scheduler {
-    protected abstract @NotNull Plugin getPlugin();
+public class GameTickScheduler implements Scheduler {
+    protected static Plugin plugin;
+
+    public static void init(@NotNull Plugin plugin) {
+        if (GameTickScheduler.plugin == null) {
+            GameTickScheduler.plugin = plugin;
+        }
+        else {
+            throw new IllegalStateException("既にプラグインのインスタンスが登録されています");
+        }
+    }
+
+    private @NotNull Plugin getPlugin() throws IllegalStateException {
+        if (plugin == null) {
+            throw new IllegalStateException("プラグインのインスタンスが登録されていません");
+        }
+
+        return plugin;
+    }
 
     private final Runnable callback;
 
     private final Map<Integer, BukkitTask> tasks = new HashMap<>();
 
-    public AbstractGameTickScheduler(Runnable callback) {
+    public GameTickScheduler(Runnable callback) {
         this.callback = callback;
     }
 
-    public AbstractGameTickScheduler(Consumer<AbstractGameTickScheduler> callback) {
+    public GameTickScheduler(Consumer<GameTickScheduler> callback) {
         this.callback = () -> callback.accept(this);
     }
 
-    public AbstractGameTickScheduler(BiConsumer<AbstractGameTickScheduler, Integer> callback) {
-        this.callback = () -> callback.accept(this, AbstractGameTickScheduler.id);
+    public GameTickScheduler(BiConsumer<GameTickScheduler, Integer> callback) {
+        this.callback = () -> callback.accept(this, GameTickScheduler.id);
     }
 
     private int issue(Function<BukkitRunnable, BukkitTask> function) {

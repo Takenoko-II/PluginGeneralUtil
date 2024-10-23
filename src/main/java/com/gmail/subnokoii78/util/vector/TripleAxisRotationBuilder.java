@@ -4,6 +4,7 @@ import com.gmail.subnokoii78.util.function.TriFunction;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 
@@ -156,87 +157,109 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
         return equals(new TripleAxisRotationBuilder());
     }
 
-    public LocalAxisProviderE getLocalAxisProviderE() {
+    public @NotNull LocalAxisProviderE getLocalAxisProviderE() {
         return new LocalAxisProviderE(this);
     }
 
-    public DualAxisRotationBuilder getRotation2d() {
+    public @NotNull DualAxisRotationBuilder getRotation2d() {
         return new DualAxisRotationBuilder(yaw, pitch);
     }
 
-    public Vector3Builder getDirection3d() {
+    public @NotNull Vector3Builder getDirection3d() {
         return getRotation2d().getDirection3d();
     }
 
-    private void rotateQuaternion(Quaternionf quaternion, Vector3Builder axis, float angle) {
-        final Vector3Builder normalized = axis.copy().normalize();
-        quaternion.rotateAxis(
-            (float) (angle * Math.PI / 180),
-            (float) normalized.x(),
-            (float) normalized.y(),
-            (float) normalized.z()
-        );
-    }
-
-    public Quaternionf getQuaternion4d() {
+    public @NotNull Quaternionf getQuaternion4d() {
         final var quaternion = new Quaternionf(0f, 0f, 0f, 1f);
-        final var axisProvider = new DualAxisRotationBuilder(yaw, pitch).getDirection3d().getLocalAxisProvider();
-        rotateQuaternion(quaternion, axisProvider.getZ(), roll);
-        rotateQuaternion(quaternion, axisProvider.getX(), pitch);
-        rotateQuaternion(quaternion, new Vector3Builder(0, 1, 0), -(yaw + 90));
+        final var axes = new DualAxisRotationBuilder(yaw, pitch).getDirection3d().getLocalAxisProvider();
+
+        final BiConsumer<Vector3Builder, Float> function = ((axis, angle) -> {
+            final Vector3Builder normalized = axis.copy().normalize();
+            quaternion.rotateAxis(
+                (float) (angle * Math.PI / 180),
+                (float) normalized.x(),
+                (float) normalized.y(),
+                (float) normalized.z()
+            );
+        });
+
+        function.accept(axes.getZ(), roll);
+        function.accept(axes.getX(), pitch);
+        function.accept(new Vector3Builder(0, 1, 0), -(yaw + 90));
         return quaternion;
     }
 
-    public static TripleAxisRotationBuilder from(DualAxisRotationBuilder other) {
+    public static @NotNull TripleAxisRotationBuilder from(@NotNull DualAxisRotationBuilder other) {
         return new TripleAxisRotationBuilder(other.yaw(), other.pitch(), 0);
     }
 
     public static final class LocalAxisProviderE extends Vector3Builder.LocalAxisProvider {
         private final double[][] matrix;
 
-        private final TripleAxisRotationBuilder rotation;
-
-        private LocalAxisProviderE(TripleAxisRotationBuilder rotation) {
+        private LocalAxisProviderE(@NotNull TripleAxisRotationBuilder rotation) {
             super(rotation.getDirection3d());
 
-            this.rotation = rotation;
-
-            final double radian = rotation.roll * Math.PI / 180;
+            final double radian = (double)rotation.roll * Math.PI / 180.0;
             final double sin = Math.sin(radian);
             final double cos = Math.cos(radian);
+
             final Vector3Builder axis = super.getZ();
-            final double x = axis.x();
-            final double y = axis.y();
-            final double z = axis.z();
+            double x = axis.x();
+            double y = axis.y();
+            double z = axis.z();
 
             this.matrix = new double[][]{
-                new double[]{
-                    cos + x * x * (1 - cos),
-                    x * y * (1 - cos) - z * sin,
-                    x * z * (1 - cos) + y * sin
+                {
+                    cos + x * x * (1.0 - cos),
+                    x * y * (1.0 - cos) - z * sin,
+                    x * z * (1.0 - cos) + y * sin
                 },
-                new double[]{
-                    y * x * (1 - cos) + z * sin,
-                    cos + y * y * (1 - cos),
-                    y * z * (1 - cos) - x * sin
+                {
+                    y * x * (1.0 - cos) + z * sin,
+                    cos + y * y * (1.0 - cos),
+                    y * z * (1.0 - cos) - x * sin
                 },
-                new double[]{
-                    z * x * (1 - cos) - y * sin,
-                    z * y * (1 - cos) + x * sin,
-                    cos + z * z * (1 - cos)
+                {
+                    z * x * (1.0 - cos) - y * sin,
+                    z * y * (1.0 - cos) + x * sin,
+                    cos + z * z * (1.0 - cos)
                 }
             };
         }
 
-        private Vector3Builder rotate(Vector3Builder vector3) {
-            final double x = matrix[0][0] * vector3.x() + matrix[0][1] * vector3.y() + matrix[0][2] * vector3.z();
-            final double y = matrix[1][0] * vector3.x() + matrix[1][1] * vector3.y() + matrix[1][2] * vector3.z();
-            final double z = matrix[2][0] * vector3.x() + matrix[2][1] * vector3.y() + matrix[2][2] * vector3.z();
+        private Vector3Builder rotate(@NotNull Vector3Builder vector3) {
+            final double x = this.matrix[0][0] * vector3.x() + this.matrix[0][1] * vector3.y() + this.matrix[0][2] * vector3.z();
+            final double y = this.matrix[1][0] * vector3.x() + this.matrix[1][1] * vector3.y() + this.matrix[1][2] * vector3.z();
+            final double z = this.matrix[2][0] * vector3.x() + this.matrix[2][1] * vector3.y() + this.matrix[2][2] * vector3.z();
             return new Vector3Builder(x, y, z);
         }
 
+        @NotNull
+        public Vector3Builder getX() {
+            return this.rotate(super.getX());
+        }
+
+        @NotNull
+        public Vector3Builder getY() {
+            return this.getZ().cross(this.getX());
+        }
+
+        @NotNull
+        public Vector3Builder getZ() {
+            return super.getZ();
+        }
+    }
+
+    /*public static final class LocalAxisProviderE extends Vector3Builder.LocalAxisProvider {
+        private final float roll;
+
+        private LocalAxisProviderE(TripleAxisRotationBuilder rotation) {
+            super(rotation.getDirection3d());
+            this.roll = rotation.roll;
+        }
+
         public @NotNull Vector3Builder getX() {
-            return rotate(super.getX());
+            return super.getX().rotate(getZ(), roll);
         }
 
         public @NotNull Vector3Builder getY() {
@@ -246,5 +269,5 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
         public @NotNull Vector3Builder getZ() {
             return super.getZ();
         }
-    }
+    }*/
 }

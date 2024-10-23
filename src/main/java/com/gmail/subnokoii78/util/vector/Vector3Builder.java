@@ -6,7 +6,6 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiFunction;
@@ -325,10 +324,18 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
         final double sin = Math.sin(radian);
         final double cos = Math.cos(radian);
 
-        final double x = axis.copy().normalize().x;
-        final double y = axis.copy().normalize().y;
-        final double z = axis.copy().normalize().z;
+        final Vector3Builder normalized = axis.copy().normalize();
+        final double x = normalized.x;
+        final double y = normalized.y;
+        final double z = normalized.z;
 
+        final var a = this.copy().scale(cos);
+        final var b = normalized.cross(this).scale(sin);
+        final var c = normalized.copy().scale(normalized.dot(this)).scale(1 - cos);
+        final var d = a.add(b).add(c);
+        x(d.x).y(d.y).z(d.z);
+
+/*
         final double[][] matrix = new double[][]{
             new double[]{cos + x * x * (1 - cos), x * y * (1 - cos) - z * sin, x * z * (1 - cos) + y * sin},
             new double[]{y * x * (1 - cos) + z * sin, cos + y * y * (1 - cos), y * z * (1 - cos) - x * sin},
@@ -338,7 +345,7 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
         this.x = matrix[0][0] * this.x + matrix[0][1] * this.y + matrix[0][2] * this.z;
         this.y = matrix[1][0] * this.x + matrix[1][1] * this.y + matrix[1][2] * this.z;
         this.z = matrix[2][0] * this.x + matrix[2][1] * this.y + matrix[2][2] * this.z;
-
+*/
         return this;
     }
 
@@ -364,6 +371,10 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
             .replaceAll("\\$c", "");
     }
 
+    /**
+     * このベクトルを文字列化します。
+     * @return 文字列化されたベクトル
+     */
     @Override
     public @NotNull String toString() {
         return format("($x, $y, $z)", 2);
@@ -431,7 +442,7 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
      * @deprecated この関数はすぐに削除される可能性が極めて高いため、使用を推奨しません。
      * @return 選ばれたベクトル
      */
-    @ApiStatus.Experimental
+    @Deprecated
     public @NotNull Vector3Builder selectClosest(@NotNull Vector3Builder... points) {
         if (points.length == 0) {
             throw new IllegalArgumentException("配列の長さが0です");
@@ -482,6 +493,15 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
      */
     public static @NotNull Vector3Builder from(@NotNull Entity entity) {
         return Vector3Builder.from(entity.getLocation());
+    }
+
+    /**
+     * 渡されたブロックの情報からこのクラスのインスタンスを作成します。
+     * @param block ブロックの情報
+     * @return 作成されたベクトル
+     */
+    public static @NotNull Vector3Builder from(@NotNull Block block) {
+        return Vector3Builder.from(block.getLocation());
     }
 
     /**

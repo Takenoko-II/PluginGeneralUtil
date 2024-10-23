@@ -2,9 +2,8 @@ package com.gmail.subnokoii78.util.file.json;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 
 public final class JSONObject extends JSONValue<Map<String, Object>> {
     public JSONObject() {
@@ -92,5 +91,9 @@ public final class JSONObject extends JSONValue<Map<String, Object>> {
         }
 
         return map;
+    }
+
+    public @NotNull JSONObject copy() {
+        return new JSONObject(asMap());
     }
 }
