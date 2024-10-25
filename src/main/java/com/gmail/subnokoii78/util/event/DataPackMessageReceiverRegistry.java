@@ -21,9 +21,9 @@ public final class DataPackMessageReceiverRegistry {
     private void onReceive(@NotNull DataPackMessageReceiveEvent event) {
         final JSONObject message = event.getMessage();
 
-        if (!message.has("id")) return;
-        else if (!message.getTypeOf("id").equals(JSONValueType.STRING)) return;
-        final String id = message.get("id", JSONValueType.STRING);
+        if (!message.hasKey("id")) return;
+        else if (!message.getTypeOfKey("id").equals(JSONValueType.STRING)) return;
+        final String id = message.getKey("id", JSONValueType.STRING);
 
         for (final String receiverId : receivers.keySet()) {
             if (receiverId.equals(id)) {

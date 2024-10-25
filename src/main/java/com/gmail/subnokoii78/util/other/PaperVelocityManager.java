@@ -124,11 +124,11 @@ public final class PaperVelocityManager implements PluginMessageListener {
         final JSONObject message = new JSONObject();
 
         getServer(server -> {
-            message.set("id", UUID.randomUUID().toString());
-            message.set("server", server);
-            message.set("plugin", plugin.getName());
-            message.set("timestamp", System.currentTimeMillis());
-            message.set("data", data);
+            message.setKey("id", UUID.randomUUID().toString());
+            message.setKey("server", server);
+            message.setKey("plugin", plugin.getName());
+            message.setKey("timestamp", System.currentTimeMillis());
+            message.setKey("data", data);
 
             newInteractiveMessage("Forward", (input, time) -> {})
                 .argument(target.id)

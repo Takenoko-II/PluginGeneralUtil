@@ -338,19 +338,19 @@ public class SourceStack {
     public @NotNull JSONObject getAsJSONObject() {
         final JSONObject jsonObject = new JSONObject();
 
-        jsonObject.set("sender", JSONComponentSerializer.json().serialize(sender.getName()));
-        jsonObject.set("executor", hasExecutor() ? executor.getName() : "null");
+        jsonObject.setKey("sender", JSONComponentSerializer.json().serialize(sender.getName()));
+        jsonObject.setKey("executor", hasExecutor() ? executor.getName() : "null");
         final JSONArray loc = new JSONArray();
         loc.add(location.x());
         loc.add(location.y());
         loc.add(location.z());
-        jsonObject.set("location", loc);
+        jsonObject.setKey("location", loc);
         final JSONArray rot = new JSONArray();
         rot.add(rotation.yaw());
         rot.add(rotation.pitch());
-        jsonObject.set("rotation", rot);
-        jsonObject.set("anchor", anchor.getType().getId());
-        jsonObject.set("dimension", VanillaDimensionProvider.get(dimension).getId());
+        jsonObject.setKey("rotation", rot);
+        jsonObject.setKey("anchor", anchor.getType().getId());
+        jsonObject.setKey("dimension", VanillaDimensionProvider.get(dimension).getId());
 
         return jsonObject;
     }

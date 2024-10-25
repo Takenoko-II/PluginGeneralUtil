@@ -39,7 +39,7 @@ public final class JSONSerializer {
             final String key = keys[i];
 
             try {
-                final Object childValue = value.get(key, value.getTypeOf(key));
+                final Object childValue = value.getKey(key, value.getTypeOfKey(key));
                 stringBuilder
                     .append(LINE_BREAK)
                     .append(indentation(indentation + 1))
@@ -51,7 +51,7 @@ public final class JSONSerializer {
                     .append(serialize(childValue, indentation + 1));
             }
             catch (IllegalArgumentException e) {
-                throw new IllegalStateException("キー'" + key + "における無効な型: " + value.getTypeOf(key), e);
+                throw new IllegalStateException("キー'" + key + "における無効な型: " + value.getTypeOfKey(key), e);
             }
 
             if (i != keys.length - 1) {

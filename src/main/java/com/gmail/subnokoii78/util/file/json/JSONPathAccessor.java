@@ -8,12 +8,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public final class JSONPathAccessor {
+    private final JSONObject initialObject;
+
+    JSONPathAccessor(@NotNull JSONObject initialObject) {
+        this.initialObject = initialObject;
+    }
+
     private @NotNull List<String> splitPath(@NotNull String path) {
         final Pattern pattern = Pattern.compile("^([^\\[\\]]+)(?:\\[([+-]?\\d+)])+$");
 
@@ -55,102 +61,190 @@ public final class JSONPathAccessor {
         }
     }
 
-    private final JSONValue<?> jsonValue;
+    private <T> @Nullable T onFinalPair(@NotNull JSONLocationAccessor<?, ?> previousPair, @Nullable Object currentStructure, @NotNull List<String> path, boolean createWay, @NotNull Function<JSONLocationAccessor<?, ?>, T> callback) {
+        if (currentStructure == null) return null;
 
-    public JSONPathAccessor(@NotNull JSONValue<?> value) {
-        this.jsonValue = value;
-    }
+        final String key = path.removeFirst();
 
-    private TupleLR<?, ?> finalPair(@NotNull List<String> path, boolean createWay) {
-        Object value = jsonValue;
-
-        while (path.size() >= 2) {
-            final String key = path.removeFirst();
-
-            if (value == null) {
-                return null;
+        if (path.isEmpty()) {
+            if (currentStructure instanceof JSONArray jsonArray && key.startsWith(ARRAY_INDEX_PREFIX)) {
+                final int index = parseIndexKey(key);
+                final T r = callback.apply(JSONLocationAccessor.of(jsonArray, index));
+                previousPair.set(jsonArray);
+                return r;
             }
-
-            value = switch (value) {
-                case JSONObject jsonObject -> {
-                    if (jsonObject.has(key)) {
-                        yield jsonObject.get(key, jsonObject.getTypeOf(key));
-                    }
-                    else if (createWay) {
-                        final JSONObject newObject = new JSONObject();
-                        jsonObject.set(key, newObject);
-                        yield newObject;
-                    }
-                    else yield null;
-                }
-                case JSONArray jsonArray -> {
-                    if (key.startsWith(ARRAY_INDEX_PREFIX)) {
-                        final int index = parseIndexKey(key);
-                        if (jsonArray.has(index)) {
-                            yield jsonArray.get(index, jsonArray.getTypeAt(index));
-                        }
-                        else yield null;
-                    }
-                    else yield null;
-                }
-                default -> value;
-            };
-        }
-
-        final String last = path.removeFirst();
-        if (value instanceof JSONArray jsonArray && last.startsWith(ARRAY_INDEX_PREFIX)) {
-            final int index = parseIndexKey(last);
-            if (jsonArray.has(index)) return new TupleLR<>(jsonArray, index);
+            else if (currentStructure instanceof JSONObject jsonObject) {
+                final T r = callback.apply(JSONLocationAccessor.of(jsonObject, key));
+                previousPair.set(jsonObject);
+                return r;
+            }
             else return null;
         }
-        else if (value instanceof JSONObject jsonObject) {
-            if (jsonObject.has(last)) return new TupleLR<>(jsonObject, last);
-            else return null;
-        }
-        else return null;
+
+        final TupleLR<Object, JSONLocationAccessor<?, ?>> nextObjects = getNextObjects(currentStructure, key, createWay);
+
+        if (nextObjects == null) return null;
+
+        return onFinalPair(nextObjects.right(), nextObjects.left(), path, createWay, callback);
     }
 
-    public <S extends JSONValue<?>, T, U> @Nullable U access(@NotNull String path, boolean createWay, Class<S> s, Class<T> t, @NotNull BiFunction<S, T, U> accessor) {
-        final TupleLR<?, ?> pair = finalPair(new ArrayList<>(splitPath(path)), createWay);
-        if (pair == null) return null;
+    private @Nullable TupleLR<Object, JSONLocationAccessor<?, ?>> getNextObjects(@NotNull Object currentStructure, @NotNull String key, boolean createWay) {
+        return switch (currentStructure) {
+            case JSONObject jsonObject -> {
+                if (jsonObject.hasKey(key)) {
+                    final Object nextStructure = jsonObject.getKey(key, jsonObject.getTypeOfKey(key));
+                    yield new TupleLR<>(nextStructure, JSONLocationAccessor.of(jsonObject, key));
+                }
+                else if (createWay) {
+                    final JSONObject nextStructure = new JSONObject();
+                    jsonObject.setKey(key, nextStructure);
+                    yield new TupleLR<>(nextStructure, JSONLocationAccessor.of(jsonObject, key));
+                }
+                else yield null;
+            }
+            case JSONArray jsonArray -> {
+                if (key.startsWith(ARRAY_INDEX_PREFIX)) {
+                    final int index = parseIndexKey(key);
+                    if (jsonArray.has(index)) {
+                        final Object nextStructure = jsonArray.get(index, jsonArray.getTypeAt(index));
+                        yield new TupleLR<>(nextStructure, JSONLocationAccessor.of(jsonArray, index));
+                    }
+                    else yield null;
+                }
+                else yield null;
+            }
+            default -> null;
+        };
+    }
 
-        final Object structure = pair.left();
-        final Object key = pair.right();
+    public <T> @Nullable T access(@NotNull String path, boolean createWay, @NotNull Function<JSONLocationAccessor<?, ?>, T> callback) {
+        final List<String> paths = new ArrayList<>(splitPath(path));
 
-        if (s.isInstance(structure) && t.isInstance(key)) {
-            return accessor.apply(s.cast(structure), t.cast(key));
+        if (paths.isEmpty()) {
+            throw new IllegalArgumentException("パスがいかれてるぜ");
+        }
+        else if (paths.size() == 1) {
+            return callback.apply(JSONLocationAccessor.of(initialObject, paths.getFirst()));
         }
         else {
-            final StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("予期しないクラスがaccess()の引数に渡されました: ");
-            if (!s.isInstance(structure)) {
-                stringBuilder
-                    .append("s=")
-                    .append(s)
-                    .append("(期待された型: ")
-                    .append(structure.getClass())
-                    .append(") ");
-            }
-
-            if (!t.isInstance(key)) {
-                stringBuilder
-                    .append("t=")
-                    .append(t)
-                    .append("(期待された型: ")
-                    .append(key.getClass())
-                    .append(") ");
-            }
-
-            throw new IllegalArgumentException(stringBuilder.toString());
+            final TupleLR<Object, JSONLocationAccessor<?, ?>> nextObjects = getNextObjects(initialObject, paths.removeFirst(), createWay);
+            if (nextObjects == null) return null;
+            return onFinalPair(nextObjects.right(), nextObjects.left(), paths, createWay, callback);
         }
     }
 
-    private static final String ARRAY_INDEX_PREFIX =  "ARRAY_INDEX(" + UUID.randomUUID() + ")=";
+    public boolean has(@NotNull String path) {
+        return access(path, false, accessor -> 0) != null;
+    }
 
-    /*static {
-        final JSONObject s = new JSONPathAccessor(new JSONObject()).access("foo.bar", true, JSONObject.class, String.class, (s, t) -> {
-            s.set(t, "value");
-            return s;
+    public @NotNull JSONValueType<?> getTypeOf(@NotNull String path) {
+        final JSONValueType<?> type = access(path, false, JSONLocationAccessor::getType);
+        if (type == null) {
+            throw new IllegalArgumentException("パス '" + path + "' は存在しません");
+        }
+        return type;
+    }
+
+    public <T> @NotNull T get(@NotNull String path, @NotNull JSONValueType<T> type) {
+        final T value = access(path, false, accessor -> accessor.get(type));
+        if (value == null) {
+            throw new IllegalArgumentException("パス '" + path + "' は存在しません");
+        }
+        return value;
+    }
+
+    public <T> void set(@NotNull String path, @NotNull T value) {
+        access(path, true, accessor -> {
+            accessor.set(value);
+            return null;
         });
-    }*/
+    }
+
+    public void delete(@NotNull String path) {
+        access(path, false, accessor -> {
+            accessor.delete();
+            return null;
+        });
+    }
+
+    private static final String ARRAY_INDEX_PREFIX = "ARRAY_INDEX(" + UUID.randomUUID() + ")=";
+
+    public static abstract class JSONLocationAccessor<T extends JSONValue<?>, U> {
+        protected final T structure;
+
+        protected final U key;
+
+        protected JSONLocationAccessor(@NotNull T value, @NotNull U key) {
+            this.structure = value;
+            this.key = key;
+        }
+
+        public abstract @NotNull JSONValueType<?> getType();
+
+        public abstract <P> @NotNull P get(@NotNull JSONValueType<P> type);
+
+        public abstract <P> void set(@NotNull P value);
+
+        public abstract void delete();
+
+        private static @NotNull JSONLocationAccessor<JSONObject, String> of(@NotNull JSONObject jsonObject, @NotNull String key) {
+            return new ObjectLocationAccessor(jsonObject, key);
+        }
+
+        private static @NotNull JSONLocationAccessor<JSONArray, Integer> of(@NotNull JSONArray jsonArray, @NotNull Integer key) {
+            return new ArrayLocationAccessor(jsonArray, key);
+        }
+
+        private static final class ObjectLocationAccessor extends JSONLocationAccessor<JSONObject, String> {
+            private ObjectLocationAccessor(@NotNull JSONObject value, @NotNull String key) {
+                super(value, key);
+            }
+
+            @Override
+            public @NotNull JSONValueType<?> getType() {
+                return structure.getTypeOfKey(key);
+            }
+
+            @Override
+            public <P> @NotNull P get(@NotNull JSONValueType<P> type) {
+                return structure.getKey(key, type);
+            }
+
+            @Override
+            public <P> void set(@NotNull P value) {
+                structure.setKey(key, value);
+            }
+
+            @Override
+            public void delete() {
+                structure.deleteKey(key);
+            }
+        }
+
+        private static final class ArrayLocationAccessor extends JSONLocationAccessor<JSONArray, Integer> {
+            private ArrayLocationAccessor(@NotNull JSONArray value, @NotNull Integer key) {
+                super(value, key);
+            }
+
+            @Override
+            public @NotNull JSONValueType<?> getType() {
+                return structure.getTypeAt(key);
+            }
+
+            @Override
+            public <P> @NotNull P get(@NotNull JSONValueType<P> type) {
+                return structure.get(key, type);
+            }
+
+            @Override
+            public <P> void set(@NotNull P value) {
+                structure.set(key, value);
+            }
+
+            @Override
+            public void delete() {
+                structure.delete(key);
+            }
+        }
+    }
 }

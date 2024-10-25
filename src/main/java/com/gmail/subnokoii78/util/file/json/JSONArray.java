@@ -12,8 +12,8 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
         super(new ArrayList<>());
     }
 
-    public JSONArray(@NotNull Collection<?> list) {
-        super(new ArrayList<>(list));
+    public JSONArray(@NotNull Collection<?> collection) {
+        super(new ArrayList<>(collection));
     }
 
     public boolean has(int index) {
@@ -128,6 +128,10 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
         }
 
         return list;
+    }
+
+    public @NotNull JSONArray copy() {
+        return new JSONArray(asList());
     }
 
     public <T> TypedJSONArray<T> typed(@NotNull JSONValueType<T> type) {

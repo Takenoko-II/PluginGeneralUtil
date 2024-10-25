@@ -3,9 +3,10 @@ package com.gmail.subnokoii78.util.file.json;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.function.Function;
 
 public final class JSONObject extends JSONValue<Map<String, Object>> {
+    private final JSONPathAccessor accessor = new JSONPathAccessor(this);
+
     public JSONObject() {
         super(new HashMap<>());
     }
@@ -14,7 +15,7 @@ public final class JSONObject extends JSONValue<Map<String, Object>> {
         super(map);
     }
 
-    public boolean has(@NotNull String key) {
+    public boolean hasKey(@NotNull String key) {
         return value.containsKey(key);
     }
 
@@ -22,27 +23,27 @@ public final class JSONObject extends JSONValue<Map<String, Object>> {
         return value.isEmpty();
     }
 
-    public JSONValueType<?> getTypeOf(@NotNull String key) {
-        if (!has(key)) {
+    public @NotNull JSONValueType<?> getTypeOfKey(@NotNull String key) {
+        if (!hasKey(key)) {
             throw new IllegalArgumentException("キー '" + key + "' は存在しません");
         }
 
         return JSONValueType.of(value.get(key));
     }
 
-    public <T> T get(@NotNull String key, JSONValueType<T> type) {
-        if (!has(key)) {
+    public @NotNull <T> T getKey(@NotNull String key, JSONValueType<T> type) {
+        if (!hasKey(key)) {
             throw new IllegalArgumentException("キー '" + key + "' は存在しません");
         }
 
-        if (!getTypeOf(key).equals(type)) {
+        if (!getTypeOfKey(key).equals(type)) {
             throw new IllegalArgumentException("キー '" + key + "' は期待される型の値と紐づけられていません");
         }
 
         return type.get(value.get(key));
     }
 
-    public void set(@NotNull String key, Object value) {
+    public void setKey(@NotNull String key, Object value) {
         JSONValueType.checkIsValid(value);
 
         if (value instanceof JSONValue<?> jsonValue) {
@@ -53,8 +54,8 @@ public final class JSONObject extends JSONValue<Map<String, Object>> {
         }
     }
 
-    public void delete(@NotNull String key) {
-        if (has(key)) value.remove(key);
+    public void deleteKey(@NotNull String key) {
+        if (hasKey(key)) value.remove(key);
     }
 
     public void clear() {
@@ -67,7 +68,7 @@ public final class JSONObject extends JSONValue<Map<String, Object>> {
 
     public void merge(@NotNull JSONObject jsonObject) {
         for (String key : jsonObject.keys()) {
-            set(key, jsonObject.value.get(key));
+            setKey(key, jsonObject.value.get(key));
         }
     }
 
@@ -75,14 +76,14 @@ public final class JSONObject extends JSONValue<Map<String, Object>> {
         final Map<String, Object> map = new HashMap<>();
 
         for (String key : keys()) {
-            final JSONValueType<?> type = getTypeOf(key);
+            final JSONValueType<?> type = getTypeOfKey(key);
 
             if (type.equals(JSONValueType.OBJECT)) {
-                final JSONObject object = get(key, JSONValueType.OBJECT);
+                final JSONObject object = getKey(key, JSONValueType.OBJECT);
                 map.put(key, object.asMap());
             }
             else if (type.equals(JSONValueType.ARRAY)) {
-                final JSONArray array = get(key, JSONValueType.ARRAY);
+                final JSONArray array = getKey(key, JSONValueType.ARRAY);
                 map.put(key, array.asList());
             }
             else {
@@ -95,5 +96,25 @@ public final class JSONObject extends JSONValue<Map<String, Object>> {
 
     public @NotNull JSONObject copy() {
         return new JSONObject(asMap());
+    }
+
+    public boolean has(@NotNull String path) {
+        return accessor.has(path);
+    }
+
+    public @NotNull JSONValueType<?> getTypeOf(@NotNull String path) {
+        return accessor.getTypeOf(path);
+    }
+
+    public <T> @NotNull T get(@NotNull String path, @NotNull JSONValueType<T> type) {
+        return accessor.get(path, type);
+    }
+
+    public void set(@NotNull String path, Object value) {
+        accessor.set(path, value);
+    }
+
+    public void delete(@NotNull String path) {
+        accessor.delete(path);
     }
 }
