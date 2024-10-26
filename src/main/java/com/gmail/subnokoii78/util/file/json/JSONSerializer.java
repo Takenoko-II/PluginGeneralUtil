@@ -5,9 +5,9 @@ import org.jetbrains.annotations.NotNull;
 public final class JSONSerializer {
     private final int indentationSpaceCount;
 
-    private final JSONValue<?> value;
+    private final JSONStructure value;
 
-    public JSONSerializer(@NotNull JSONValue<?> value) {
+    private JSONSerializer(@NotNull JSONStructure value) {
         this.value = value;
         this.indentationSpaceCount = 4;
     }
@@ -139,4 +139,8 @@ public final class JSONSerializer {
     private static final char ARRAY_BRACE_END = ']';
 
     private static final char WHITESPACE = ' ';
+
+    public static @NotNull String serialize(@NotNull JSONStructure jsonValue) {
+        return new JSONSerializer(jsonValue).serialize();
+    }
 }

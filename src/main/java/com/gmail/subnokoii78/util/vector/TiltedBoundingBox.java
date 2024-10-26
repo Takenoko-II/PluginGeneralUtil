@@ -75,6 +75,7 @@ public final class TiltedBoundingBox {
     /**
      * {@link Location}を使用してディメンション、座標、回転を一度に変更します。
      * <br>回転のロール角は0に設定されます。
+     * <br>回転も変更するため、エンティティの位置に設置する目的で使用しないでください。
      * @param location Bukkit API の {@link Location}
      * @return this
      */
@@ -529,6 +530,6 @@ public final class TiltedBoundingBox {
         return new TiltedBoundingBox()
             .size(new Vector3Builder(box.getWidthX(), box.getHeight(), box.getWidthZ()))
             .dimension(entity.getWorld())
-            .center(Vector3Builder.from(entity).add(new Vector3Builder(0, box.getHeight() / 2, 0)));
+            .center(Vector3Builder.from(box.getCenter()));
     }
 }

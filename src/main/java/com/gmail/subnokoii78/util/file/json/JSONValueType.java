@@ -3,7 +3,7 @@ package com.gmail.subnokoii78.util.file.json;
 import java.util.*;
 
 public abstract class JSONValueType<T> {
-    private JSONValueType() {}
+    protected JSONValueType() {}
 
     protected abstract T get(Object value);
 
@@ -26,7 +26,7 @@ public abstract class JSONValueType<T> {
         };
     }
 
-    public static void checkIsValid(Object value) throws IllegalArgumentException {
+    public static void throwIfInvalid(Object value) throws IllegalArgumentException {
         switch (value) {
             case JSONValue<?> ignored: break;
             case Boolean ignored: break;

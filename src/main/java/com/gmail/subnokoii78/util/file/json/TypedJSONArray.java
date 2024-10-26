@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T> {
+public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T>, JSONStructure {
     private final JSONValueType<T> type;
 
     public TypedJSONArray(@NotNull JSONValueType<T> type) {

@@ -174,7 +174,7 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
                 final String message = tag.replaceFirst("^plugin_api\\.json_message\\s+", "");
 
                 try {
-                    final JSONObject jsonObject = new JSONParser(message).parseObject();
+                    final JSONObject jsonObject = JSONParser.parseObject(message);
                     getRegistry(CustomEventType.DATA_PACK_MESSAGE_RECEIVE).call(new DataPackMessageReceiveEvent(location, targets, jsonObject));
                 }
                 catch (RuntimeException e) {

@@ -967,7 +967,7 @@ public class Execute {
     public @NotNull String toString() {
         final JSONArray jsonArray = new JSONArray();
         stacks.forEach(stack -> jsonArray.add(stack.getAsJSONObject()));
-        return new JSONSerializer(jsonArray).serialize();
+        return JSONSerializer.serialize(jsonArray);
     }
 
     public static final int SUCCESS = 1;

@@ -8,15 +8,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.List;
 
-public final class JSONFileHandler {
+public final class JSONFile {
     private final String path;
 
     /**
      * 指定パスのjsonファイルを読み取ります。
      * @param path ファイルパス
      */
-    public JSONFileHandler(@NotNull String path) {
+    public JSONFile(@NotNull String path) {
         if (!path.endsWith(".json")) {
             throw new IllegalArgumentException("ファイルの拡張子は.jsonである必要があります");
         }
@@ -29,16 +30,16 @@ public final class JSONFileHandler {
             return String.join("", Files.readAllLines(Path.of(path)));
         }
         catch (IOException e) {
-            throw new RuntimeException("ファイルを読み取れませんでした", e);
+            throw new IllegalStateException("ファイルの読み取りに失敗しました", e);
         }
     }
 
-    private void write(String[] json) {
+    private void write(@NotNull List<String> json) {
         try {
-            Files.write(Path.of(path), Arrays.stream(json).toList(), StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(Path.of(path), json, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING);
         }
         catch (IOException e) {
-            throw new RuntimeException("ファイルの書き込みに失敗しました", e);
+            throw new IllegalStateException("ファイルの書き込みに失敗しました", e);
         }
     }
 
@@ -46,23 +47,19 @@ public final class JSONFileHandler {
      * オブジェクトを解析します。
      * @return 解析されたjsonオブジェクト
      */
-    public @NotNull JSONObject readObject() {
-        return new JSONParser(read()).parseObject();
+    public @NotNull JSONObject readAsObject() {
+        return JSONParser.parseObject(read());
     }
 
     /**
      * 配列を解析します。
      * @return 解析されたjson配列
      */
-    public @NotNull JSONArray readArray() {
-        return new JSONParser(read()).parseArray();
+    public @NotNull JSONArray readAsArray() {
+        return JSONParser.parseArray(read());
     }
 
-    public void writeObject(@NotNull JSONObject object) {
-        write(new JSONSerializer(object).serialize().split("\n"));
-    }
-
-    public void writeArray(@NotNull JSONArray array) {
-        write(new JSONSerializer(array).serialize().split("\n"));
+    public void write(@NotNull JSONStructure structure) {
+        write(Arrays.stream(JSONSerializer.serialize(structure).split("\n")).toList());
     }
 }

@@ -12,7 +12,7 @@ public final class JSONParser {
 
     private int location = 0;
 
-    public JSONParser(@NotNull String json) {
+    private JSONParser(@NotNull String json) {
         this.text = json.replaceAll("\n", "");
     }
 
@@ -235,5 +235,13 @@ public final class JSONParser {
         if (l != 'l') throw new IllegalStateException("null値の解析中に無効な文字を検知しました: " + l);
         if (l_2 != 'l') throw new IllegalStateException("null値の解析中に無効な文字を検知しました: " + l_2);
         return null;
+    }
+
+    public static @NotNull JSONObject parseObject(@NotNull String text) {
+        return new JSONParser(text).parseObject();
+    }
+
+    public static @NotNull JSONArray parseArray(@NotNull String text) {
+        return new JSONParser(text).parseArray();
     }
 }

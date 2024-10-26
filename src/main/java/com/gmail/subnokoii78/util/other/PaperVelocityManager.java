@@ -64,7 +64,7 @@ public final class PaperVelocityManager implements PluginMessageListener {
                     throw new RuntimeException("データの読み取りに失敗しました");
                 }
 
-                final JSONObject jsonObject = new JSONParser(jsonString).parseObject();
+                final JSONObject jsonObject = JSONParser.parseObject(jsonString);
 
                 customPluginMessageReceivers.forEach(receiver -> {
                     receiver.accept(jsonObject);
@@ -135,7 +135,7 @@ public final class PaperVelocityManager implements PluginMessageListener {
                 .argument("CustomPluginMessageByPaperVelocityManager")
                 .argument(out -> {
                     try {
-                        out.writeUTF(new JSONSerializer(message).serialize());
+                        out.writeUTF(JSONSerializer.serialize(message));
                     }
                     catch (IOException e) {
                         throw new RuntimeException("データの書き込みに失敗しました");
@@ -202,7 +202,7 @@ public final class PaperVelocityManager implements PluginMessageListener {
     public void sendDataPackMessage(@NotNull Location location, @NotNull Set<Entity> targets, @NotNull JSONObject message) {
         final Entity messenger = location.getWorld().spawnEntity(location, EntityType.MARKER);
         messenger.addScoreboardTag("plugin_api.messenger");
-        messenger.addScoreboardTag("plugin_api.json_message" + ' ' + new JSONSerializer(message).serialize());
+        messenger.addScoreboardTag("plugin_api.json_message" + ' ' + JSONSerializer.serialize(message));
         targets.forEach(target -> target.addScoreboardTag("plugin_api.target"));
         messenger.teleport(location);
         targets.forEach(target -> target.removeScoreboardTag("plugin_api.target"));

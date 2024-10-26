@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-public final class JSONArray extends JSONValue<List<Object>> implements Iterable<Object> {
+public final class JSONArray extends JSONValue<List<Object>> implements Iterable<Object>, JSONStructure {
     public JSONArray() {
         super(new ArrayList<>());
     }
@@ -44,12 +44,16 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
         return type.get(value.get(index));
     }
 
+    public <T> @NotNull T get(int index, @NotNull JSONValueConverter<T> converter) {
+        return converter.convert(get(index, getTypeAt(index)));
+    }
+
     public void add(int index, Object value) {
         if (index < 0 || index > this.value.size()) {
             throw new IllegalArgumentException("そのインデックスは使用できません");
         }
 
-        JSONValueType.checkIsValid(value);
+        JSONValueType.throwIfInvalid(value);
 
         if (value instanceof JSONValue<?> jsonValue) {
             this.value.add(index, jsonValue);
@@ -60,7 +64,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
     }
 
     public void add(Object value) {
-        JSONValueType.checkIsValid(value);
+        JSONValueType.throwIfInvalid(value);
 
         if (value instanceof JSONValue<?> jsonValue) {
             this.value.add(jsonValue);
@@ -75,7 +79,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
             throw new IllegalArgumentException("そのインデックスは使用できません");
         }
 
-        JSONValueType.checkIsValid(value);
+        JSONValueType.throwIfInvalid(value);
 
         if (value instanceof JSONValue<?> jsonValue) {
             this.value.set(index, jsonValue.value);
@@ -132,6 +136,16 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
 
     public @NotNull JSONArray copy() {
         return new JSONArray(asList());
+    }
+
+    public boolean isArrayOf(@NotNull JSONValueType<?> type) {
+        for (int i = 0; i < length(); i++) {
+            if (!getTypeAt(i).equals(type)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public <T> TypedJSONArray<T> typed(@NotNull JSONValueType<T> type) {

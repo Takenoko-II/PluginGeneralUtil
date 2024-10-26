@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public final class JSONObject extends JSONValue<Map<String, Object>> {
+public final class JSONObject extends JSONValue<Map<String, Object>> implements JSONStructure {
     private final JSONPathAccessor accessor = new JSONPathAccessor(this);
 
     public JSONObject() {
@@ -44,7 +44,7 @@ public final class JSONObject extends JSONValue<Map<String, Object>> {
     }
 
     public void setKey(@NotNull String key, Object value) {
-        JSONValueType.checkIsValid(value);
+        JSONValueType.throwIfInvalid(value);
 
         if (value instanceof JSONValue<?> jsonValue) {
             this.value.put(key, jsonValue.value);
@@ -108,6 +108,19 @@ public final class JSONObject extends JSONValue<Map<String, Object>> {
 
     public <T> @NotNull T get(@NotNull String path, @NotNull JSONValueType<T> type) {
         return accessor.get(path, type);
+    }
+
+    public <T> @NotNull T get(@NotNull String path, @NotNull JSONValueConverter<T> converter) {
+        final T v = accessor.access(path, false, accessor -> {
+            final Object value = accessor.get(accessor.getType());
+            return converter.convert(value);
+        });
+
+        if (v == null) {
+            throw new IllegalArgumentException("パスが存在しません");
+        }
+
+        return v;
     }
 
     public void set(@NotNull String path, Object value) {

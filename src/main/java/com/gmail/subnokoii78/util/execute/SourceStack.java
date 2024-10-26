@@ -430,7 +430,7 @@ public class SourceStack {
      */
     @Override
     public @NotNull String toString() {
-        return new JSONSerializer(getAsJSONObject()).serialize();
+        return JSONSerializer.serialize(getAsJSONObject());
     }
 
     /**

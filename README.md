@@ -63,7 +63,7 @@ ItemStackオブジェクトの作成を単純化するクラス
 サーバーフォルダ内の主なファイルのパスの列挙型
 <br><br>その他のファイル使用非推奨
 
-### json パッケージ
+### [json パッケージ](src/main/java/com/gmail/subnokoii78/util/file/json)
 json文字列のシリアライズ・デシリアライズ、jsonファイルの読み取り・書き込みなどjsonに対する操作を提供するクラス
 
 ## scoreboard パッケージ
