@@ -132,8 +132,6 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
                 final long dropEventTime = EventFiredTimeStorage.getStorage(PlayerDropItemEvent.class).getTime(player);
                 final long interactEventTime = EventFiredTimeStorage.getStorage(PlayerInteractEvent.class).getTime(player);
 
-                System.out.println("drop delta: " + (System.currentTimeMillis() - dropEventTime));
-
                 // ドロップと同時のとき発火しない
                 if (System.currentTimeMillis() - dropEventTime < 50L) return;
                 // 右クリックと同時のとき発火しない

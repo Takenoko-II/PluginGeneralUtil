@@ -20,7 +20,7 @@ public final class JSONPathAccessor {
         this.initialObject = initialObject;
     }
 
-    private @NotNull List<String> splitPath(@NotNull String path) {
+    private static @NotNull List<String> parsePath(@NotNull String path) {
         final Pattern pattern = Pattern.compile("^([^\\[\\]]+)(?:\\[([+-]?\\d+)])+$");
 
         return Arrays.stream(path.split("\\."))
@@ -52,7 +52,7 @@ public final class JSONPathAccessor {
             .toList();
     }
 
-    private int parseIndexKey(@NotNull String key) {
+    private static int parseIndexKey(@NotNull String key) {
         try {
             return Integer.parseInt(key.replace(ARRAY_INDEX_PREFIX, ""));
         }
@@ -118,7 +118,7 @@ public final class JSONPathAccessor {
     }
 
     public <T> @Nullable T access(@NotNull String path, boolean createWay, @NotNull Function<JSONLocationAccessor<?, ?>, T> callback) {
-        final List<String> paths = new ArrayList<>(splitPath(path));
+        final List<String> paths = new ArrayList<>(parsePath(path));
 
         if (paths.isEmpty()) {
             throw new IllegalArgumentException("パスがいかれてるぜ");
@@ -134,7 +134,9 @@ public final class JSONPathAccessor {
     }
 
     public boolean has(@NotNull String path) {
-        return access(path, false, accessor -> 0) != null;
+        final Boolean flag = access(path, false, JSONLocationAccessor::has);
+        if (flag == null) return false;
+        else return flag;
     }
 
     public @NotNull JSONValueType<?> getTypeOf(@NotNull String path) {
@@ -167,6 +169,16 @@ public final class JSONPathAccessor {
         });
     }
 
+    public static boolean isValidPath(@NotNull String path) {
+        try {
+            parsePath(path);
+            return true;
+        }
+        catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     private static final String ARRAY_INDEX_PREFIX = "ARRAY_INDEX(" + UUID.randomUUID() + ")=";
 
     public static abstract class JSONLocationAccessor<T extends JSONValue<?>, U> {
@@ -178,6 +190,8 @@ public final class JSONPathAccessor {
             this.structure = value;
             this.key = key;
         }
+
+        public abstract boolean has();
 
         public abstract @NotNull JSONValueType<?> getType();
 
@@ -198,6 +212,11 @@ public final class JSONPathAccessor {
         private static final class ObjectLocationAccessor extends JSONLocationAccessor<JSONObject, String> {
             private ObjectLocationAccessor(@NotNull JSONObject value, @NotNull String key) {
                 super(value, key);
+            }
+
+            @Override
+            public boolean has() {
+                return structure.hasKey(key);
             }
 
             @Override
@@ -224,6 +243,11 @@ public final class JSONPathAccessor {
         private static final class ArrayLocationAccessor extends JSONLocationAccessor<JSONArray, Integer> {
             private ArrayLocationAccessor(@NotNull JSONArray value, @NotNull Integer key) {
                 super(value, key);
+            }
+
+            @Override
+            public boolean has() {
+                return structure.has(key);
             }
 
             @Override
