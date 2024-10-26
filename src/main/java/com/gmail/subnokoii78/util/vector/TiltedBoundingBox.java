@@ -318,15 +318,7 @@ public final class TiltedBoundingBox {
      * @return 衝突していればtrue
      */
     public boolean isCollides(@NotNull Entity entity) {
-        final BoundingBox box = entity.getBoundingBox();
-
-        final TiltedBoundingBox instance = new TiltedBoundingBox()
-            .size(new Vector3Builder(box.getWidthX(), box.getHeight() * 2, box.getWidthZ()))
-            .put(entity.getLocation());
-
-        // instance.showOutline(Color.BLUE);
-
-        return isCollides(instance);
+        return isCollides(TiltedBoundingBox.of(entity));
     }
 
 /*
@@ -532,7 +524,11 @@ public final class TiltedBoundingBox {
             .collect(Collectors.toSet());
     }
 
-    static {
-        new TiltedBoundingBox();
+    public static @NotNull TiltedBoundingBox of(@NotNull Entity entity) {
+        final BoundingBox box = entity.getBoundingBox();
+        return new TiltedBoundingBox()
+            .size(new Vector3Builder(box.getWidthX(), box.getHeight(), box.getWidthZ()))
+            .dimension(entity.getWorld())
+            .center(Vector3Builder.from(entity).add(new Vector3Builder(0, box.getHeight() / 2, 0)));
     }
 }
