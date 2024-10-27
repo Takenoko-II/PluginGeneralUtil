@@ -8,35 +8,30 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.List;
 
 public final class JSONFile {
-    private final String path;
+    private final Path path;
 
-    /**
-     * 指定パスのjsonファイルを読み取ります。
-     * @param path ファイルパス
-     */
     public JSONFile(@NotNull String path) {
         if (!path.endsWith(".json")) {
             throw new IllegalArgumentException("ファイルの拡張子は.jsonである必要があります");
         }
 
-        this.path = path;
+        this.path = Path.of(path);
     }
 
     private @NotNull String read() {
         try {
-            return String.join("", Files.readAllLines(Path.of(path)));
+            return String.join("", Files.readAllLines(path));
         }
         catch (IOException e) {
             throw new IllegalStateException("ファイルの読み取りに失敗しました", e);
         }
     }
 
-    private void write(@NotNull List<String> json) {
+    private void write(@NotNull String json) {
         try {
-            Files.write(Path.of(path), json, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(path, Arrays.stream(json.split("\\n")).toList(), StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING);
         }
         catch (IOException e) {
             throw new IllegalStateException("ファイルの書き込みに失敗しました", e);
@@ -60,6 +55,6 @@ public final class JSONFile {
     }
 
     public void write(@NotNull JSONStructure structure) {
-        write(Arrays.stream(JSONSerializer.serialize(structure).split("\n")).toList());
+        write(JSONSerializer.serialize(structure));
     }
 }

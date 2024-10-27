@@ -16,14 +16,14 @@ public final class JSONParser {
         this.text = json.replaceAll("\n", "");
     }
 
-    public @NotNull JSONObject parseObject() {
+    private @NotNull JSONObject parseObject() {
         reset();
         parseObjectCommon();
         remainingChars();
         return new JSONObject(map);
     }
 
-    public @NotNull JSONArray parseArray() {
+    private @NotNull JSONArray parseArray() {
         reset();
         if (next() != '[') {
             throw new IllegalStateException("配列は[で開始される必要があります");
@@ -75,7 +75,7 @@ public final class JSONParser {
             case '"' -> string();
             case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-' -> number(current);
             case 't', 'f' -> bool(current);
-            case 'n' -> _null();
+            case 'n' -> __null__();
             default -> throw new IllegalStateException("要素から次の要素への移動中に無効な文字を検知しました: " + current);
         };
     }
@@ -227,7 +227,7 @@ public final class JSONParser {
         }
     }
 
-    private @Nullable Object _null() {
+    private @Nullable Object __null__() {
         char u = next();
         char l = next();
         char l_2 = next();

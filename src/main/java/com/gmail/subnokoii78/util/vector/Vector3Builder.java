@@ -41,6 +41,11 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
             && z == other.z;
     }
 
+    @Override
+    public boolean similar(@NotNull Vector3Builder other, int digits) {
+        return format("($c, $c, $c)", digits).equals(other.format("($c, $c, $c)", digits));
+    }
+
     /**
      * このベクトルのX成分の値を返します。
      * @return X成分の値
@@ -325,9 +330,9 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
         final double cos = Math.cos(radian);
 
         final Vector3Builder normalized = axis.copy().normalize();
-        final double x = normalized.x;
+        /*final double x = normalized.x;
         final double y = normalized.y;
-        final double z = normalized.z;
+        final double z = normalized.z;*/
 
         final var a = this.copy().scale(cos);
         final var b = normalized.cross(this).scale(sin);

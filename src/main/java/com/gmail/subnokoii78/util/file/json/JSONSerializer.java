@@ -7,13 +7,13 @@ public final class JSONSerializer {
 
     private final JSONStructure value;
 
-    private JSONSerializer(@NotNull JSONStructure value) {
+    private JSONSerializer(@NotNull JSONStructure value, int indentationSpaceCount) {
         this.value = value;
-        this.indentationSpaceCount = 4;
+        this.indentationSpaceCount = indentationSpaceCount;
     }
 
-    public String serialize() {
-        return serialize(this.value, 1).toString();
+    private StringBuilder serialize() {
+        return serialize(this.value, 1);
     }
 
     private StringBuilder serialize(Object value, int indentation) {
@@ -140,7 +140,7 @@ public final class JSONSerializer {
 
     private static final char WHITESPACE = ' ';
 
-    public static @NotNull String serialize(@NotNull JSONStructure jsonValue) {
-        return new JSONSerializer(jsonValue).serialize();
+    public static @NotNull String serialize(@NotNull JSONStructure structure) {
+        return new JSONSerializer(structure, 4).serialize().toString();
     }
 }

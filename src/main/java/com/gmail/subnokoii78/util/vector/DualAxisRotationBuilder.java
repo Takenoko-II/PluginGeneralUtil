@@ -36,6 +36,11 @@ public class DualAxisRotationBuilder implements VectorBuilder<DualAxisRotationBu
             && pitch == other.pitch;
     }
 
+    @Override
+    public boolean similar(@NotNull DualAxisRotationBuilder other, int digits) {
+        return format("($c, $c)", digits).equals(other.format("($c, $c)", digits));
+    }
+
     /**
      * この回転のX成分(横回転)の値を返します。
      * @return X成分の値

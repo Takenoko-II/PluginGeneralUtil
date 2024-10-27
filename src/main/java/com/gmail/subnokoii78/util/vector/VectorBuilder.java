@@ -103,4 +103,10 @@ public interface VectorBuilder<T extends VectorBuilder<T, U>, U extends Number> 
      * @return components.every(v => v === 0);
      */
     boolean isZero();
+
+    /**
+     * 二つのベクトルの各成分が指定桁数まで一致していることを確かめます。
+     * @return 一致していれば真
+     */
+    boolean similar(@NotNull T other, int digits);
 }

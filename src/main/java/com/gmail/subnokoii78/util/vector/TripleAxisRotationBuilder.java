@@ -33,6 +33,11 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
             && roll == other.roll;
     }
 
+    @Override
+    public boolean similar(@NotNull TripleAxisRotationBuilder other, int digits) {
+        return format("($c, $c, $c)", digits).equals(other.format("($c, $c, $c)", digits));
+    }
+
     public float yaw() {
         return yaw;
     }

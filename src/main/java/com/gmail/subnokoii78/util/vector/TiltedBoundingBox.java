@@ -1,11 +1,21 @@
 package com.gmail.subnokoii78.util.vector;
 
+import com.gmail.subnokoii78.util.execute.EntitySelector;
+import com.gmail.subnokoii78.util.execute.Execute;
+import com.gmail.subnokoii78.util.execute.IfUnless;
+import com.gmail.subnokoii78.util.execute.SelectorArgument;
+import com.gmail.subnokoii78.util.other.TupleLR;
 import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.BoundingBox;
+import org.bukkit.util.RayTraceResult;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -320,6 +330,68 @@ public final class TiltedBoundingBox {
      */
     public boolean isCollides(@NotNull Entity entity) {
         return isCollides(TiltedBoundingBox.of(entity));
+    }
+
+    /**
+     * 6つの面を取得します。
+     * @return {@link Set}<{@link BoundedPlane}>
+     */
+    @ApiStatus.Experimental
+    public @NotNull Set<BoundedPlane> getBoundedPlanes() {
+        final TripleAxisRotationBuilder.LocalAxisProviderE provider = rotation.getLocalAxisProviderE();
+        final Vector3Builder x = provider.getX().length(width / 2);
+        final Vector3Builder y = provider.getY().length(height / 2);
+        final Vector3Builder z = provider.getZ().length(depth / 2);
+
+        final Vector3Builder left = center().add(x);
+        final Vector3Builder right = center().subtract(x);
+        final Vector3Builder up = center().add(y);
+        final Vector3Builder down = center().subtract(y);
+        final Vector3Builder forward = center().add(z);
+        final Vector3Builder back = center().subtract(z);
+
+        // TripleAxisRotationBuilder::left()とか実装したい
+        // やる気になるまでの仮実装ということで...
+        final BoundedPlane leftPlane = new BoundedPlane(left, z.copy().invert(), y, x, depth, height);
+        final BoundedPlane rightPlane = new BoundedPlane(right, z, y, x.copy().invert(), depth, height);
+        final BoundedPlane upPlane = new BoundedPlane(up, x, z.copy().invert(), y, width, depth);
+        final BoundedPlane downPlane = new BoundedPlane(down, x, z, y.copy().invert(), width, depth);
+        final BoundedPlane forwardPlane = new BoundedPlane(forward, x, y, z, width, height);
+        final BoundedPlane backPlane = new BoundedPlane(back, x.copy().invert(), y, z.copy().invert(), width, height);
+
+        return Set.of(
+            leftPlane, rightPlane,
+            upPlane, downPlane,
+            forwardPlane, backPlane
+        );
+    }
+
+    /**
+     * このボックスとのレイキャストを実行します。
+     * @param from 線分の始点
+     * @param to 線分の終点
+     * @return 交差した場合ボックスとの最初の交点、交差していなければnull
+     */
+    public @Nullable Vector3Builder rayCast(@NotNull Vector3Builder from, @NotNull Vector3Builder to) {
+        final List<Vector3Builder> intersections = new ArrayList<>();
+
+        for (final BoundedPlane boundedPlane : getBoundedPlanes()) {
+            final Vector3Builder intersection = boundedPlane.rayCast(from, to);
+            if (intersection == null) continue;
+            intersections.add(intersection);
+        }
+
+        if (intersections.isEmpty()) {
+            return null;
+        }
+
+        return intersections.stream()
+            .map(intersection -> {
+                return new TupleLR<>(intersection, from.getDistanceTo(intersection));
+            })
+            .sorted((a, b) -> (int) (a.right() - b.right()))
+            .toList()
+            .getFirst().left();
     }
 
 /*
