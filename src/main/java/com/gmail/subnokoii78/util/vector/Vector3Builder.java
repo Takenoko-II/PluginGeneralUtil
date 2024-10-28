@@ -330,27 +330,36 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
         final double cos = Math.cos(radian);
 
         final Vector3Builder normalized = axis.copy().normalize();
-        /*final double x = normalized.x;
-        final double y = normalized.y;
-        final double z = normalized.z;*/
+        final double ax = normalized.x;
+        final double ay = normalized.y;
+        final double az = normalized.z;
 
-        final var a = this.copy().scale(cos);
-        final var b = normalized.cross(this).scale(sin);
-        final var c = normalized.copy().scale(normalized.dot(this)).scale(1 - cos);
-        final var d = a.add(b).add(c);
-        x(d.x).y(d.y).z(d.z);
-
-/*
         final double[][] matrix = new double[][]{
-            new double[]{cos + x * x * (1 - cos), x * y * (1 - cos) - z * sin, x * z * (1 - cos) + y * sin},
-            new double[]{y * x * (1 - cos) + z * sin, cos + y * y * (1 - cos), y * z * (1 - cos) - x * sin},
-            new double[]{z * x * (1 - cos) - y * sin, z * y * (1 - cos) + x * sin, cos + z * z * (1 - cos)}
+            {
+                cos + ax * ax * (1 - cos),
+                ax * ay * (1 - cos) - az * sin,
+                ax * az * (1 - cos) + ay * sin
+            },
+            {
+                ay * ax * (1 - cos) + az * sin,
+                cos + ay * ay * (1 - cos),
+                ay * az * (1 - cos) - ax * sin
+            },
+            {
+                az * ax * (1 - cos) - ay * sin,
+                az * ay * (1 - cos) + ax * sin,
+                cos + az * az * (1 - cos)
+            }
         };
 
-        this.x = matrix[0][0] * this.x + matrix[0][1] * this.y + matrix[0][2] * this.z;
-        this.y = matrix[1][0] * this.x + matrix[1][1] * this.y + matrix[1][2] * this.z;
-        this.z = matrix[2][0] * this.x + matrix[2][1] * this.y + matrix[2][2] * this.z;
-*/
+        final double bx = matrix[0][0] * this.x + matrix[0][1] * this.y + matrix[0][2] * this.z;
+        final double by = matrix[1][0] * this.x + matrix[1][1] * this.y + matrix[1][2] * this.z;
+        final double bz = matrix[2][0] * this.x + matrix[2][1] * this.y + matrix[2][2] * this.z;
+
+        this.x = bx;
+        this.y = by;
+        this.z = bz;
+
         return this;
     }
 

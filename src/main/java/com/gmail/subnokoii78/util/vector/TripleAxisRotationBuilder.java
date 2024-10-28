@@ -1,6 +1,8 @@
 package com.gmail.subnokoii78.util.vector;
 
 import com.gmail.subnokoii78.util.function.TriFunction;
+import org.bukkit.util.StructureSearchResult;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
@@ -105,7 +107,7 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
     @Override
     @Destructive
     public @NotNull TripleAxisRotationBuilder subtract(@NotNull TripleAxisRotationBuilder other) {
-        return add(other.copy().invert());
+        return calculate(other, (a, b) -> a - b);
     }
 
     @Override
@@ -114,6 +116,7 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
         return calculate(component -> component * scalar);
     }
 
+    @Deprecated
     @Override
     @Destructive
     public @NotNull TripleAxisRotationBuilder invert() {
@@ -199,60 +202,73 @@ public final class TripleAxisRotationBuilder implements VectorBuilder<TripleAxis
     }
 
     public static final class LocalAxisProviderE extends Vector3Builder.LocalAxisProvider {
+        private final TripleAxisRotationBuilder rotation;
+/*
         private final double[][] matrix;
-
+*/
         private LocalAxisProviderE(@NotNull TripleAxisRotationBuilder rotation) {
             super(rotation.getDirection3d());
-
-            final double radian = (double)rotation.roll * Math.PI / 180.0;
+/*
+            final double radian = rotation.roll * Math.PI / 180;
             final double sin = Math.sin(radian);
             final double cos = Math.cos(radian);
 
             final Vector3Builder axis = super.getZ();
-            double x = axis.x();
-            double y = axis.y();
-            double z = axis.z();
+            final double x = axis.x();
+            final double y = axis.y();
+            final double z = axis.z();
 
             this.matrix = new double[][]{
                 {
-                    cos + x * x * (1.0 - cos),
-                    x * y * (1.0 - cos) - z * sin,
-                    x * z * (1.0 - cos) + y * sin
+                    cos + x * x * (1 - cos),
+                    x * y * (1 - cos) - z * sin,
+                    x * z * (1 - cos) + y * sin
                 },
                 {
-                    y * x * (1.0 - cos) + z * sin,
-                    cos + y * y * (1.0 - cos),
-                    y * z * (1.0 - cos) - x * sin
+                    y * x * (1 - cos) + z * sin,
+                    cos + y * y * (1 - cos),
+                    y * z * (1 - cos) - x * sin
                 },
                 {
-                    z * x * (1.0 - cos) - y * sin,
-                    z * y * (1.0 - cos) + x * sin,
-                    cos + z * z * (1.0 - cos)
+                    z * x * (1 - cos) - y * sin,
+                    z * y * (1 - cos) + x * sin,
+                    cos + z * z * (1 - cos)
                 }
             };
+*/
+            this.rotation = rotation.copy();
         }
-
+/*
         private Vector3Builder rotate(@NotNull Vector3Builder vector3) {
             final double x = this.matrix[0][0] * vector3.x() + this.matrix[0][1] * vector3.y() + this.matrix[0][2] * vector3.z();
             final double y = this.matrix[1][0] * vector3.x() + this.matrix[1][1] * vector3.y() + this.matrix[1][2] * vector3.z();
             final double z = this.matrix[2][0] * vector3.x() + this.matrix[2][1] * vector3.y() + this.matrix[2][2] * vector3.z();
             return new Vector3Builder(x, y, z);
         }
-
-        @NotNull
-        public Vector3Builder getX() {
-            return this.rotate(super.getX());
+*/
+        public @NotNull Vector3Builder getX() {
+            return super.getX().rotate(getZ(), rotation.roll()); //return this.rotate(super.getX());
         }
 
-        @NotNull
-        public Vector3Builder getY() {
+        public @NotNull Vector3Builder getY() {
             return this.getZ().cross(this.getX());
         }
 
-        @NotNull
-        public Vector3Builder getZ() {
+        public @NotNull Vector3Builder getZ() {
             return super.getZ();
         }
+
+        public @NotNull TripleAxisRotationBuilder back() {
+            return new TripleAxisRotationBuilder(
+                rotation.yaw + 180,
+                -rotation.pitch,
+                -rotation.roll
+            );
+        }
+
+        /*public @NotNull TripleAxisRotationBuilder left() {
+
+        }*/
     }
 
     /*public static final class LocalAxisProviderE extends Vector3Builder.LocalAxisProvider {
