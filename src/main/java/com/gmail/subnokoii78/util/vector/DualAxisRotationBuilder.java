@@ -112,7 +112,7 @@ public class DualAxisRotationBuilder implements VectorBuilder<DualAxisRotationBu
     @Override
     @Destructive
     public @NotNull DualAxisRotationBuilder subtract(@NotNull DualAxisRotationBuilder subtrahend) {
-        return add(subtrahend.copy().invert());
+        return calculate(subtrahend, (a, b) -> a - b);
     }
 
     /**
@@ -133,9 +133,8 @@ public class DualAxisRotationBuilder implements VectorBuilder<DualAxisRotationBu
     @Override
     @Destructive
     public @NotNull DualAxisRotationBuilder invert() {
-        final DualAxisRotationBuilder rotation = getDirection3d().invert().getRotation2d();
-        yaw = rotation.yaw();
-        pitch = rotation.pitch();
+        yaw += 180;
+        pitch *= -1;
         return this;
     }
 
@@ -177,18 +176,18 @@ public class DualAxisRotationBuilder implements VectorBuilder<DualAxisRotationBu
 
     /**
      * この回転と別の回転がなす角の大きさを求めます。
-     * @param rotation 別の回転
+     * @param other 別の回転
      * @return 角の大きさ(度)
      */
-    public double getAngleBetween(DualAxisRotationBuilder rotation) {
-        return getDirection3d().getAngleBetween(rotation.getDirection3d());
+    public double getAngleBetween(@NotNull DualAxisRotationBuilder other) {
+        return getDirection3d().getAngleBetween(other.getDirection3d());
     }
 
     /**
      * この回転を単位ベクトルに変換します。
      * @return 単位ベクトル
      */
-    public Vector3Builder getDirection3d() {
+    public @NotNull Vector3Builder getDirection3d() {
         final double x = -Math.sin(yaw * Math.PI / 180) * Math.cos(pitch * Math.PI / 180);
         final double y = -Math.sin(pitch * Math.PI / 180);
         final double z = Math.cos(yaw * Math.PI / 180) * Math.cos(pitch * Math.PI / 180);
@@ -204,11 +203,35 @@ public class DualAxisRotationBuilder implements VectorBuilder<DualAxisRotationBu
         return new Location(world, coordinate.x(), coordinate.y(), coordinate.z(), yaw, pitch);
     }
 
-    public static DualAxisRotationBuilder from(Location location) {
+    public static @NotNull DualAxisRotationBuilder from(@NotNull Location location) {
         return new DualAxisRotationBuilder(location.getYaw(), location.getPitch());
     }
 
-    public static DualAxisRotationBuilder from(Entity entity) {
+    public static @NotNull DualAxisRotationBuilder from(@NotNull Entity entity) {
         return DualAxisRotationBuilder.from(entity.getLocation());
+    }
+
+    public static @NotNull DualAxisRotationBuilder north() {
+        return new DualAxisRotationBuilder(180, 0);
+    }
+
+    public static @NotNull DualAxisRotationBuilder south() {
+        return new DualAxisRotationBuilder(0, 0);
+    }
+
+    public static @NotNull DualAxisRotationBuilder east() {
+        return new DualAxisRotationBuilder(-90, 0);
+    }
+
+    public static @NotNull DualAxisRotationBuilder west() {
+        return new DualAxisRotationBuilder(90, 0);
+    }
+
+    public static @NotNull DualAxisRotationBuilder up() {
+        return new DualAxisRotationBuilder(0, -90);
+    }
+
+    public static @NotNull DualAxisRotationBuilder down() {
+        return new DualAxisRotationBuilder(0, 90);
     }
 }

@@ -549,6 +549,30 @@ public class Vector3Builder implements VectorBuilder<Vector3Builder, Double> {
         return a.copy().calculate(b, Math::max);
     }
 
+    public static @NotNull Vector3Builder forward() {
+        return new Vector3Builder(0, 0, 1);
+    }
+
+    public static @NotNull Vector3Builder back() {
+        return new Vector3Builder(0, 0, -1);
+    }
+
+    public static @NotNull Vector3Builder left() {
+        return new Vector3Builder(1, 0, 0);
+    }
+
+    public static @NotNull Vector3Builder right() {
+        return new Vector3Builder(-1, 0, 0);
+    }
+
+    public static @NotNull Vector3Builder up() {
+        return new Vector3Builder(0, 1, 0);
+    }
+
+    public static @NotNull Vector3Builder down() {
+        return new Vector3Builder(0, -1, 0);
+    }
+
     /**
      * ローカル軸を取得するためのクラス
      */

@@ -1,14 +1,9 @@
 package com.gmail.subnokoii78.util.vector;
 
-import com.gmail.subnokoii78.util.execute.EntitySelector;
-import com.gmail.subnokoii78.util.execute.Execute;
-import com.gmail.subnokoii78.util.execute.IfUnless;
-import com.gmail.subnokoii78.util.execute.SelectorArgument;
 import com.gmail.subnokoii78.util.other.TupleLR;
 import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.BoundingBox;
-import org.bukkit.util.RayTraceResult;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -350,14 +345,12 @@ public final class TiltedBoundingBox {
         final Vector3Builder forward = center().add(z);
         final Vector3Builder back = center().subtract(z);
 
-        // TripleAxisRotationBuilder::left()とか実装したい
-        // やる気になるまでの仮実装ということで...
-        final BoundedPlane leftPlane = new BoundedPlane(left, z.copy().invert(), y, x, depth, height);
-        final BoundedPlane rightPlane = new BoundedPlane(right, z, y, x.copy().invert(), depth, height);
-        final BoundedPlane upPlane = new BoundedPlane(up, x, z.copy().invert(), y, width, depth);
-        final BoundedPlane downPlane = new BoundedPlane(down, x, z, y.copy().invert(), width, depth);
-        final BoundedPlane forwardPlane = new BoundedPlane(forward, x, y, z, width, height);
-        final BoundedPlane backPlane = new BoundedPlane(back, x.copy().invert(), y, z.copy().invert(), width, height);
+        final BoundedPlane leftPlane = new BoundedPlane(left, provider.left(), depth, height);
+        final BoundedPlane rightPlane = new BoundedPlane(right, provider.right(), depth, height);
+        final BoundedPlane upPlane = new BoundedPlane(up, provider.up(), width, depth);
+        final BoundedPlane downPlane = new BoundedPlane(down, provider.down(), width, depth);
+        final BoundedPlane forwardPlane = new BoundedPlane(forward, provider.forward(), width, height);
+        final BoundedPlane backPlane = new BoundedPlane(back, provider.back(), width, height);
 
         return Set.of(
             leftPlane, rightPlane,

@@ -1,35 +1,24 @@
 package com.gmail.subnokoii78.util.vector;
 
 import com.gmail.subnokoii78.util.other.TupleT;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 頭悪めなクラス
- */
-@ApiStatus.Experimental
 public final class BoundedPlane {
     private final Vector3Builder center;
 
-    private final Vector3Builder x;
-
-    private final Vector3Builder y;
-
-    private final Vector3Builder z;
+    private final TripleAxisRotationBuilder rotation;
 
     private final double width;
 
     private final double height;
 
-    public BoundedPlane(@NotNull Vector3Builder center, @NotNull Vector3Builder x, @NotNull Vector3Builder y, @NotNull Vector3Builder z, double width, double height) {
+    public BoundedPlane(@NotNull Vector3Builder center, @NotNull TripleAxisRotationBuilder rotation, double width, double height) {
         this.center = center.copy();
-        this.x = x.copy();
-        this.y = y.copy();
-        this.z = z.copy();
+        this.rotation = rotation.copy();
         this.width = width;
         this.height = height;
     }
@@ -38,8 +27,20 @@ public final class BoundedPlane {
         return center.copy();
     }
 
+    public @NotNull TripleAxisRotationBuilder getRotation() {
+        return rotation.copy();
+    }
+
     public @NotNull Vector3Builder getNormal() {
-        return z.copy().normalize();
+        return rotation.getDirection3d();
+    }
+
+    public double getWidth() {
+        return width;
+    }
+
+    public double getHeight() {
+        return height;
     }
 
     public @Nullable Vector3Builder rayCast(@NotNull Vector3Builder from, @NotNull Vector3Builder to) {
@@ -49,8 +50,10 @@ public final class BoundedPlane {
 
         if (v1.dot(n) * v2.dot(n) > 0) return null;
 
-        final Vector3Builder vx = x.copy().length(width / 2);
-        final Vector3Builder vy = y.copy().length(height / 2);
+        final var provider = rotation.getLocalAxisProviderE();
+
+        final Vector3Builder vx = provider.getX().length(width / 2);
+        final Vector3Builder vy = provider.getY().length(height / 2);
 
         final Vector3Builder $00 = center.copy().subtract(vx).subtract(vy);
         final Vector3Builder $10 = center.copy().add(vx).subtract(vy);
@@ -91,7 +94,7 @@ public final class BoundedPlane {
     }
 
     public double getDistanceBetween(@NotNull Vector3Builder point) {
-        final Vector3Builder n = z.copy();
-        return Math.abs(point.copy().subtract(center).dot(n)) / n.length();
+        final Vector3Builder n = getNormal();
+        return Math.abs(point.copy().subtract(center).dot(n));
     }
 }
