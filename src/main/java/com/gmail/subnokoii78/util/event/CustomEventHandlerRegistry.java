@@ -161,7 +161,7 @@ public final class CustomEventHandlerRegistry<T extends CustomEvent> {
 
             if (!tags.contains("plugin_api.messenger")) return;
 
-            final EntitySelector<Entity> selector = EntitySelector.E.build().arg(SelectorArgument.TAG, "plugin_api.target");
+            final EntitySelector<Entity> selector = EntitySelector.E.arg(SelectorArgument.TAG, "plugin_api.target");
             final Set<Entity> targets = new HashSet<>(new SourceStack(SourceOrigin.of(entity)).getEntities(selector));
 
             final Location location = Objects.requireNonNullElse(event.getTo(), event.getFrom());
