@@ -1,11 +1,7 @@
 package com.gmail.subnokoii78.util.execute;
 
-import com.gmail.subnokoii78.util.file.json.JSONArray;
-import com.gmail.subnokoii78.util.file.json.JSONObject;
-import com.gmail.subnokoii78.util.file.json.JSONSerializer;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
-import net.kyori.adventure.text.serializer.json.JSONComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -14,7 +10,6 @@ import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -70,16 +65,27 @@ public class SourceStack {
      * コマンドの送信者(実行者)を取得します。
      * @return 送信者
      */
-    public SourceOrigin<?> getSender() {
+    public @NotNull SourceOrigin<?> getSender() {
         return sender;
     }
 
     /**
-     * コマンドの実行者を取得します。
-     * @return 実行者がいればそのまま返し、いなければnull
+     * 実行者が存在するかどうかをテストします。
+     * @return 実行者が存在すればtrue、しなければfalse
      */
-    public @Nullable Entity getExecutor() {
-        return executor;
+    public boolean hasExecutor() {
+        if (executor == null) return false;
+        else return executor.isValid();
+    }
+
+    /**
+     * コマンドの実行者を取得します。
+     * <br>先に{@link SourceStack#hasExecutor()}を呼び出してください
+     * @return 実行者
+     */
+    public @NotNull Entity getExecutor() throws IllegalStateException {
+        if (hasExecutor()) return executor;
+        else throw new IllegalStateException("実行者が存在しません");
     }
 
     /**
@@ -104,6 +110,35 @@ public class SourceStack {
      */
     public @NotNull DualAxisRotationBuilder getRotation() {
         return rotation.copy();
+    }
+
+    /**
+     * 実行座標、実行方向、実行ディメンションの三つを一つの{@link Location}オブジェクトとして取得します。
+     * @return 実行座標・実行方向・実行ディメンション
+     */
+    public @NotNull Location getLocation(@NotNull LocationGetter... getters) {
+        final Set<LocationGetter> set = Set.of(getters);
+
+        if (set.isEmpty()) {
+            return location.withRotationAndWorld(rotation, dimension);
+        }
+
+        final Location loc = new Location(VanillaDimensionProvider.OVERWORLD.getWorld(), 0d, 0d, 0d, 0f, 0f);
+
+        if (set.contains(LocationGetter.DIMENSION)) {
+            loc.setWorld(dimension);
+        }
+        if (set.contains(LocationGetter.POSITION)) {
+            loc.setX(location.x());
+            loc.setY(location.y());
+            loc.setZ(location.z());
+        }
+        if (set.contains(LocationGetter.ROTATION)) {
+            loc.setYaw(rotation.yaw());
+            loc.setPitch(rotation.pitch());
+        }
+
+        return loc;
     }
 
     /**
@@ -332,30 +367,6 @@ public class SourceStack {
     }
 
     /**
-     * {@link JSONObject}としてソーススタックに格納されている情報を取得します。
-     * @return シリアライズされたオブジェクト
-     */
-    public @NotNull JSONObject getAsJSONObject() {
-        final JSONObject jsonObject = new JSONObject();
-
-        jsonObject.setKey("sender", JSONComponentSerializer.json().serialize(sender.getName()));
-        jsonObject.setKey("executor", hasExecutor() ? executor.getName() : "null");
-        final JSONArray loc = new JSONArray();
-        loc.add(location.x());
-        loc.add(location.y());
-        loc.add(location.z());
-        jsonObject.setKey("location", loc);
-        final JSONArray rot = new JSONArray();
-        rot.add(rotation.yaw());
-        rot.add(rotation.pitch());
-        jsonObject.setKey("rotation", rot);
-        jsonObject.setKey("anchor", anchor.getType().getId());
-        jsonObject.setKey("dimension", VanillaDimensionProvider.get(dimension).getId());
-
-        return jsonObject;
-    }
-
-    /**
      * コマンドを実行します。
      * @param command 実行するコマンド
      * @return 成功したときtrue、失敗すればfalse
@@ -394,43 +405,6 @@ public class SourceStack {
         catch (CommandException e) {
             return false;
         }
-    }
-
-    /**
-     * 実行者が存在するかどうかをテストします。
-     * @return 実行者が存在すればtrue、しなければfalse
-     */
-    public boolean hasExecutor() {
-        return executor != null;
-    }
-
-    /**
-     * 実行者が存在しないときに例外を投げることによって必ずnullでない実行者を返します。
-     * @return 実行者
-     * @throws IllegalStateException 実行者が存在しないとき
-     */
-    public @NotNull Entity requireExecutor() throws IllegalStateException {
-        if (hasExecutor()) return executor;
-        else {
-            throw new IllegalStateException("実行者がいません");
-        }
-    }
-
-    /**
-     * 実行座標、実行方向、実行ディメンションの三つを一つの{@link Location}オブジェクトとして取得します。
-     * @return 実行座標・実行方向・実行ディメンション
-     */
-    public @NotNull Location getAsBukkitLocation() {
-        return location.withRotationAndWorld(rotation, dimension);
-    }
-
-    /**
-     * この{@link SourceStack}オブジェクトを文字列として視覚化します。
-     * @return 変換された文字列
-     */
-    @Override
-    public @NotNull String toString() {
-        return JSONSerializer.serialize(getAsJSONObject());
     }
 
     /**

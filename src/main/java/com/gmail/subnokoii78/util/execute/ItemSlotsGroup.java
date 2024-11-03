@@ -1,5 +1,6 @@
 package com.gmail.subnokoii78.util.execute;
 
+import com.gmail.subnokoii78.util.other.InstanceAccessor;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
 import org.jetbrains.annotations.NotNull;
@@ -8,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Predicate;
 
 /**
@@ -170,9 +170,9 @@ public abstract class ItemSlotsGroup<T, U> {
     /**
      * プレイヤーのインベントリ内カーソル
      */
-    public static final ItemSlotsGroup<HumanEntity, Object> PLAYER_CURSOR = new ItemSlotsGroup<>() {
+    public static final ItemSlotsGroup<HumanEntity, Void> PLAYER_CURSOR = new ItemSlotsGroup<>() {
         @Override
-        @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Object arg) {
+        @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Void arg) {
             final ItemStack itemStack = target.getItemOnCursor();
 
             if (itemStack.getItemMeta() == null) return null;
@@ -180,8 +180,8 @@ public abstract class ItemSlotsGroup<T, U> {
         }
 
         @Override
-        @NotNull List<Object> getCandidates() {
-            return List.of(new Object());
+        @NotNull List<Void> getCandidates() {
+            return List.of(InstanceAccessor.VOID.newInstance());
         }
     };
 
@@ -244,40 +244,34 @@ public abstract class ItemSlotsGroup<T, U> {
      * @param argument スロットの種類に応じた引数
      * @return スロット
      */
-    public ItemSlots<T, U> getSingleSlot(@NotNull U argument) {
-        return new ItemSlots<>(this, argument);
+    public ItemSlotsMatcher<T, U> getSlots(@NotNull U argument) {
+        return new ItemSlotsMatcher<>(this, argument);
     }
 
     /**
-     * {@link ItemSlotsGroup#ANY}を引数に渡すことによってこのスロットグループのスロットを全て取得します。
-     * @param id {@link ItemSlotsGroup#ANY}
+     * このスロットグループのスロットを全て取得します。
      * @return 全スロット
      */
-    public ItemSlots<T, U> getSlots(@NotNull UUID id) {
-        return new ItemSlots<>(this, id);
+    public ItemSlotsMatcher<T, U> getAllSlots() {
+        return new ItemSlotsMatcher<>(this);
     }
-
-    /**
-     * 全てのスロットを取得するためのキー
-     */
-    public static final UUID ANY = UUID.randomUUID();
 
     /**
      * アイテムスロットの集合を表現するクラス
      * @param <T> スロットグループを取得できるクラス
      * @param <U> スロットグループからスロットを取得するときに必要な値の型
      */
-    public static final class ItemSlots<T, U> {
+    public static final class ItemSlotsMatcher<T, U> {
         private final ItemSlotsGroup<T, U> group;
 
         private final U argument;
 
-        private ItemSlots(@NotNull ItemSlotsGroup<T, U> group, @NotNull U argument) {
+        private ItemSlotsMatcher(@NotNull ItemSlotsGroup<T, U> group, @NotNull U argument) {
             this.group = group;
             this.argument = argument;
         }
 
-        private ItemSlots(@NotNull ItemSlotsGroup<T, U> group, @NotNull UUID any) {
+        private ItemSlotsMatcher(@NotNull ItemSlotsGroup<T, U> group) {
             this.group = group;
             this.argument = null;
         }

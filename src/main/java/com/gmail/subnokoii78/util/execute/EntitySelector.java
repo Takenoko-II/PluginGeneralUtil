@@ -47,7 +47,7 @@ public final class EntitySelector<T extends Entity> {
     }
 
     /**
-     * セレクターに引数を追加します。
+     * セレクターに負の引数を追加します。
      * @param modifier セレクター引数の種類
      * @param value セレクター引数に渡す値
      * @return thisをそのまま返す
@@ -62,12 +62,12 @@ public final class EntitySelector<T extends Entity> {
         final SourceStack copy = stack.copy();
         List<Entity> out = entities.stream().map(entity -> (Entity) entity).toList();
 
-        // xyz -> sort -> limit
+        // xyz -> sort -> limit の順番
         for (final SelectorArgument modifier : modifiers) {
             out = modifier.modify(out, copy);
         }
 
-        // out(List<Entity>)はentities(List<T>)をフィルターしたりソートしたものなのでここのキャストでエラーが起こることはない
+        // out(List<Entity>)はentities(List<T extends Entity>)をフィルターしたりソートしたものなのでここのキャストでエラーが起こることはない！！！！
         return (List<T>) out;
     }
 
@@ -107,7 +107,7 @@ public final class EntitySelector<T extends Entity> {
     public static final Provider<Entity> S = new Provider<>() {
         @Override
         @NotNull List<Entity> getTargetCandidates(@NotNull SourceStack stack) {
-            return stack.getExecutor() == null ? List.of() : List.of(stack.getExecutor());
+            return stack.hasExecutor() ? List.of(stack.getExecutor()) : List.of();
         }
 
         @Override
@@ -204,8 +204,28 @@ public final class EntitySelector<T extends Entity> {
         /**
          * 新しくセレクターを作成します。
          */
-        public @NotNull EntitySelector<T> build() {
+        protected @NotNull EntitySelector<T> build() {
             return new EntitySelector<>(this);
+        }
+
+        /**
+         * セレクターに引数を追加してセレクターを作成します。
+         * @param modifier セレクター引数の種類
+         * @param value セレクター引数に渡す値
+         * @return 作成されたセレクター
+         */
+        public <U> @NotNull EntitySelector<T> arg(@NotNull SelectorArgument.Builder<U> modifier, @NotNull U value) {
+            return build().arg(modifier, value);
+        }
+
+        /**
+         * セレクターに負の引数を追加してセレクターを作成します。
+         * @param modifier セレクター引数の種類
+         * @param value セレクター引数に渡す値
+         * @return 作成されたセレクター
+         */
+        public <U> @NotNull EntitySelector<T> notArg(@NotNull SelectorArgument.Builder<U> modifier, @NotNull U value) {
+            return build().notArg(modifier, value);
         }
     }
 }

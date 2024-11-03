@@ -9,9 +9,9 @@ import org.jetbrains.annotations.Nullable;
  * スコアホルダーを表現するクラス
  */
 public abstract class ScoreHolder {
-    abstract @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack);
+    protected abstract @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack);
 
-    abstract void setScore(@NotNull String objectiveId, @NotNull SourceStack stack, int value);
+    protected abstract void setScore(@NotNull String objectiveId, @NotNull SourceStack stack, int value);
 
     /**
      * 単一のエンティティを示すセレクターからエンティティのスコアホルダーを取得します。
@@ -62,7 +62,7 @@ public abstract class ScoreHolder {
         }
 
         @Override
-        @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack) {
+        protected @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack) {
             final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective(objectiveId);
 
             if (objective == null) return null;
@@ -71,7 +71,7 @@ public abstract class ScoreHolder {
         }
 
         @Override
-        void setScore(@NotNull String objectiveId, @NotNull SourceStack stack, int value) {
+        protected void setScore(@NotNull String objectiveId, @NotNull SourceStack stack, int value) {
             final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective(objectiveId);
 
             if (objective == null) return;
@@ -88,7 +88,7 @@ public abstract class ScoreHolder {
         }
 
         @Override
-        @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack) {
+        protected @Nullable Integer getScore(@NotNull String objectiveId, @NotNull SourceStack stack) {
             final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective(objectiveId);
 
             if (objective == null) return null;
@@ -97,7 +97,7 @@ public abstract class ScoreHolder {
         }
 
         @Override
-        void setScore(@NotNull String objectiveId, @NotNull SourceStack stack, int value) {
+        protected void setScore(@NotNull String objectiveId, @NotNull SourceStack stack, int value) {
             final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective(objectiveId);
 
             if (objective == null) return;

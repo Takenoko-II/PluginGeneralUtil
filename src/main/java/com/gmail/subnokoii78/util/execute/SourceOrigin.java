@@ -1,6 +1,7 @@
 package com.gmail.subnokoii78.util.execute;
 
 import net.kyori.adventure.text.Component;
+import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.block.Block;
 import org.bukkit.block.CommandBlock;
@@ -29,6 +30,8 @@ public abstract class SourceOrigin<T> {
      */
     public abstract @NotNull Component getName();
 
+    public abstract @NotNull Location getLocation();
+
     /**
      * メッセージを送信します。
      * <br>ブロック・サーバーが送信者の場合メッセージは送信できません。
@@ -36,7 +39,7 @@ public abstract class SourceOrigin<T> {
      */
     public abstract void sendMessage(@NotNull Component message);
 
-    public <U, V> @Nullable V callOrigin(Class<U> clazz, Function<U, V> callback) {
+    public <U, V> @Nullable V callOrigin(@NotNull Class<U> clazz, @NotNull Function<U, V> callback) {
         if (clazz.isInstance(sender)) {
             return callback.apply(clazz.cast(sender));
         }
@@ -51,6 +54,11 @@ public abstract class SourceOrigin<T> {
         @Override
         public @NotNull Component getName() {
             return sender.name();
+        }
+
+        @Override
+        public @NotNull Location getLocation() {
+            return sender.getLocation();
         }
 
         @Override
@@ -74,6 +82,11 @@ public abstract class SourceOrigin<T> {
         }
 
         @Override
+        public @NotNull Location getLocation() {
+            return sender.getLocation().toCenterLocation();
+        }
+
+        @Override
         public void sendMessage(@NotNull Component message) {
             return;
         }
@@ -90,6 +103,11 @@ public abstract class SourceOrigin<T> {
         }
 
         @Override
+        public @NotNull Location getLocation() {
+            return new Location(VanillaDimensionProvider.OVERWORLD.getWorld(), 0d, 0d, 0d, 0f, 0f);
+        }
+
+        @Override
         public void sendMessage(@NotNull Component message) {
             sender.sendMessage(message);
         }
@@ -103,6 +121,11 @@ public abstract class SourceOrigin<T> {
         @Override
         public @NotNull Component getName() {
             return Component.text(sender.getName());
+        }
+
+        @Override
+        public @NotNull Location getLocation() {
+            return new Location(VanillaDimensionProvider.OVERWORLD.getWorld(), 0d, 0d, 0d, 0f, 0f);
         }
 
         @Override

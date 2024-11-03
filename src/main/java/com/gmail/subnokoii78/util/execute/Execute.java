@@ -1,7 +1,5 @@
 package com.gmail.subnokoii78.util.execute;
 
-import com.gmail.subnokoii78.util.file.json.JSONArray;
-import com.gmail.subnokoii78.util.file.json.JSONSerializer;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import io.papermc.paper.entity.Leashable;
@@ -181,7 +179,7 @@ public class Execute {
          */
         public @NotNull Execute over(@NotNull HeightMap heightMap) {
             return execute.redirect(stack -> {
-                final Location location = stack.getAsBukkitLocation().toHighestLocation(heightMap);
+                final Location location = stack.getLocation().toHighestLocation(heightMap);
                 stack.write(Vector3Builder.from(location));
                 stack.write(DualAxisRotationBuilder.from(location));
                 stack.write(location.getWorld());
@@ -523,7 +521,7 @@ public class Execute {
              * @apiNote 適切なセレクターを渡さなければ例外が発生する可能性があります。
              */
             @ApiStatus.Experimental
-            public <T> @NotNull Execute entity(@NotNull EntitySelector<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlots<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
+            public <T> @NotNull Execute entity(@NotNull EntitySelector<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlotsMatcher<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
                 if (!selector.isSingle()) {
                     throw new IllegalArgumentException("セレクターは単一のエンティティを指定する必要があります");
                 }
@@ -552,7 +550,7 @@ public class Execute {
              * @param predicate 条件
              * @return that
              */
-            public <T> @NotNull Execute entity(@NotNull EntitySelector.Provider<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlots<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
+            public <T> @NotNull Execute entity(@NotNull EntitySelector.Provider<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlotsMatcher<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
                 return entity(selector.build(), itemSlots, predicate);
             }
 
@@ -563,7 +561,7 @@ public class Execute {
              * @param predicate 条件
              * @return that
              */
-            public @NotNull Execute block(@NotNull String input, @NotNull ItemSlotsGroup.ItemSlots<InventoryHolder, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
+            public @NotNull Execute block(@NotNull String input, @NotNull ItemSlotsGroup.ItemSlotsMatcher<InventoryHolder, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
                 return ifUnless.execute.fork(stack -> {
                     final BlockState blockState = stack.getDimension()
                         .getBlockAt(stack.readCoordinates(input).withWorld(stack.getDimension()))
@@ -616,8 +614,8 @@ public class Execute {
          */
         public @NotNull Execute passengers() {
             return execute.fork(stack -> {
+                if (!stack.hasExecutor()) return List.of();
                 final Entity executor = stack.getExecutor();
-                if (executor == null) return List.of();
 
                 return executor.getPassengers()
                     .stream()
@@ -636,8 +634,8 @@ public class Execute {
          */
         public @NotNull Execute vehicle() {
             return execute.redirect(stack -> {
+                if (!stack.hasExecutor()) return;
                 final Entity executor = stack.getExecutor();
-                if (executor == null) return;
                 final Entity vehicle = executor.getVehicle();
                 if (vehicle == null) return;
                 stack.write(vehicle);
@@ -651,7 +649,7 @@ public class Execute {
         public @NotNull Execute owner() {
             return execute.fork(stack -> {
                 final Entity executor = stack.getExecutor();
-                if (executor == null) return List.of();
+                if (!stack.hasExecutor()) return List.of();
                 if (!(executor instanceof Tameable tameable)) return List.of();
                 final AnimalTamer tamer = tameable.getOwner();
                 if (tamer == null) return List.of();
@@ -668,10 +666,9 @@ public class Execute {
          */
         public @NotNull Execute origin() {
             return execute.fork(stack -> {
-                final Entity executor = stack.getExecutor();
-                if (executor == null) return List.of();
+                if (!stack.hasExecutor()) return List.of();
 
-                return switch (executor) {
+                return switch (stack.getExecutor()) {
                     case Projectile projectile -> {
                         final UUID id = projectile.getOwnerUniqueId();
                         if (id == null) yield List.of();
@@ -725,7 +722,7 @@ public class Execute {
          */
         public @NotNull Execute target() {
             return execute.fork(stack -> {
-                if (stack.getExecutor() == null) return List.of();
+                if (!stack.hasExecutor()) return List.of();
                 else if (!(stack.getExecutor() instanceof Mob mob)) return List.of();
                 else if (mob.getTarget() == null) return List.of();
                 else {
@@ -741,7 +738,7 @@ public class Execute {
          */
         public @NotNull Execute leasher() {
             return execute.fork(stack -> {
-                if (stack.getExecutor() == null) return List.of();
+                if (!stack.hasExecutor()) return List.of();
                 else if (!(stack.getExecutor() instanceof Leashable leashable)) return List.of();
                 else if (!leashable.isLeashed()) return List.of();
                 else {
@@ -776,7 +773,7 @@ public class Execute {
          */
         public @NotNull Execute controller() {
             return execute.fork(stack -> {
-                if (stack.getExecutor() == null) return List.of();
+                if (!stack.hasExecutor()) return List.of();
                 else {
                     final Entity entity = getExecuteOnEntity(stack.getExecutor(), "controller");
                     stack.write(entity);
@@ -791,7 +788,7 @@ public class Execute {
          */
         public @NotNull Execute attacker() {
             return execute.fork(stack -> {
-                if (stack.getExecutor() == null) return List.of();
+                if (!stack.hasExecutor()) return List.of();
                 else {
                     final Entity entity = getExecuteOnEntity(stack.getExecutor(), "attacker");
                     stack.write(entity);
@@ -808,7 +805,10 @@ public class Execute {
      */
     public @NotNull Execute summon(@NotNull EntityType entityType) {
         return redirect(stack -> {
-            final Entity entity = stack.getDimension().spawnEntity(stack.getAsBukkitLocation(), entityType);
+            final Entity entity = stack.getDimension().spawnEntity(
+                stack.getLocation(LocationGetter.DIMENSION, LocationGetter.POSITION),
+                entityType
+            );
             stack.write(entity);
         });
     }
@@ -957,17 +957,6 @@ public class Execute {
                 return store.register(target, resultConsumer);
             }
         }
-    }
-
-    /**
-     * この{@link Execute}オブジェクトを文字列として視覚化します。
-     * @return 変換された文字列
-     */
-    @Override
-    public @NotNull String toString() {
-        final JSONArray jsonArray = new JSONArray();
-        stacks.forEach(stack -> jsonArray.add(stack.getAsJSONObject()));
-        return JSONSerializer.serialize(jsonArray);
     }
 
     public static final int SUCCESS = 1;
