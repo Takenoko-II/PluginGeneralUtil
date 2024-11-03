@@ -92,7 +92,7 @@ public class Execute {
      * @param selector 実行者となるエンティティのセレクター
      * @return this
      */
-    public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
+    public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Builder<T> selector) {
         return as(selector.build());
     }
 
@@ -120,7 +120,7 @@ public class Execute {
      * @param selector 実行者となるエンティティのセレクター
      * @return this
      */
-    public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector.Provider<T> selector) {
+    public <T extends Entity> @NotNull Execute at(@NotNull EntitySelector.Builder<T> selector) {
         return at(selector.build());
     }
 
@@ -168,7 +168,7 @@ public class Execute {
          * @param selector 参照するエンティティ
          * @return that
          */
-        public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
+        public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Builder<T> selector) {
             return as(selector.build());
         }
 
@@ -228,7 +228,7 @@ public class Execute {
          * @param selector 参照するエンティティ
          * @return that
          */
-        public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Provider<T> selector) {
+        public <T extends Entity> @NotNull Execute as(@NotNull EntitySelector.Builder<T> selector) {
             return as(selector.build());
         }
     }
@@ -283,7 +283,7 @@ public class Execute {
          * @param selector 参照するエンティティ
          * @return that
          */
-        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Provider<T> selector, @NotNull EntityAnchorType anchor) {
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Builder<T> selector, @NotNull EntityAnchorType anchor) {
             return entity(selector.build(), anchor);
         }
     }
@@ -358,7 +358,7 @@ public class Execute {
          * @param selector セレクター
          * @return that
          */
-        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Provider<T> selector) {
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Builder<T> selector) {
             return entity(selector.build());
         }
 
@@ -550,7 +550,7 @@ public class Execute {
              * @param predicate 条件
              * @return that
              */
-            public <T> @NotNull Execute entity(@NotNull EntitySelector.Provider<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlotsMatcher<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
+            public <T> @NotNull Execute entity(@NotNull EntitySelector.Builder<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlotsMatcher<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
                 return entity(selector.build(), itemSlots, predicate);
             }
 

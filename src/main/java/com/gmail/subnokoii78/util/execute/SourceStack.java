@@ -352,6 +352,15 @@ public class SourceStack {
     }
 
     /**
+     * 渡されたセレクターから処理順に従ってエンティティを取得します。
+     * @param selector セレクター
+     * @return エンティティのリスト
+     */
+    public <T extends Entity> @NotNull List<T> getEntities(@NotNull EntitySelector.Builder<T> selector) {
+        return getEntities(selector.build());
+    }
+
+    /**
      * このソーススタックをコピーします。
      * @return コピーされたオブジェクト
      */

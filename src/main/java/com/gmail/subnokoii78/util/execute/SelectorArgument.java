@@ -21,7 +21,11 @@ import java.util.function.BiPredicate;
  * セレクター引数を表現するクラス
  */
 public abstract class SelectorArgument {
-    private SelectorArgument() {}
+    protected final Object value;
+
+    private SelectorArgument(Object value) {
+        this.value = value;
+    }
 
     abstract @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack);
 
@@ -424,13 +428,13 @@ public abstract class SelectorArgument {
         public abstract @NotNull String getId();
 
         @NotNull
-        SelectorArgument build(@NotNull U value) {
+        SelectorArgument build(@NotNull U parameter) {
             final Builder<U> that = this;
 
-            return new SelectorArgument() {
+            return new SelectorArgument(parameter) {
                 @Override
                 @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack) {
-                    return that.modify(entities, stack, value);
+                    return that.modify(entities, stack, parameter);
                 }
 
                 @Override

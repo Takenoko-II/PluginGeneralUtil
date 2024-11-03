@@ -27,7 +27,7 @@ public abstract class ScoreHolder {
      * @param selector セレクター
      * @return スコアホルダー
      */
-    public static @NotNull ScoreHolder of(@NotNull EntitySelector.Provider<? extends Entity> selector) {
+    public static @NotNull ScoreHolder of(@NotNull EntitySelector.Builder<? extends Entity> selector) {
         return new EntityScoreHolder(selector.build());
     }
 
