@@ -518,22 +518,21 @@ public class Execute {
              * @param itemSlots アイテムスロットの候補
              * @param predicate 条件
              * @return that
-             * @apiNote 適切なセレクターを渡さなければ例外が発生する可能性があります。
              */
-            @ApiStatus.Experimental
-            public <T> @NotNull Execute entity(@NotNull EntitySelector<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlotsMatcher<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
+            public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlotsMatcher<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
                 if (!selector.isSingle()) {
                     throw new IllegalArgumentException("セレクターは単一のエンティティを指定する必要があります");
                 }
 
                 return ifUnless.execute.fork(stack -> {
-                    for (final Entity entity : stack.getEntities(selector)) {
-                        if (itemSlots.matches((T) entity, predicate)) {
-                            if (ifUnless.toggle.equals(IfUnless.IF)) {
-                                return List.of(stack);
-                            }
-                            else return List.of();
+                    final T target = itemSlots.getParentGroup().tryCastTarget(stack.getEntities(selector).getFirst());
+                    if (target == null) return List.of();
+
+                    if (itemSlots.matches(target, predicate)) {
+                        if (ifUnless.toggle.equals(IfUnless.IF)) {
+                            return List.of(stack);
                         }
+                        else return List.of();
                     }
 
                     if (ifUnless.toggle.equals(IfUnless.IF)) {
@@ -550,7 +549,7 @@ public class Execute {
              * @param predicate 条件
              * @return that
              */
-            public <T> @NotNull Execute entity(@NotNull EntitySelector.Builder<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlotsMatcher<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
+            public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Builder<? extends Entity> selector, @NotNull ItemSlotsGroup.ItemSlotsMatcher<T, ?> itemSlots, @NotNull Predicate<ItemStack> predicate) {
                 return entity(selector.build(), itemSlots, predicate);
             }
 
@@ -806,7 +805,7 @@ public class Execute {
     public @NotNull Execute summon(@NotNull EntityType entityType) {
         return redirect(stack -> {
             final Entity entity = stack.getDimension().spawnEntity(
-                stack.getLocation(LocationGetter.DIMENSION, LocationGetter.POSITION),
+                stack.getLocation(LocationGetOption.DIMENSION, LocationGetOption.POSITION),
                 entityType
             );
             stack.write(entity);
@@ -829,7 +828,7 @@ public class Execute {
          * 現在の実行文脈を使用して指定のコマンドを実行します。
          * @param command コマンド文字列
          * @return 成功した場合true、失敗した場合false
-         * @apiNote {@link org.bukkit.Server#dispatchCommand(CommandSender, String)}が整数ではなく真偽値を返してしまうため、{@link ResultCallback}に正しい値が渡されない問題があります。使用する意味も薄いため、将来的に削除される可能性があります。
+         * @apiNote {@link org.bukkit.Server#dispatchCommand(CommandSender, String)}によって呼び出されるコマンドの実行タイミングがティック内のかなり後のほうのため、様々なバグの温床になる恐れがあります
          */
         @ApiStatus.Obsolete
         public boolean command(@NotNull String command) {
@@ -920,6 +919,16 @@ public class Execute {
                 return store.register(target, (stack, integer) -> {
                     stack.getEntities(selector).forEach(entity -> consumer.accept(entity, integer));
                 });
+            }
+
+            /**
+             * 実行によって得られた整数をエンティティに関連付けて格納します。
+             * @param selector セレクター
+             * @param consumer 格納する関数
+             * @return that.that
+             */
+            public @NotNull Execute entity(@NotNull EntitySelector.Builder<? extends Entity> selector, @NotNull BiConsumer<Entity, Integer> consumer) {
+                return entity(selector.build(), consumer);
             }
 
             /**

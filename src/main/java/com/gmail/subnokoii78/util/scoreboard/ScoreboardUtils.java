@@ -2,183 +2,67 @@ package com.gmail.subnokoii78.util.scoreboard;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Entity;
 import org.bukkit.scoreboard.*;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ScoreboardUtils {
     private static final Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
 
-    public static Objective createObjective(String name) {
-        final org.bukkit.scoreboard.Objective newObjective = scoreboard.registerNewObjective(name, Criteria.DUMMY, Component.text(name));
-
-        return new Objective(newObjective);
+    public static @NotNull ScoreObjective createObjective(@NotNull String name) {
+        return createObjective(name, Criteria.DUMMY);
     }
 
-    public static Objective createObjective(String name, Criteria criteria) {
-        final org.bukkit.scoreboard.Objective newObjective = scoreboard.registerNewObjective(name, criteria, Component.text(name));
-
-        return new Objective(newObjective);
+    public static @NotNull ScoreObjective createObjective(@NotNull String name, @NotNull Criteria criteria) {
+        return createObjective(name, criteria, Component.text(name));
     }
 
-    public static @Nullable Objective getObjective(String name) {
-        final org.bukkit.scoreboard.Objective objective = scoreboard.getObjective(name);
+    public static @NotNull ScoreObjective createObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull Component displayName) {
+        if (isRegistered(name)) {
+            throw new IllegalArgumentException("既にその名前のオブジェクティブは登録されています");
+        }
 
-        if (objective == null) return null;
-
-        return new Objective(objective);
+        return new ScoreObjective(scoreboard.registerNewObjective(name, criteria, displayName));
     }
 
-    public static Objective getOrCreateObjective(String name) {
-        final org.bukkit.scoreboard.Objective objective = scoreboard.getObjective(name);
-
-        if (objective == null) return createObjective(name);
-
-        return new Objective(objective);
+    public static boolean isRegistered(@NotNull String name) {
+        return scoreboard.getObjective(name) != null;
     }
 
-    public static Objective getOrCreateObjective(String name, Criteria criteria) {
-        final org.bukkit.scoreboard.Objective objective = scoreboard.getObjective(name);
-
-        if (objective == null) return createObjective(name, criteria);
-
-        return new Objective(objective);
+    public static @NotNull ScoreObjective getObjective(String name) throws IllegalArgumentException {
+        final Objective objective = scoreboard.getObjective(name);
+        if (objective == null) {
+            throw new IllegalArgumentException("その名前のオブジェクティブは登録されていません");
+        }
+        else return new ScoreObjective(objective);
     }
 
-    public static Objective[] getAllObjectives() {
+    public static @NotNull ScoreObjective getOrCreateObjective(@NotNull String name) {
+        return isRegistered(name) ? getObjective(name) : createObjective(name);
+    }
+
+    public static @NotNull ScoreObjective getOrCreateObjective(@NotNull String name, @NotNull Criteria criteria) {
+        return isRegistered(name) ? getObjective(name) : createObjective(name, criteria);
+    }
+
+    public static @NotNull ScoreObjective getOrCreateObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull Component displayName) {
+        return isRegistered(name) ? getObjective(name) : createObjective(name, criteria, displayName);
+    }
+
+    public static @NotNull Set<ScoreObjective> getAllObjectives() {
         return scoreboard
-        .getObjectives()
-        .stream()
-        .map(Objective::new)
-        .toArray(Objective[]::new);
+            .getObjectives()
+            .stream()
+            .map(ScoreObjective::new)
+            .collect(Collectors.toSet());
     }
 
-    public static void removeObjective(String name) {
-        final org.bukkit.scoreboard.Objective objective = scoreboard.getObjective(name);
-
+    public static void removeObjective(@NotNull String name) {
+        final Objective objective = scoreboard.getObjective(name);
         if (objective == null) return;
-
         objective.unregister();
     }
 
-    public static final class Objective {
-        private final org.bukkit.scoreboard.Objective objective;
-
-        private Objective(org.bukkit.scoreboard.Objective objective) {
-            this.objective = objective;
-        }
-
-        public boolean hasScore(Entity entity) {
-            return objective.getScoreFor(entity).isScoreSet();
-        }
-
-        public boolean hasScore(String name) {
-            return objective.getScore(name).isScoreSet();
-        }
-
-        public int getScore(Entity entity) {
-            return objective.getScoreFor(entity).getScore();
-        }
-
-        public int getScore(String name) {
-            return objective.getScore(name).getScore();
-        }
-
-        public Objective setScore(Entity entity, int value) {
-            objective.getScoreFor(entity).setScore(value);
-
-            return this;
-        }
-
-        public Objective setScore(String name, int value) {
-            objective.getScore(name).setScore(value);
-
-            return this;
-        }
-
-        public Objective addScore(Entity entity, int value) {
-            setScore(entity, getScore(entity) + value);
-
-            return this;
-        }
-
-        public Objective addScore(String name, int value) {
-            setScore(name, getScore(name) + value);
-
-            return this;
-        }
-
-        public Objective subtractScore(Entity entity, int value) {
-            setScore(entity, getScore(entity) - value);
-
-            return this;
-        }
-
-        public Objective subtractScore(String name, int value) {
-            setScore(name, getScore(name) - value);
-
-            return this;
-        }
-
-        public Objective multiplyScore(Entity entity, int value) {
-            setScore(entity, getScore(entity) * value);
-
-            return this;
-        }
-
-        public Objective multiplyScore(String name, int value) {
-            final int subtrahend = getScore(name) * value;
-            setScore(name, subtrahend);
-
-            return this;
-        }
-
-        public Objective divideScore(Entity entity, int value) {
-            if (value == 0) return this;
-
-            setScore(entity, getScore(entity) / value);
-
-            return this;
-        }
-
-        public Objective divideScore(String name, int value) {
-            if (value == 0) return this;
-
-            setScore(name, getScore(name) / value);
-
-            return this;
-        }
-
-        public Objective resetScore(Entity entity) {
-            objective.getScoreFor(entity).resetScore();
-
-            return this;
-        }
-
-        public Objective resetScore(String name) {
-            objective.getScore(name).resetScore();
-
-            return this;
-        }
-
-        public String getName() {
-            return objective.getName();
-        }
-
-        public Component getDisplayName() {
-            return objective.displayName();
-        }
-
-        public void setDisplayName(Component displayName) {
-            objective.displayName(displayName);
-        }
-
-        public DisplaySlot getDisplaySlot() {
-            return objective.getDisplaySlot();
-        }
-
-        public void setDisplaySlot(DisplaySlot displaySlot) {
-            objective.setDisplaySlot(displaySlot);
-        }
-    }
 }

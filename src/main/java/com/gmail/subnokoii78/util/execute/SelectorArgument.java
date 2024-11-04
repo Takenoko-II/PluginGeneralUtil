@@ -1,5 +1,6 @@
 package com.gmail.subnokoii78.util.execute;
 
+import com.gmail.subnokoii78.util.scoreboard.ScoreObjective;
 import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import net.kyori.adventure.text.Component;
@@ -351,10 +352,10 @@ public abstract class SelectorArgument {
             return entities.stream()
                 .filter(entity -> {
                     for (final String name : argument.keySet()) {
-                        final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective(name);
-                        final ScoreRange range = argument.get(name);
+                        if (!ScoreboardUtils.isRegistered(name)) return false;
 
-                        if (objective == null) return false;
+                        final ScoreObjective objective = ScoreboardUtils.getObjective(name);
+                        final ScoreRange range = argument.get(name);
 
                         if (range.min() <= objective.getScore(entity) && objective.getScore(entity) <= range.max()) {
                             return false;
@@ -416,7 +417,7 @@ public abstract class SelectorArgument {
         }
 
         private Builder() {
-            this.priority = 0;
+            this(0);
         }
 
         abstract @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull U argument);

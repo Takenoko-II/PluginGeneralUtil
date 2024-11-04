@@ -20,7 +20,7 @@ public abstract class ItemSlotsGroup<T, U> {
     /**
      * コンテナスロット
      */
-    public static final ItemSlotsGroup<InventoryHolder, Integer> CONTAINER = new ItemSlotsGroup<>() {
+    public static final ItemSlotsGroup<InventoryHolder, Integer> CONTAINER = new ItemSlotsGroup<>(InventoryHolder.class) {
         @Override
         @Nullable ItemStack getItemStack(@NotNull InventoryHolder target, @NotNull Integer arg) {
             final LevelRange range = LevelRange.of("0..53");
@@ -45,7 +45,7 @@ public abstract class ItemSlotsGroup<T, U> {
     /**
      * エンダーチェスト
      */
-    public static final ItemSlotsGroup<HumanEntity, Integer> ENDERCHEST = new ItemSlotsGroup<>() {
+    public static final ItemSlotsGroup<HumanEntity, Integer> ENDERCHEST = new ItemSlotsGroup<>(HumanEntity.class) {
         @Override
         @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Integer arg) {
             final LevelRange range = LevelRange.of("0..26");
@@ -70,7 +70,7 @@ public abstract class ItemSlotsGroup<T, U> {
     /**
      * ホットバー
      */
-    public static final ItemSlotsGroup<HumanEntity, Integer> HOTBAR = new ItemSlotsGroup<>() {
+    public static final ItemSlotsGroup<HumanEntity, Integer> HOTBAR = new ItemSlotsGroup<>(HumanEntity.class) {
         @Override
         @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Integer arg) {
             final LevelRange range = LevelRange.of("0..8");
@@ -95,7 +95,7 @@ public abstract class ItemSlotsGroup<T, U> {
     /**
      * インベントリ
      */
-    public static final ItemSlotsGroup<InventoryHolder, Integer> INVENTORY = new ItemSlotsGroup<>() {
+    public static final ItemSlotsGroup<InventoryHolder, Integer> INVENTORY = new ItemSlotsGroup<>(InventoryHolder.class) {
         @Override
         @Nullable ItemStack getItemStack(@NotNull InventoryHolder target, @NotNull Integer arg) {
             final LevelRange range = LevelRange.of("0..26");
@@ -120,9 +120,9 @@ public abstract class ItemSlotsGroup<T, U> {
     /**
      * 馬のインベントリ
      */
-    public static final ItemSlotsGroup<Horse, Integer> HORSE = new ItemSlotsGroup<>() {
+    public static final ItemSlotsGroup<AbstractHorse, Integer> HORSE = new ItemSlotsGroup<>(AbstractHorse.class) {
         @Override
-        @Nullable ItemStack getItemStack(@NotNull Horse target, @NotNull Integer arg) {
+        @Nullable ItemStack getItemStack(@NotNull AbstractHorse target, @NotNull Integer arg) {
             final LevelRange range = LevelRange.of("0..14");
 
             if (!(range.min() <= arg && arg <= range.max())) {
@@ -145,7 +145,7 @@ public abstract class ItemSlotsGroup<T, U> {
     /**
      * 村人のインベントリ
      */
-    public static final ItemSlotsGroup<Villager, Integer> VILLAGER = new ItemSlotsGroup<>() {
+    public static final ItemSlotsGroup<Villager, Integer> VILLAGER = new ItemSlotsGroup<>(Villager.class) {
         @Override
         @Nullable ItemStack getItemStack(@NotNull Villager target, @NotNull Integer arg) {
             final LevelRange range = LevelRange.of("0..7");
@@ -170,7 +170,7 @@ public abstract class ItemSlotsGroup<T, U> {
     /**
      * プレイヤーのインベントリ内カーソル
      */
-    public static final ItemSlotsGroup<HumanEntity, Void> PLAYER_CURSOR = new ItemSlotsGroup<>() {
+    public static final ItemSlotsGroup<HumanEntity, Void> PLAYER_CURSOR = new ItemSlotsGroup<>(HumanEntity.class) {
         @Override
         @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Void arg) {
             final ItemStack itemStack = target.getItemOnCursor();
@@ -188,7 +188,7 @@ public abstract class ItemSlotsGroup<T, U> {
     /**
      * 防具スロット
      */
-    public static final ItemSlotsGroup<LivingEntity, ArmorSlots> ARMOR = new ItemSlotsGroup<>() {
+    public static final ItemSlotsGroup<LivingEntity, ArmorSlots> ARMOR = new ItemSlotsGroup<>(LivingEntity.class) {
         @Override
         @Nullable ItemStack getItemStack(@NotNull LivingEntity target, @NotNull ArmorSlots arg) {
             final EntityEquipment equipment = target.getEquipment();
@@ -205,7 +205,7 @@ public abstract class ItemSlotsGroup<T, U> {
     /**
      * メインハンドまたはオフハンド
      */
-    public static final ItemSlotsGroup<LivingEntity, WeaponSlots> WEAPON = new ItemSlotsGroup<>() {
+    public static final ItemSlotsGroup<LivingEntity, WeaponSlots> WEAPON = new ItemSlotsGroup<>(LivingEntity.class) {
         @Override
         @Nullable ItemStack getItemStack(@NotNull LivingEntity target, @NotNull WeaponSlots arg) {
             final EntityEquipment equipment = target.getEquipment();
@@ -219,7 +219,18 @@ public abstract class ItemSlotsGroup<T, U> {
         }
     };
 
-    ItemSlotsGroup() {}
+    private final Class<T> clazz;
+
+    ItemSlotsGroup(@NotNull Class<T> clazz) {
+        this.clazz = clazz;
+    }
+
+    public @Nullable T tryCastTarget(@NotNull Object target) {
+        if (clazz.isInstance(target)) {
+            return clazz.cast(target);
+        }
+        else return null;
+    }
 
     abstract @Nullable ItemStack getItemStack(@NotNull T target, @NotNull U arg);
 
@@ -274,6 +285,10 @@ public abstract class ItemSlotsGroup<T, U> {
         private ItemSlotsMatcher(@NotNull ItemSlotsGroup<T, U> group) {
             this.group = group;
             this.argument = null;
+        }
+
+        public @NotNull ItemSlotsGroup<T, U> getParentGroup() {
+            return group;
         }
 
         /**

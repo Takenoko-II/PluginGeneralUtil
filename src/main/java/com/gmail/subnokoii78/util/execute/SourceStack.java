@@ -1,5 +1,7 @@
 package com.gmail.subnokoii78.util.execute;
 
+import com.gmail.subnokoii78.util.scoreboard.ScoreObjective;
+import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;
@@ -9,6 +11,7 @@ import org.bukkit.block.Block;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -116,8 +119,8 @@ public class SourceStack {
      * 実行座標、実行方向、実行ディメンションの三つを一つの{@link Location}オブジェクトとして取得します。
      * @return 実行座標・実行方向・実行ディメンション
      */
-    public @NotNull Location getLocation(@NotNull LocationGetter... getters) {
-        final Set<LocationGetter> set = Set.of(getters);
+    public @NotNull Location getLocation(@NotNull LocationGetOption... options) {
+        final Set<LocationGetOption> set = Set.of(options);
 
         if (set.isEmpty()) {
             return location.withRotationAndWorld(rotation, dimension);
@@ -125,15 +128,15 @@ public class SourceStack {
 
         final Location loc = new Location(VanillaDimensionProvider.OVERWORLD.getWorld(), 0d, 0d, 0d, 0f, 0f);
 
-        if (set.contains(LocationGetter.DIMENSION)) {
+        if (set.contains(LocationGetOption.DIMENSION)) {
             loc.setWorld(dimension);
         }
-        if (set.contains(LocationGetter.POSITION)) {
+        if (set.contains(LocationGetOption.POSITION)) {
             loc.setX(location.x());
             loc.setY(location.y());
             loc.setZ(location.z());
         }
-        if (set.contains(LocationGetter.ROTATION)) {
+        if (set.contains(LocationGetOption.ROTATION)) {
             loc.setYaw(rotation.yaw());
             loc.setPitch(rotation.pitch());
         }
@@ -370,7 +373,7 @@ public class SourceStack {
         stack.write(executor);
         stack.write(location.copy());
         stack.write(rotation.copy());
-        stack.anchor = anchor;
+        stack.write(anchor.getType());
         stack.resultCallback = resultCallback;
         return stack;
     }
@@ -379,7 +382,9 @@ public class SourceStack {
      * コマンドを実行します。
      * @param command 実行するコマンド
      * @return 成功したときtrue、失敗すればfalse
+     * @apiNote 整数を返さないため、使用を推奨しません。
      */
+    @ApiStatus.Obsolete
     public boolean runCommand(@NotNull String command) {
         final String common = String.format(
             "in %s positioned %s rotated %s",

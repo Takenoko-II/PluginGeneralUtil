@@ -2,6 +2,7 @@ package com.gmail.subnokoii78.util.event;
 
 import com.gmail.subnokoii78.util.file.json.JSONObject;
 import com.gmail.subnokoii78.util.file.json.JSONValueType;
+import com.gmail.subnokoii78.util.scoreboard.ScoreObjective;
 import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,8 +30,8 @@ public final class DataPackMessageReceiverRegistry {
             if (receiverId.equals(id)) {
                 try {
                     final int value = receivers.get(id).apply(event);
-                    final ScoreboardUtils.Objective objective = ScoreboardUtils.getObjective("plugin_api.return");
-                    if (objective == null) break;
+                    if (!ScoreboardUtils.isRegistered("plugin_api.return")) break;
+                    final ScoreObjective objective = ScoreboardUtils.getObjective("plugin_api.return");
                     objective.setScore("#", value);
                 }
                 catch (Throwable e) {
