@@ -525,7 +525,7 @@ public class Execute {
                 }
 
                 return ifUnless.execute.fork(stack -> {
-                    final T target = itemSlots.getParentGroup().tryCastTarget(stack.getEntities(selector).getFirst());
+                    final T target = itemSlots.getGroup().tryCastTarget(stack.getEntities(selector).getFirst());
                     if (target == null) return List.of();
 
                     if (itemSlots.matches(target, predicate)) {

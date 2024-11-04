@@ -220,10 +220,10 @@ public class ContainerUI {
             initialized = true;
             Bukkit.getServer().getPluginManager().registerEvents(INSTANCE, plugin);
 
-            PluginDebugger.INSTANCE.register("instanceCount", ctx -> {
-                ctx.getSource().getSender().sendMessage("instanceCount: " + instances.size());
+            PluginDebugger.DEFAULT_DEBUGGER.register("instanceCount", stack -> {
+                stack.getSender().sendMessage("instanceCount: " + instances.size());
                 instances.forEach(instance -> {
-                    ctx.getSource().getSender().sendMessage("inventoryCount: " + instance.inventories.size());
+                    stack.getSender().sendMessage("inventoryCount: " + instance.inventories.size());
                 });
                 return 1;
             });
@@ -242,8 +242,8 @@ public class ContainerUI {
                 })
                 .add(new ItemButton(Material.PAPER));
 
-            PluginDebugger.INSTANCE.register("openTestUI", ctx -> {
-                if (ctx.getSource().getSender() instanceof Player player) {
+            PluginDebugger.DEFAULT_DEBUGGER.register("openTestUI", stack -> {
+                if (stack.getSender() instanceof Player player) {
                     ui.open(player);
                     return 1;
                 }
