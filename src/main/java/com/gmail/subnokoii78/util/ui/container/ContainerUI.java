@@ -1,4 +1,4 @@
-package com.gmail.subnokoii78.util.ui;
+package com.gmail.subnokoii78.util.ui.container;
 
 import com.gmail.subnokoii78.util.command.PluginDebugger;
 import net.kyori.adventure.text.Component;

@@ -1,4 +1,4 @@
-package com.gmail.subnokoii78.util.ui;
+package com.gmail.subnokoii78.util.ui.container;
 
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Bukkit;

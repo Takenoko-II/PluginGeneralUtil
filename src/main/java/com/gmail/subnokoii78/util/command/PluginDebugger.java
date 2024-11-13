@@ -1,6 +1,5 @@
 package com.gmail.subnokoii78.util.command;
 
-import com.gmail.subnokoii78.util.execute.ItemSlotsGroup;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -15,8 +14,6 @@ import java.util.function.Function;
 public class PluginDebugger {
     private PluginDebugger() {}
 
-    private boolean isInitialized = false;
-
     private final Map<String, Function<CommandSourceStack, Integer>> functions = new HashMap<>();
 
     private int call(@NotNull CommandContext<CommandSourceStack> context) {
@@ -26,17 +23,10 @@ public class PluginDebugger {
     }
 
     public void init(@NotNull String name, @NotNull Commands dispatcher) {
-        if (isInitialized) {
-            throw new IllegalStateException("既にこのデバッガ―は初期化されています");
-        }
         dispatcher.register(Commands.literal(name).then(functionId().executes(this::call)).build());
-        isInitialized = true;
     }
 
     public void register(@NotNull String id, Function<CommandSourceStack, Integer> function) throws IllegalArgumentException {
-        if (functions.containsKey(id)) {
-            throw new IllegalArgumentException("そのIDの関数は既に登録されています");
-        }
         functions.put(id, function);
     }
 

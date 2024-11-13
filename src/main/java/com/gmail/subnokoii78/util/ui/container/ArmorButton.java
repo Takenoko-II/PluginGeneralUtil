@@ -1,4 +1,4 @@
-package com.gmail.subnokoii78.util.ui;
+package com.gmail.subnokoii78.util.ui.container;
 
 import com.destroystokyo.paper.MaterialSetTag;
 import com.gmail.subnokoii78.util.itemstack.TypedAttributeModifier;

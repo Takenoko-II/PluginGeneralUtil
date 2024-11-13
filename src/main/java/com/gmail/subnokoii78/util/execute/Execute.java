@@ -436,7 +436,7 @@ public class Execute {
          * @param range 数値の範囲
          * @return that
          */
-        public @NotNull Execute score(@NotNull ScoreHolder holder, @NotNull String objectiveId, @NotNull ScoreRange range) {
+        public @NotNull Execute score(@NotNull ScoreHolder holder, @NotNull String objectiveId, @NotNull NumberRange<Integer> range) {
             return execute.fork(stack -> {
                 final Integer val = holder.getScore(objectiveId, stack);
 
@@ -444,7 +444,7 @@ public class Execute {
                     return List.of();
                 }
 
-                if (toggle.apply(range.min() <= val && val <= range.max())) {
+                if (toggle.apply(range.within(val))) {
                     return List.of(stack);
                 }
                 else return List.of();

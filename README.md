@@ -18,10 +18,10 @@
 向きにおいてディスプレイエンティティに匹敵する自由度を持つ当たり判定のクラス
 
 ## ui パッケージ
-### [ContainerUI](src/main/java/com/gmail/subnokoii78/util/ui/ContainerUI.java)
+### [ContainerUI](src/main/java/com/gmail/subnokoii78/util/ui/container/ContainerUI.java)
 コンテナ(チェスト型)のUIを作成するためのクラス
 
-### [ItemButton](src/main/java/com/gmail/subnokoii78/util/ui/ItemButton.java)
+### [ItemButton](src/main/java/com/gmail/subnokoii78/util/ui/container/ItemButton.java)
 ContainerUIクラスで使用されるボタンを表現するクラス
 <br>その他のファイルはItemButtonを継承したクラス
 

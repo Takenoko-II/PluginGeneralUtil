@@ -23,9 +23,9 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<InventoryHolder, Integer> CONTAINER = new ItemSlotsGroup<>(InventoryHolder.class) {
         @Override
         protected @Nullable ItemStack getItemStack(@NotNull InventoryHolder target, @NotNull Integer arg) {
-            final LevelRange range = LevelRange.of("0..53");
+            final NumberRange.LevelRange range = NumberRange.level("0..53");
 
-            if (!(range.min() <= arg && arg <= range.max())) {
+            if (!range.within(arg)) {
                 throw new IllegalArgumentException("containerの値は0～53です");
             }
 
@@ -48,9 +48,9 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<HumanEntity, Integer> ENDERCHEST = new ItemSlotsGroup<>(HumanEntity.class) {
         @Override
         protected @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Integer arg) {
-            final LevelRange range = LevelRange.of("0..26");
+            final NumberRange.LevelRange range = NumberRange.level("0..26");
 
-            if (!(range.min() <= arg && arg <= range.max())) {
+            if (!range.within(arg)) {
                 throw new IllegalArgumentException("enderchestの値は0～26です");
             }
 
@@ -73,9 +73,9 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<HumanEntity, Integer> HOTBAR = new ItemSlotsGroup<>(HumanEntity.class) {
         @Override
         protected @Nullable ItemStack getItemStack(@NotNull HumanEntity target, @NotNull Integer arg) {
-            final LevelRange range = LevelRange.of("0..8");
+            final NumberRange.LevelRange range = NumberRange.level("0..8");
 
-            if (!(range.min() <= arg && arg <= range.max())) {
+            if (!range.within(arg)) {
                 throw new IllegalArgumentException("hotbarの値は0～8です");
             }
 
@@ -98,9 +98,9 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<InventoryHolder, Integer> INVENTORY = new ItemSlotsGroup<>(InventoryHolder.class) {
         @Override
         protected @Nullable ItemStack getItemStack(@NotNull InventoryHolder target, @NotNull Integer arg) {
-            final LevelRange range = LevelRange.of("0..26");
+            final NumberRange.LevelRange range = NumberRange.level("0..26");
 
-            if (!(range.min() <= arg && arg <= range.max())) {
+            if (!range.within(arg)) {
                 throw new IllegalArgumentException("inventoryの値は0～26です");
             }
 
@@ -123,9 +123,9 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<AbstractHorse, Integer> HORSE = new ItemSlotsGroup<>(AbstractHorse.class) {
         @Override
         protected @Nullable ItemStack getItemStack(@NotNull AbstractHorse target, @NotNull Integer arg) {
-            final LevelRange range = LevelRange.of("0..14");
+            final NumberRange.LevelRange range = NumberRange.level("0..14");
 
-            if (!(range.min() <= arg && arg <= range.max())) {
+            if (!range.within(arg)) {
                 throw new IllegalArgumentException("horseの値は0～14です");
             }
 
@@ -148,9 +148,9 @@ public abstract class ItemSlotsGroup<T, U> {
     public static final ItemSlotsGroup<Villager, Integer> VILLAGER = new ItemSlotsGroup<>(Villager.class) {
         @Override
         protected @Nullable ItemStack getItemStack(@NotNull Villager target, @NotNull Integer arg) {
-            final LevelRange range = LevelRange.of("0..7");
+            final NumberRange.LevelRange range = NumberRange.level("0..7");
 
-            if (!(range.min() <= arg && arg <= range.max())) {
+            if (!range.within(arg)) {
                 throw new IllegalArgumentException("villagerの値は0～7です");
             }
 

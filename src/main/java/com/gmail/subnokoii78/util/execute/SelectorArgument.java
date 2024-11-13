@@ -243,13 +243,13 @@ public abstract class SelectorArgument {
     /**
      * セレクター引数level=
      */
-    public static final Builder<LevelRange> LEVEL = new Builder<>() {
+    public static final Builder<NumberRange.LevelRange> LEVEL = new Builder<>() {
         @Override
-        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull LevelRange argument) {
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull NumberRange.LevelRange argument) {
             return entities.stream()
                 .filter(entity -> {
                     if (entity instanceof Player player) {
-                        return argument.min() <= player.getLevel() && player.getLevel() <= argument.max();
+                        return argument.within(player.getLevel());
                     }
                     else return false;
                 })
@@ -265,11 +265,11 @@ public abstract class SelectorArgument {
     /**
      * セレクター引数x_rotation=
      */
-    public static final Builder<RotationRange> X_ROTATION = new Builder<>() {
+    public static final Builder<NumberRange.RotationRange> X_ROTATION = new Builder<>() {
         @Override
-        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull RotationRange argument) {
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull NumberRange.RotationRange argument) {
             return entities.stream()
-                .filter(entity -> argument.min() <= entity.getLocation().getPitch() && entity.getLocation().getPitch() <= argument.max())
+                .filter(entity -> argument.within(entity.getLocation().getPitch()))
                 .toList();
         }
 
@@ -282,11 +282,11 @@ public abstract class SelectorArgument {
     /**
      * セレクター引数y_rotation=
      */
-    public static final Builder<RotationRange> Y_ROTATION = new Builder<>() {
+    public static final Builder<NumberRange.RotationRange> Y_ROTATION = new Builder<>() {
         @Override
-        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull RotationRange argument) {
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull NumberRange.RotationRange argument) {
             return entities.stream()
-                .filter(entity -> argument.min() <= entity.getLocation().getYaw() && entity.getLocation().getYaw() <= argument.max())
+                .filter(entity -> argument.within(entity.getLocation().getYaw()))
                 .toList();
         }
 
@@ -345,19 +345,19 @@ public abstract class SelectorArgument {
     /**
      * セレクター引数scores=
      */
-    public static final Builder<Map<String, ScoreRange>> SCORES = new Builder<>() {
+    public static final Builder<Map<String, NumberRange.ScoreRange>> SCORES = new Builder<>() {
         @Override
         @NotNull
-        List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Map<String, ScoreRange> argument) {
+        List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Map<String, NumberRange.ScoreRange> argument) {
             return entities.stream()
                 .filter(entity -> {
                     for (final String name : argument.keySet()) {
                         if (!ScoreboardUtils.isRegistered(name)) return false;
 
                         final ScoreObjective objective = ScoreboardUtils.getObjective(name);
-                        final ScoreRange range = argument.get(name);
+                        final NumberRange<Integer> range = argument.get(name);
 
-                        if (range.min() <= objective.getScore(entity) && objective.getScore(entity) <= range.max()) {
+                        if (range.within(objective.getScore(entity))) {
                             return false;
                         }
                     }
