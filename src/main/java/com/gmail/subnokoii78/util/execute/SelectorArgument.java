@@ -162,13 +162,14 @@ public abstract class SelectorArgument {
     /**
      * セレクター引数distance=
      */
-    public static final Builder<DistanceRange> DISTANCE = new Builder<>() {
+    public static final Builder<NumberRange.DistanceRange> DISTANCE = new Builder<>() {
         @Override
-        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull DistanceRange argument) {
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull NumberRange.DistanceRange argument) {
             return entities.stream()
                 .filter(entity -> {
+                    if (!stack.getDimension().equals(entity.getWorld())) return false;
                     final double distance = stack.getPosition().getDistanceTo(Vector3Builder.from(entity));
-                    return argument.min() <= distance && distance <= argument.max();
+                    return argument.within(distance);
                 })
                 .toList();
         }
@@ -208,7 +209,10 @@ public abstract class SelectorArgument {
             );
 
             return entities.stream()
-                .filter(entity -> entity.getBoundingBox().overlaps(box))
+                .filter(entity -> {
+                    if (!stack.getDimension().equals(entity.getWorld())) return false;
+                    return entity.getBoundingBox().overlaps(box);
+                })
                 .toList();
         }
 

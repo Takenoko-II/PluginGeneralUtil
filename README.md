@@ -104,9 +104,13 @@ Xorshift128を実装したクラス
 Velocityとの通信を行うクラス
 <br>これはBoA用
 
-### [CalcExpEvaluator](src/main/java/com/gmail/subnokoii78/util/other/CalcExpEvaluator.java)
+## eval パッケージ
+### [CalcExpEvaluator](src/main/java/com/gmail/subnokoii78/util/eval/CalcExpEvaluator.java)
 計算式を解析し評価するクラス
 <br>関数や定数の定義が可能なため簡易的なゲーム内スクリプトとして使用予定
+
+### [CalcExpFunction](src/main/java/com/gmail/subnokoii78/util/eval/CalcExpFunction.java)
+Evaluatorに登録される関数のインターフェース
 
 ## datacontainer パッケージ
 ### [DataContainerCompound](src/main/java/com/gmail/subnokoii78/util/datacontainer/DataContainerCompound.java)
@@ -153,17 +157,8 @@ all/maskedを区別する列挙型
 ### [ItemSlotsGroup](src/main/java/com/gmail/subnokoii78/util/execute/ItemSlotsGroup.java)
 アイテムのパス指定を容易にするクラス
 
-### [ScoreRange](src/main/java/com/gmail/subnokoii78/util/execute/ScoreRange.java)
-整数の範囲
-
-### [LevelRange](src/main/java/com/gmail/subnokoii78/util/execute/LevelRange.java)
-正の整数の範囲
-
-### [RotationRange](src/main/java/com/gmail/subnokoii78/util/execute/RotationRange.java)
-正の浮動小数点数の範囲
-
-### [DistanceRange](src/main/java/com/gmail/subnokoii78/util/execute/DistanceRange.java)
-正の倍精度浮動小数点数の範囲
+### [NumberRange](src/main/java/com/gmail/subnokoii78/util/execute/NumberRange.java)
+数値の範囲を表現するクラス
 
 ### [SourceOrigin](src/main/java/com/gmail/subnokoii78/util/execute/SourceOrigin.java)
 executeコマンドの送信者を表すクラス

@@ -2,10 +2,10 @@ package com.gmail.subnokoii78.util.event;
 
 import org.jetbrains.annotations.NotNull;
 
-public class CustomEventType<T extends CustomEvent> {
+public final class CustomEventType<T extends CustomEvent> {
     private final Class<T> clazz;
 
-    private CustomEventType(Class<T> clazz) {
+    private CustomEventType(@NotNull Class<T> clazz) {
         this.clazz = clazz;
     }
 

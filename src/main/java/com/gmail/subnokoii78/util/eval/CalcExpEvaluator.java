@@ -1,4 +1,4 @@
-package com.gmail.subnokoii78.util.other;
+package com.gmail.subnokoii78.util.eval;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,7 +14,9 @@ public final class CalcExpEvaluator {
 
     private static final List<Character> SIGNS = List.of('+', '-');
 
-    private static final Set<Character> INTEGERS = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    private static final Set<Character> NUMBERS = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+
+    private static final Function<String, Double> NUMBER_PARSER = Double::parseDouble;
 
     private static final char DECIMAL_POINT = '.';
 
@@ -73,11 +75,7 @@ public final class CalcExpEvaluator {
         }
     ));
 
-    private final Map<String, DoubleSupplier> ZERO_ARGUMENT_FUNCTIONS = new HashMap<>();
-
-    private final Map<String, DoubleUnaryOperator> SINGLE_ARGUMENT_FUNCTIONS = new HashMap<>();
-
-    private final Map<String, BinaryOperator<Double>> DOUBLE_ARGUMENTS_FUNCTIONS = new HashMap<>();
+    private final Map<String, CalcExpFunction> FUNCTIONS = new HashMap<>();
 
     private final Map<String, Double> CONSTANTS = new HashMap<>();
 
@@ -149,23 +147,8 @@ public final class CalcExpEvaluator {
 
         final char futureNext = expression.charAt(location);
 
-        if (isZeroArgFunction()) {
-            final var function = getZeroArgFunction();
-            final var args = arguments();
-            if (!args.isEmpty()) throw new CalcExpEvalException("関数の引数の数は0つが要求されています");
-            stringBuilder.append(function.getAsDouble());
-        }
-        else if (isSingleArgFunction()) {
-            final var function = getSingleArgFunction();
-            final var args = arguments();
-            if (args.size() != 1) throw new CalcExpEvalException("関数の引数の数は1つが要求されています");
-            stringBuilder.append(function.applyAsDouble(args.getFirst()));
-        }
-        else if (isDoubleArgsFunction()) {
-            final var function = getDoubleArgsFunction();
-            final var args = arguments();
-            if (args.size() != 2) throw new CalcExpEvalException("関数の引数の数は2つが要求されています");
-            stringBuilder.append(function.apply(args.get(0), args.get(1)));
+        if (isFunction()) {
+            stringBuilder.append(getFunction().apply(arguments()));
         }
         else if (isConst()) {
             stringBuilder.append(getConst());
@@ -187,7 +170,7 @@ public final class CalcExpEvaluator {
             while (!isOver()) {
                 final char current = next();
 
-                if (INTEGERS.contains(current)) stringBuilder.append(current);
+                if (NUMBERS.contains(current)) stringBuilder.append(current);
                 else if (current == DECIMAL_POINT) {
                     if (dotAlreadyAppended) {
                         throw new CalcExpEvalException("無効な小数点を検知しました");
@@ -204,7 +187,7 @@ public final class CalcExpEvaluator {
         }
 
         try {
-            return Double.parseDouble(stringBuilder.toString());
+            return NUMBER_PARSER.apply(stringBuilder.toString());
         }
         catch (NumberFormatException e) {
             throw new CalcExpEvalException("数値の解析に失敗しました: " + expression.substring(location), e);
@@ -348,11 +331,11 @@ public final class CalcExpEvaluator {
         throw new CalcExpEvalException("定数を取得できませんでした");
     }
 
-    private boolean isZeroArgFunction() {
+    private boolean isFunction() {
         final String str = expression.substring(location);
 
-        for (final String name : ZERO_ARGUMENT_FUNCTIONS.keySet().stream().sorted((a, b) -> b.length() - a.length()).toList()) {
-            if (str.startsWith(name)) {
+        for (final String name : FUNCTIONS.keySet()) {
+            if (str.startsWith(name + PARENTHESIS_START)) {
                 return true;
             }
         }
@@ -360,63 +343,13 @@ public final class CalcExpEvaluator {
         return false;
     }
 
-    private DoubleSupplier getZeroArgFunction() {
+    private Function<List<Double>, Double> getFunction() {
         final String str = expression.substring(location);
 
-        for (final String name : ZERO_ARGUMENT_FUNCTIONS.keySet()) {
-            if (str.startsWith(name)) {
+        for (final String name : FUNCTIONS.keySet()) {
+            if (str.startsWith(name + PARENTHESIS_START)) {
                 location += name.length();
-                return ZERO_ARGUMENT_FUNCTIONS.get(name);
-            }
-        }
-
-        throw new CalcExpEvalException("関数を取得できませんでした");
-    }
-
-    private boolean isSingleArgFunction() {
-        final String str = expression.substring(location);
-
-        for (final String name : SINGLE_ARGUMENT_FUNCTIONS.keySet()) {
-            if (str.startsWith(name + "(")) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private DoubleUnaryOperator getSingleArgFunction() {
-        final String str = expression.substring(location);
-
-        for (final String name : SINGLE_ARGUMENT_FUNCTIONS.keySet()) {
-            if (str.startsWith(name + "(")) {
-                location += name.length();
-                return SINGLE_ARGUMENT_FUNCTIONS.get(name);
-            }
-        }
-
-        throw new CalcExpEvalException("関数を取得できませんでした");
-    }
-
-    private boolean isDoubleArgsFunction() {
-        final String str = expression.substring(location);
-
-        for (final String name : DOUBLE_ARGUMENTS_FUNCTIONS.keySet()) {
-            if (str.startsWith(name + "(")) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private BinaryOperator<Double> getDoubleArgsFunction() {
-        final String str = expression.substring(location);
-
-        for (final String name : DOUBLE_ARGUMENTS_FUNCTIONS.keySet()) {
-            if (str.startsWith(name + "(")) {
-                location += name.length();
-                return DOUBLE_ARGUMENTS_FUNCTIONS.get(name);
+                return FUNCTIONS.get(name);
             }
         }
 
@@ -430,13 +363,10 @@ public final class CalcExpEvaluator {
     }
 
     public boolean isDefined(@NotNull String name) {
-        return ZERO_ARGUMENT_FUNCTIONS.containsKey(name)
-            || SINGLE_ARGUMENT_FUNCTIONS.containsKey(name)
-            || DOUBLE_ARGUMENTS_FUNCTIONS.containsKey(name)
-            || CONSTANTS.containsKey(name);
+        return FUNCTIONS.containsKey(name) || CONSTANTS.containsKey(name);
     }
 
-    private void throwIfDefined(@NotNull String name) {
+    private void throwIfDefined(@NotNull String name) throws IllegalArgumentException {
         if (isDefined(name)) {
             throw new IllegalArgumentException("その名前は既に使用されています: " + name);
         }
@@ -456,24 +386,14 @@ public final class CalcExpEvaluator {
         return value;
     }
 
-    public void define(@NotNull String name, @NotNull DoubleSupplier function) {
-        throwIfDefined(name);
-        ZERO_ARGUMENT_FUNCTIONS.put(name, function);
-    }
-
-    public void define(@NotNull String name, @NotNull DoubleUnaryOperator function) {
-        throwIfDefined(name);
-        SINGLE_ARGUMENT_FUNCTIONS.put(name, function);
-    }
-
-    public void define(@NotNull String name, @NotNull BinaryOperator<Double> function) {
-        throwIfDefined(name);
-        DOUBLE_ARGUMENTS_FUNCTIONS.put(name, function);
-    }
-
     public void define(@NotNull String name, double constant) {
         throwIfDefined(name);
         CONSTANTS.put(name, constant);
+    }
+
+    public void define(@NotNull String name, @NotNull CalcExpFunction function) {
+        throwIfDefined(name);
+        FUNCTIONS.put(name, function);
     }
 
     public <T> void define(@NotNull String name, @NotNull Class<T> clazz, @Nullable T object) {
@@ -501,56 +421,20 @@ public final class CalcExpEvaluator {
 
             if (isDefined(id)) undefine(id);
 
-            switch (method.getParameterCount()) {
-                case 0:
-                    define(id, () -> {
-                        try {
-                            return (double) method.invoke(object);
-                        }
-                        catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException("NEVER HAPPENS");
-                        }
-                    });
-                    break;
-                case 1:
-                    if (!classChecker.test(method.getParameterTypes()[0])) continue;
-
-                    define(id, x -> {
-                        try {
-                            return (double) method.invoke(object, x);
-                        }
-                        catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException("NEVER HAPPENS");
-                        }
-                    });
-
-                    break;
-                case 2:
-                    if (!classChecker.test(method.getParameterTypes()[0]) || !classChecker.test(method.getParameterTypes()[1])) {
-                        continue;
-                    }
-
-                    define(id, (x, y) -> {
-                        try {
-                            return (double) method.invoke(object, x, y);
-                        }
-                        catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException("NEVER HAPPENS");
-                        }
-                    });
-
-                    break;
-                default:
-                    break;
-            }
+            define(id, list -> {
+                try {
+                    return (double) method.invoke(object, list.toArray());
+                }
+                catch (IllegalAccessException | InvocationTargetException e) {
+                    throw new RuntimeException("NEVER HAPPENS");
+                }
+            });
         }
     }
 
     public void undefine(@NotNull String name) {
         if (isDefined(name)) {
-            ZERO_ARGUMENT_FUNCTIONS.remove(name);
-            SINGLE_ARGUMENT_FUNCTIONS.remove(name);
-            DOUBLE_ARGUMENTS_FUNCTIONS.remove(name);
+            FUNCTIONS.remove(name);
             CONSTANTS.remove(name);
         }
     }
@@ -569,30 +453,62 @@ public final class CalcExpEvaluator {
         evaluator.define("E", Math.E);
         evaluator.define("Infinity", Double.POSITIVE_INFINITY);
 
-        evaluator.define("random", Math::random);
+        evaluator.define("random", CalcExpFunction.of(Math::random));
 
-        evaluator.define("sqrt", Math::sqrt);
-        evaluator.define("cbrt", Math::cbrt);
-        evaluator.define("abs", Math::abs);
-        evaluator.define("floor", Math::floor);
-        evaluator.define("ceil", Math::ceil);
-        evaluator.define("round", Math::round);
-        evaluator.define("sin", Math::sin);
-        evaluator.define("cos", Math::cos);
-        evaluator.define("tan", Math::tan);
-        evaluator.define("asin", Math::asin);
-        evaluator.define("acos", Math::acos);
-        evaluator.define("atan", Math::atan);
-        evaluator.define("exp", Math::exp);
-        evaluator.define("to_degrees", Math::toDegrees);
-        evaluator.define("to_radians", Math::toRadians);
-        evaluator.define("log10", Math::log10);
+        evaluator.define("sqrt", CalcExpFunction.of(Math::sqrt));
+        evaluator.define("cbrt", CalcExpFunction.of(Math::cbrt));
+        evaluator.define("abs", CalcExpFunction.of(Math::abs));
+        evaluator.define("floor", CalcExpFunction.of(Math::floor));
+        evaluator.define("ceil", CalcExpFunction.of(Math::ceil));
+        evaluator.define("round", CalcExpFunction.of(Math::round));
+        evaluator.define("sin", CalcExpFunction.of(Math::sin));
+        evaluator.define("cos", CalcExpFunction.of(Math::cos));
+        evaluator.define("tan", CalcExpFunction.of(Math::tan));
+        evaluator.define("asin", CalcExpFunction.of(Math::asin));
+        evaluator.define("acos", CalcExpFunction.of(Math::acos));
+        evaluator.define("atan", CalcExpFunction.of(Math::atan));
+        evaluator.define("exp", CalcExpFunction.of(Math::exp));
+        evaluator.define("to_degrees", CalcExpFunction.of(Math::toDegrees));
+        evaluator.define("to_radians", CalcExpFunction.of(Math::toRadians));
+        evaluator.define("log10", CalcExpFunction.of(Math::log10));
 
-        evaluator.define("log", (a, b) -> Math.log(b) / Math.log(a));
-        evaluator.define("atan2", Math::atan2);
-        evaluator.define("min", Math::min);
-        evaluator.define("max", Math::max);
-        evaluator.define("pow", Math::pow);
+        evaluator.define("log", CalcExpFunction.of((a, b) -> Math.log(b) / Math.log(a)));
+        evaluator.define("atan2", CalcExpFunction.of(Math::atan2));
+        evaluator.define("min", CalcExpFunction.of(Math::min));
+        evaluator.define("max", CalcExpFunction.of(Math::max));
+        evaluator.define("pow", CalcExpFunction.of(Math::pow));
+
+        class Bit {
+            public static double and(double a, double b) {
+                return (int) a & (int) b;
+            }
+
+            public static double or(double a, double b) {
+                return (int) a | (int) b;
+            }
+
+            public static double xor(double a, double b) {
+                return (int) a ^ (int) b;
+            }
+
+            public static double not(double x) {
+                return ~ (int) x;
+            }
+
+            public static double shift_left(double a, double b) {
+                return (int) a << (int) b;
+            }
+
+            public static double shift_right(double a, double b) {
+                return (int) a >> (int) b;
+            }
+
+            public static double shift_right_unsigned(double a, double b) {
+                return (int) a >>> (int) b;
+            }
+        }
+
+        evaluator.define("Bit", Bit.class, null);
 
         return evaluator;
     }

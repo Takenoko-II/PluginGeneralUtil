@@ -1,4 +1,4 @@
-package com.gmail.subnokoii78.util.other;
+package com.gmail.subnokoii78.util.eval;
 
 import org.jetbrains.annotations.NotNull;
 
