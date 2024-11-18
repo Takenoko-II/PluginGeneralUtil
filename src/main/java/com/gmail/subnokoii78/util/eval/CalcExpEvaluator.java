@@ -26,16 +26,16 @@ public final class CalcExpEvaluator {
 
     private static final char PARENTHESIS_END = ')';
 
-    private final Map<Character, BinaryOperator<Double>> MONOMIAL_OPERATORS = new HashMap<>(Map.of(
-        '*', (a, b) -> a * b,
-        '/', (a, b) -> {
+    private final Map<String, BinaryOperator<Double>> MONOMIAL_OPERATORS = new HashMap<>(Map.of(
+        "*", (a, b) -> a * b,
+        "/", (a, b) -> {
             if (a == 0 && b == 0) {
                 throw new CalcExpEvalException("式 '0 / 0'はNaNを返します");
             }
 
             return a / b;
         },
-        '%', (a, b) -> {
+        "%", (a, b) -> {
             if (a == 0 && b == 0) {
                 throw new CalcExpEvalException("式 '0 % 0'はNaNを返します");
             }
@@ -44,17 +44,17 @@ public final class CalcExpEvaluator {
         }
     ));
 
-    private final Map<Character, BinaryOperator<Double>> POLYNOMIAL_OPERATORS = new HashMap<>(Map.of(
-        '+', Double::sum,
-        '-', (a, b) -> a - b
+    private final Map<String, BinaryOperator<Double>> POLYNOMIAL_OPERATORS = new HashMap<>(Map.of(
+        "+", Double::sum,
+        "-", (a, b) -> a - b
     ));
 
-    private final Map<Character, BinaryOperator<Double>> FACTOR_OPERATORS = new HashMap<>(Map.of(
-        '^', Math::pow
+    private final Map<String, BinaryOperator<Double>> FACTOR_OPERATORS = new HashMap<>(Map.of(
+        "^", Math::pow
     ));
 
-    private final Map<Character, DoubleUnaryOperator> NUMBER_SUFFIX_OPERATOR = new HashMap<>(Map.of(
-        '!', value -> {
+    private final Map<String, DoubleUnaryOperator> NUMBER_SUFFIX_OPERATOR = new HashMap<>(Map.of(
+        "!", value -> {
             if (value != (double) (int) value) {
                 throw new CalcExpEvalException("階乗演算子は実質的な整数の値にのみ使用できます");
             }
@@ -123,6 +123,20 @@ public final class CalcExpEvaluator {
 
         if (current == next) {
             location++;
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean nextIf(@NotNull String next) {
+        if (isOver()) return false;
+
+        final String str = expression.substring(location);
+
+        if (str.startsWith(next)) {
+            location += next.length();
+            beforeWhitespace();
             return true;
         }
 
@@ -209,15 +223,14 @@ public final class CalcExpEvaluator {
     private double monomial() {
         double value = operateIfSuffix(factor());
 
-        while (!isOver()) {
-            final char current = next();
-            if (MONOMIAL_OPERATORS.containsKey(current)) {
-                value = MONOMIAL_OPERATORS.get(current).apply(value, operateIfSuffix(factor()));
+        a: while (!isOver()) {
+            for (final String o : MONOMIAL_OPERATORS.keySet()) {
+                if (nextIf(o)) {
+                    value = MONOMIAL_OPERATORS.get(o).apply(value, operateIfSuffix(factor()));
+                    continue a;
+                }
             }
-            else {
-                location--;
-                break;
-            }
+            break;
         }
 
         return value;
@@ -226,37 +239,42 @@ public final class CalcExpEvaluator {
     private double polynomial() {
         double value = monomial();
 
-        while (!isOver()) {
-            final char current = next();
-            if (POLYNOMIAL_OPERATORS.containsKey(current)) {
-                value = POLYNOMIAL_OPERATORS.get(current).apply(value, monomial());
+        a: while (!isOver()) {
+            for (final String o : POLYNOMIAL_OPERATORS.keySet()) {
+                if (nextIf(o)) {
+                    value = POLYNOMIAL_OPERATORS.get(o).apply(value, monomial());
+                    continue a;
+                }
             }
-            else {
-                location--;
-                break;
-            }
+            break;
         }
 
         return value;
     }
 
     private double operateIfSuffix(double num) {
-        if (!isOver()) {
-            final char current2 = next();
-            if (NUMBER_SUFFIX_OPERATOR.containsKey(current2)) {
-                return NUMBER_SUFFIX_OPERATOR.get(current2).applyAsDouble(num);
+        double value = num;
+
+        a: while (!isOver()) {
+            for (final String o : NUMBER_SUFFIX_OPERATOR.keySet()) {
+                if (nextIf(o)) {
+                    value = NUMBER_SUFFIX_OPERATOR.get(o).applyAsDouble(value);
+                    continue a;
+                }
             }
-            else if (FACTOR_OPERATORS.containsKey(current2)) {
-                final double obj = factor();
-                return FACTOR_OPERATORS.get(current2).apply(num, obj);
+
+            for (final String o : FACTOR_OPERATORS.keySet()) {
+                if (nextIf(o)) {
+                    final double obj = factor();
+                    value = FACTOR_OPERATORS.get(o).apply(value, obj);
+                    continue a;
+                }
             }
-            else {
-                location--;
-                return num;
-            }
+
+            break;
         }
 
-        return num;
+        return value;
     }
 
     private double factor() {
@@ -266,7 +284,10 @@ public final class CalcExpEvaluator {
             double value = polynomial();
             if (isOver()) throw new CalcExpEvalException("括弧が閉じられていません");
             final char next = next();
-            if (next == PARENTHESIS_END) return value;
+            if (next == PARENTHESIS_END) {
+                beforeWhitespace();
+                return value;
+            }
             else throw new CalcExpEvalException("括弧が閉じられていません: " + next);
         }
         else {
