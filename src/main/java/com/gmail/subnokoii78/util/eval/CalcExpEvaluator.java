@@ -209,12 +209,12 @@ public final class CalcExpEvaluator {
     }
 
     private double monomial() {
-        double value = operateIfSuffix(factor());
+        double value = factorOperator(factor());
 
         a: while (!isOver()) {
             for (final String o : MONOMIAL_OPERATORS.keySet()) {
                 if (nextIf(o)) {
-                    value = MONOMIAL_OPERATORS.get(o).applyAsDouble(value, operateIfSuffix(factor()));
+                    value = MONOMIAL_OPERATORS.get(o).applyAsDouble(value, factorOperator(factor()));
                     continue a;
                 }
             }
@@ -240,7 +240,7 @@ public final class CalcExpEvaluator {
         return value;
     }
 
-    private double operateIfSuffix(double num) {
+    private double factorOperator(double num) {
         double value = num;
 
         a: while (!isOver()) {
@@ -365,28 +365,21 @@ public final class CalcExpEvaluator {
         }
     }
 
-    public boolean containsReservedChar(@NotNull String word) {
+    private boolean isInvalidName(@NotNull String word) {
         return word.contains(String.valueOf(PARENTHESIS_START))
             || word.contains(String.valueOf(PARENTHESIS_END))
             || word.contains(String.valueOf(FUNCTION_ARGUMENT_SEPARATOR));
     }
 
-    public <T> boolean isDeclared(@NotNull DeclarationKey<T> type, @NotNull String name) {
-        if (type.isConst()) {
-            return CONSTANTS.containsKey(name);
-        }
-        else if (type.isFunction()) {
-            return FUNCTIONS.containsKey(name);
-        }
-        else if (type.isOperator()) {
-            return POLYNOMIAL_OPERATORS.containsKey(name)
+    public boolean isDeclared(@NotNull String name, @NotNull DeclarationKey.DeclarationCategory category) {
+        return switch (category) {
+            case CONSTANT -> CONSTANTS.containsKey(name);
+            case FUNCTION -> FUNCTIONS.containsKey(name);
+            case OPERATOR -> POLYNOMIAL_OPERATORS.containsKey(name)
                 || MONOMIAL_OPERATORS.containsKey(name)
                 || FACTOR_OPERATORS.containsKey(name);
-        }
-        else if (type.isSelfOperator()) {
-            return NUMBER_SUFFIX_OPERATORS.containsKey(name);
-        }
-        else return false;
+            case SELF_OPERATOR -> NUMBER_SUFFIX_OPERATORS.containsKey(name);
+        };
     }
 
     public double evaluate(@NotNull String expression) throws CalcExpEvaluationException {
@@ -407,8 +400,8 @@ public final class CalcExpEvaluator {
         return value;
     }
 
-    public <T> void declare(@NotNull String name, @NotNull DeclarationKey<T> type, @NotNull T value) {
-        if (containsReservedChar(name)) {
+    public <T> void declare(@NotNull String name, @NotNull DeclarationKey<T> key, @NotNull T value) {
+        if (isInvalidName(name)) {
             throw new IllegalArgumentException(String.format(
                 "予約済み文字を含む名前は使用できません: ['%c'], ['%c'], ['%c']",
                 PARENTHESIS_START,
@@ -417,69 +410,53 @@ public final class CalcExpEvaluator {
             ));
         }
 
-        if (type.isConst()) {
-            CONSTANTS.put(name, type.constant(value));
-        }
-        else if (type.isFunction()) {
-            FUNCTIONS.put(name, type.function(value));
-        }
-        else if (type.isOperator()) {
-            final Map<String, DoubleBinaryOperator> map;
-
-            if (type == DeclarationKey.OPERATOR_POLYNOMIAL) map = POLYNOMIAL_OPERATORS;
-            else if (type == DeclarationKey.OPERATOR_MONOMIAL) map = MONOMIAL_OPERATORS;
-            else if (type == DeclarationKey.OPERATOR_FACTOR) map = FACTOR_OPERATORS;
-            else throw new IllegalArgumentException("不明な演算子定義タイプです");
-
-            map.put(name, type.operator(value));
-        }
-        else if (type.isSelfOperator()) {
-            final Map<String, DoubleUnaryOperator> map;
-
-            if (type == DeclarationKey.SELF_OPERATOR_NUMBER_SUFFIX) map = NUMBER_SUFFIX_OPERATORS;
-            else throw new IllegalArgumentException("不明な演算子定義タイプです");
-
-            map.put(name, type.selfOperator(value));
-        }
-        else throw new IllegalArgumentException("不明な演算子定義タイプです");
-    }
-
-    public <T> void undeclare(@NotNull String name, @NotNull DeclarationKey<T> type) {
-        if (isDeclared(type, name)) {
-            if (type.isConst()) {
-                CONSTANTS.remove(name);
+        switch (key.getCategory()) {
+            case CONSTANT -> CONSTANTS.put(name, key.constant(value));
+            case FUNCTION -> FUNCTIONS.put(name, key.function(value));
+            case OPERATOR -> {
+                final Map<String, DoubleBinaryOperator> map;
+                if (key == DeclarationKey.OPERATOR_POLYNOMIAL) map = POLYNOMIAL_OPERATORS;
+                else if (key == DeclarationKey.OPERATOR_MONOMIAL) map = MONOMIAL_OPERATORS;
+                else if (key == DeclarationKey.OPERATOR_FACTOR) map = FACTOR_OPERATORS;
+                else throw new IllegalArgumentException("不明な演算子定義タイプです");
+                map.put(name, key.operator(value));
             }
-            else if (type.isFunction()) {
-                FUNCTIONS.remove(name);
-            }
-            else if (type.isOperator()) {
-                POLYNOMIAL_OPERATORS.remove(name);
-                MONOMIAL_OPERATORS.remove(name);
-                FACTOR_OPERATORS.remove(name);
-            }
-            else if (type.isSelfOperator()) {
-                NUMBER_SUFFIX_OPERATORS.remove(name);
+            case SELF_OPERATOR -> {
+                final Map<String, DoubleUnaryOperator> map;
+                if (key == DeclarationKey.SELF_OPERATOR_NUMBER_SUFFIX) map = NUMBER_SUFFIX_OPERATORS;
+                else throw new IllegalArgumentException("不明な演算子定義タイプです");
+                map.put(name, key.selfOperator(value));
             }
         }
     }
 
-    public @NotNull Set<String> getConstantNames() {
-        return Set.copyOf(CONSTANTS.keySet());
+    public void undeclare(@NotNull String name, @NotNull DeclarationKey.DeclarationCategory category) {
+        if (isDeclared(name, category)) {
+            switch (category) {
+                case CONSTANT -> CONSTANTS.remove(name);
+                case FUNCTION -> FUNCTIONS.remove(name);
+                case OPERATOR -> {
+                    POLYNOMIAL_OPERATORS.remove(name);
+                    MONOMIAL_OPERATORS.remove(name);
+                    FACTOR_OPERATORS.remove(name);
+                }
+                case SELF_OPERATOR -> NUMBER_SUFFIX_OPERATORS.remove(name);
+            }
+        }
     }
 
-    public @NotNull Set<String> getFunctionNames() {
-        return Set.copyOf(FUNCTIONS.keySet());
-    }
-
-    public @NotNull Set<String> getOperatorNames() {
-        final Set<String> set = new HashSet<>(Set.copyOf(POLYNOMIAL_OPERATORS.keySet()));
-        set.addAll(MONOMIAL_OPERATORS.keySet());
-        set.addAll(FACTOR_OPERATORS.keySet());
-        return Set.copyOf(set);
-    }
-
-    public @NotNull Set<String> getSelfOperatorNames() {
-        return Set.copyOf(NUMBER_SUFFIX_OPERATORS.keySet());
+    public @NotNull Set<String> getDeclarationNames(@NotNull DeclarationKey.DeclarationCategory category) {
+        return switch (category) {
+            case CONSTANT -> Set.copyOf(CONSTANTS.keySet());
+            case FUNCTION -> Set.copyOf(FUNCTIONS.keySet());
+            case OPERATOR -> {
+                final Set<String> set = new HashSet<>(Set.copyOf(POLYNOMIAL_OPERATORS.keySet()));
+                set.addAll(MONOMIAL_OPERATORS.keySet());
+                set.addAll(FACTOR_OPERATORS.keySet());
+                yield Set.copyOf(set);
+            }
+            case SELF_OPERATOR -> Set.copyOf(NUMBER_SUFFIX_OPERATORS.keySet());
+        };
     }
 
     @Override

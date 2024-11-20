@@ -6,22 +6,14 @@ import java.util.List;
 import java.util.function.*;
 
 public abstract class DeclarationKey<T> {
-    private DeclarationKey() {}
+    private final DeclarationCategory category;
 
-    public boolean isConst() {
-        return false;
+    private DeclarationKey(@NotNull DeclarationCategory category) {
+        this.category = category;
     }
 
-    public boolean isFunction() {
-        return false;
-    }
-
-    public boolean isOperator() {
-        return false;
-    }
-
-    public boolean isSelfOperator() {
-        return false;
+    public @NotNull DeclarationCategory getCategory() {
+        return category;
     }
 
     public @NotNull Double constant(@NotNull T value) throws IllegalStateException {
@@ -40,31 +32,21 @@ public abstract class DeclarationKey<T> {
         throw new IllegalStateException();
     }
 
-    public static final DeclarationKey<Number> CONSTANT = new DeclarationKey<>() {
+    public static final DeclarationKey<Number> CONSTANT = new DeclarationKey<>(DeclarationCategory.CONSTANT) {
         @Override
         public @NotNull Double constant(@NotNull Number value) {
             return value.doubleValue();
         }
-
-        @Override
-        public boolean isConst() {
-            return true;
-        }
     };
 
-    public static final DeclarationKey<Function<List<Double>, Double>> FUNCTION_VARIABLE_LENGTH_ARGS = new DeclarationKey<>() {
+    public static final DeclarationKey<Function<List<Double>, Double>> FUNCTION_VARIABLE_LENGTH_ARGS = new DeclarationKey<>(DeclarationCategory.FUNCTION) {
         @Override
         public @NotNull Function<List<Double>, Double> function(@NotNull Function<List<Double>, Double> function) {
             return function;
         }
-
-        @Override
-        public boolean isFunction() {
-            return true;
-        }
     };
 
-    public static final DeclarationKey<DoubleSupplier> FUNCTION_NO_ARGS = new DeclarationKey<>() {
+    public static final DeclarationKey<DoubleSupplier> FUNCTION_NO_ARGS = new DeclarationKey<>(DeclarationCategory.FUNCTION) {
         @Override
         public @NotNull Function<List<Double>, Double> function(@NotNull DoubleSupplier supplier) {
             return list -> {
@@ -74,14 +56,9 @@ public abstract class DeclarationKey<T> {
                 return supplier.getAsDouble();
             };
         }
-
-        @Override
-        public boolean isFunction() {
-            return true;
-        }
     };
 
-    public static final DeclarationKey<DoubleUnaryOperator> FUNCTION_1_ARG = new DeclarationKey<>() {
+    public static final DeclarationKey<DoubleUnaryOperator> FUNCTION_1_ARG = new DeclarationKey<>(DeclarationCategory.FUNCTION) {
         @Override
         public @NotNull Function<List<Double>, Double> function(@NotNull DoubleUnaryOperator unaryOperator) {
             return list -> {
@@ -91,14 +68,9 @@ public abstract class DeclarationKey<T> {
                 return unaryOperator.applyAsDouble(list.getFirst());
             };
         }
-
-        @Override
-        public boolean isFunction() {
-            return true;
-        }
     };
 
-    public static final DeclarationKey<DoubleBinaryOperator> FUNCTION_2_ARGS = new DeclarationKey<>() {
+    public static final DeclarationKey<DoubleBinaryOperator> FUNCTION_2_ARGS = new DeclarationKey<>(DeclarationCategory.FUNCTION) {
         @Override
         public @NotNull Function<List<Double>, Double> function(@NotNull DoubleBinaryOperator binaryOperator) {
             return list -> {
@@ -108,79 +80,40 @@ public abstract class DeclarationKey<T> {
                 return binaryOperator.applyAsDouble(list.get(0), list.get(1));
             };
         }
-
-        @Override
-        public boolean isFunction() {
-            return true;
-        }
     };
 
-    public static final DeclarationKey<DoubleBinaryOperator> OPERATOR_POLYNOMIAL = new DeclarationKey<>() {
+    public static final DeclarationKey<DoubleBinaryOperator> OPERATOR_POLYNOMIAL = new DeclarationKey<>(DeclarationCategory.OPERATOR) {
         @Override
         public @NotNull DoubleBinaryOperator operator(@NotNull DoubleBinaryOperator binaryOperator) {
             return binaryOperator;
         }
-
-        @Override
-        public boolean isOperator() {
-            return true;
-        }
     };
 
-    public static final DeclarationKey<DoubleBinaryOperator> OPERATOR_MONOMIAL = new DeclarationKey<>() {
+    public static final DeclarationKey<DoubleBinaryOperator> OPERATOR_MONOMIAL = new DeclarationKey<>(DeclarationCategory.OPERATOR) {
         @Override
         public @NotNull DoubleBinaryOperator operator(@NotNull DoubleBinaryOperator binaryOperator) {
             return binaryOperator;
         }
-
-        @Override
-        public boolean isOperator() {
-            return true;
-        }
     };
 
-    public static final DeclarationKey<DoubleBinaryOperator> OPERATOR_FACTOR = new DeclarationKey<>() {
+    public static final DeclarationKey<DoubleBinaryOperator> OPERATOR_FACTOR = new DeclarationKey<>(DeclarationCategory.OPERATOR) {
         @Override
         public @NotNull DoubleBinaryOperator operator(@NotNull DoubleBinaryOperator binaryOperator) {
             return binaryOperator;
         }
-
-        @Override
-        public boolean isOperator() {
-            return true;
-        }
     };
 
-    public static final DeclarationKey<DoubleUnaryOperator> SELF_OPERATOR_NUMBER_SUFFIX = new DeclarationKey<>() {
+    public static final DeclarationKey<DoubleUnaryOperator> SELF_OPERATOR_NUMBER_SUFFIX = new DeclarationKey<>(DeclarationCategory.SELF_OPERATOR) {
         @Override
         public @NotNull DoubleUnaryOperator selfOperator(@NotNull DoubleUnaryOperator unaryOperator) {
             return unaryOperator;
         }
-
-        @Override
-        public boolean isSelfOperator() {
-            return true;
-        }
     };
 
-    public static final DeclarationKey<Void> ABSTRACT_FUNCTION = new DeclarationKey<>() {
-        @Override
-        public boolean isFunction() {
-            return true;
-        }
-    };
-
-    public static final DeclarationKey<Void> ABSTRACT_OPERATOR = new DeclarationKey<>() {
-        @Override
-        public boolean isOperator() {
-            return true;
-        }
-    };
-
-    public static final DeclarationKey<Void> ABSTRACT_SELF_OPERATOR = new DeclarationKey<>() {
-        @Override
-        public boolean isSelfOperator() {
-            return true;
-        }
-    };
+    public enum DeclarationCategory {
+        CONSTANT,
+        FUNCTION,
+        OPERATOR,
+        SELF_OPERATOR
+    }
 }
