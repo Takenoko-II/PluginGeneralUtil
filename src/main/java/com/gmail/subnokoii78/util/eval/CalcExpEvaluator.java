@@ -49,7 +49,7 @@ public final class CalcExpEvaluator {
         "^", Math::pow
     ));
 
-    private final Map<String, DoubleUnaryOperator> NUMBER_SUFFIX_OPERATOR = new HashMap<>(Map.of(
+    private final Map<String, DoubleUnaryOperator> NUMBER_SUFFIX_OPERATORS = new HashMap<>(Map.of(
         "!", value -> {
             if (value != (double) (int) value) {
                 throw new CalcExpEvaluationException("階乗演算子は実質的な整数の値にのみ使用できます");
@@ -97,46 +97,38 @@ public final class CalcExpEvaluator {
         return current;
     }
 
-    private void beforeWhitespace() {
+    private void ignore() {
         if (isOver()) return;
 
         final char current = expression.charAt(location++);
 
         if (IGNORED.contains(current)) {
-            beforeWhitespace();
+            ignore();
         }
         else {
             location--;
         }
     }
 
-    private boolean nextIf(char next) {
-        if (location >= expression.length()) {
-            return false;
-        }
+    private boolean nextIf(@NotNull String next) {
+        if (isOver()) return false;
 
-        final char current = expression.charAt(location);
+        ignore();
 
-        if (current == next) {
-            location++;
+        final String str = expression.substring(location);
+
+        if (str.startsWith(next)) {
+            location += next.length();
+            ignore();
             return true;
         }
 
         return false;
     }
 
-    private boolean nextIf(@NotNull String next) {
-        if (isOver()) return false;
-
-        final String str = expression.substring(location);
-
-        if (str.startsWith(next)) {
-            location += next.length();
-            beforeWhitespace();
-            return true;
-        }
-
-        return false;
+    private boolean ignoringStartsWith(@NotNull String text) {
+        ignore();
+        return expression.substring(location).startsWith(text);
     }
 
     private double number() {
@@ -145,7 +137,7 @@ public final class CalcExpEvaluator {
 
         if (SIGNS.contains(init)) {
             stringBuilder.append(init);
-            beforeWhitespace();
+            ignore();
 
             if (isOver()) {
                 throw new CalcExpEvaluationException("符号の後には数が必要です");
@@ -252,9 +244,9 @@ public final class CalcExpEvaluator {
         double value = num;
 
         a: while (!isOver()) {
-            for (final String o : NUMBER_SUFFIX_OPERATOR.keySet()) {
+            for (final String o : NUMBER_SUFFIX_OPERATORS.keySet()) {
                 if (nextIf(o)) {
-                    value = NUMBER_SUFFIX_OPERATOR.get(o).applyAsDouble(value);
+                    value = NUMBER_SUFFIX_OPERATORS.get(o).applyAsDouble(value);
                     continue a;
                 }
             }
@@ -281,7 +273,7 @@ public final class CalcExpEvaluator {
             if (isOver()) throw new CalcExpEvaluationException("括弧が閉じられていません");
             final char next = next();
             if (next == PARENTHESIS_END) {
-                beforeWhitespace();
+                ignore();
                 return value;
             }
             else throw new CalcExpEvaluationException("括弧が閉じられていません: " + next);
@@ -298,36 +290,35 @@ public final class CalcExpEvaluator {
     }
 
     private List<Double> arguments() {
-        final char current = next();
         final List<Double> args = new ArrayList<>();
 
-        if (current == PARENTHESIS_START) {
-            if (nextIf(PARENTHESIS_END)) {
+        if (!nextIf(String.valueOf(PARENTHESIS_START))) {
+            throw new CalcExpEvaluationException("関数の呼び出しには括弧が必要です");
+        }
+
+        if (nextIf(String.valueOf(PARENTHESIS_END))) {
+            return args;
+        }
+
+        while (true) {
+            if (isOver()) throw new CalcExpEvaluationException("引数の探索中に文字列外に来ました");
+            double value = polynomial();
+            final char next = next();
+            if (next == FUNCTION_ARGUMENT_SEPARATOR) {
+                args.add(value);
+            }
+            else if (next == PARENTHESIS_END) {
+                args.add(value);
+                ignore();
                 return args;
             }
-
-            while (true) {
-                if (isOver()) throw new CalcExpEvaluationException("引数の探索中に文字列外に来ました");
-                double value = polynomial();
-                final char next = next();
-                if (next == FUNCTION_ARGUMENT_SEPARATOR) {
-                    args.add(value);
-                }
-                else if (next == PARENTHESIS_END) {
-                    args.add(value);
-                    return args;
-                }
-                else throw new CalcExpEvaluationException("関数の引数の区切りが見つかりません: " + next);
-            }
+            else throw new CalcExpEvaluationException("関数の引数の区切りが見つかりません: " + next);
         }
-        else throw new CalcExpEvaluationException("関数の呼び出しには括弧が必要です: " + current);
     }
 
     private boolean isConst() {
-        final String str = expression.substring(location);
-
         for (final String name : CONSTANTS.keySet()) {
-            if (str.startsWith(name)) {
+            if (ignoringStartsWith(name)) {
                 return true;
             }
         }
@@ -336,11 +327,8 @@ public final class CalcExpEvaluator {
     }
 
     private Double getConst() {
-        final String str = expression.substring(location);
-
         for (final String name : CONSTANTS.keySet().stream().sorted((a, b) -> b.length() - a.length()).toList()) {
-            if (str.startsWith(name)) {
-                location += name.length();
+            if (nextIf(name)) {
                 return CONSTANTS.get(name);
             }
         }
@@ -349,23 +337,21 @@ public final class CalcExpEvaluator {
     }
 
     private boolean isFunction() {
-        final String str = expression.substring(location);
-
-        for (final String name : FUNCTIONS.keySet()) {
-            if (str.startsWith(name + PARENTHESIS_START)) {
+        for (final String name : FUNCTIONS.keySet().stream().sorted((a, b) -> b.length() - a.length()).toList()) {
+            final int loc = location;
+            if (nextIf(name) && nextIf(String.valueOf(PARENTHESIS_START))) {
+                location = loc;
                 return true;
             }
+            location = loc;
         }
 
         return false;
     }
 
     private Function<List<Double>, Double> getFunction() {
-        final String str = expression.substring(location);
-
         for (final String name : FUNCTIONS.keySet()) {
-            if (str.startsWith(name + PARENTHESIS_START)) {
-                location += name.length();
+            if (nextIf(name) && ignoringStartsWith(String.valueOf(PARENTHESIS_START))) {
                 return FUNCTIONS.get(name);
             }
         }
@@ -379,7 +365,13 @@ public final class CalcExpEvaluator {
         }
     }
 
-    public <T, U> boolean isDefined(@NotNull ExpressionDefinition<T, U> type, @NotNull String name) {
+    public boolean containsReservedChar(@NotNull String word) {
+        return word.contains(String.valueOf(PARENTHESIS_START))
+            || word.contains(String.valueOf(PARENTHESIS_END))
+            || word.contains(String.valueOf(FUNCTION_ARGUMENT_SEPARATOR));
+    }
+
+    public <T> boolean isDeclared(@NotNull DeclarationKey<T> type, @NotNull String name) {
         if (type.isConst()) {
             return CONSTANTS.containsKey(name);
         }
@@ -392,18 +384,16 @@ public final class CalcExpEvaluator {
                 || FACTOR_OPERATORS.containsKey(name);
         }
         else if (type.isSelfOperator()) {
-            return NUMBER_SUFFIX_OPERATOR.containsKey(name);
+            return NUMBER_SUFFIX_OPERATORS.containsKey(name);
         }
         else return false;
     }
 
-    private <T, U> void throwIfDefined(@NotNull ExpressionDefinition<T, U> type, @NotNull String name) throws IllegalArgumentException {
-        if (isDefined(type, name)) {
-            throw new IllegalArgumentException("その名前は既に使用されています: " + name);
-        }
-    }
-
     public double evaluate(@NotNull String expression) throws CalcExpEvaluationException {
+        if (location != 0) {
+            throw new CalcExpEvaluationException("カーソル位置が0ではありませんでした インスタンス自身がevaluate()を呼び出した可能性があります");
+        }
+
         this.expression = expression;
         if (isOver()) throw new CalcExpEvaluationException("空文字は計算できません");
         final double value = polynomial();
@@ -417,8 +407,15 @@ public final class CalcExpEvaluator {
         return value;
     }
 
-    public <T, U> void define(@NotNull String name, @NotNull ExpressionDefinition<T, U> type, @NotNull T value) {
-        throwIfDefined(type, name);
+    public <T> void declare(@NotNull String name, @NotNull DeclarationKey<T> type, @NotNull T value) {
+        if (containsReservedChar(name)) {
+            throw new IllegalArgumentException(String.format(
+                "予約済み文字を含む名前は使用できません: ['%c'], ['%c'], ['%c']",
+                PARENTHESIS_START,
+                PARENTHESIS_END,
+                FUNCTION_ARGUMENT_SEPARATOR
+            ));
+        }
 
         if (type.isConst()) {
             CONSTANTS.put(name, type.constant(value));
@@ -429,9 +426,9 @@ public final class CalcExpEvaluator {
         else if (type.isOperator()) {
             final Map<String, DoubleBinaryOperator> map;
 
-            if (type == ExpressionDefinition.OPERATOR_POLYNOMIAL) map = POLYNOMIAL_OPERATORS;
-            else if (type == ExpressionDefinition.OPERATOR_MONOMIAL) map = MONOMIAL_OPERATORS;
-            else if (type == ExpressionDefinition.OPERATOR_FACTOR) map = FACTOR_OPERATORS;
+            if (type == DeclarationKey.OPERATOR_POLYNOMIAL) map = POLYNOMIAL_OPERATORS;
+            else if (type == DeclarationKey.OPERATOR_MONOMIAL) map = MONOMIAL_OPERATORS;
+            else if (type == DeclarationKey.OPERATOR_FACTOR) map = FACTOR_OPERATORS;
             else throw new IllegalArgumentException("不明な演算子定義タイプです");
 
             map.put(name, type.operator(value));
@@ -439,7 +436,7 @@ public final class CalcExpEvaluator {
         else if (type.isSelfOperator()) {
             final Map<String, DoubleUnaryOperator> map;
 
-            if (type == ExpressionDefinition.SELF_OPERATOR_NUMBER_SUFFIX) map = NUMBER_SUFFIX_OPERATOR;
+            if (type == DeclarationKey.SELF_OPERATOR_NUMBER_SUFFIX) map = NUMBER_SUFFIX_OPERATORS;
             else throw new IllegalArgumentException("不明な演算子定義タイプです");
 
             map.put(name, type.selfOperator(value));
@@ -447,8 +444,8 @@ public final class CalcExpEvaluator {
         else throw new IllegalArgumentException("不明な演算子定義タイプです");
     }
 
-    public <T, U> void undefine(@NotNull ExpressionDefinition<T, U> type, @NotNull String name) {
-        if (isDefined(type, name)) {
+    public <T> void undeclare(@NotNull String name, @NotNull DeclarationKey<T> type) {
+        if (isDeclared(type, name)) {
             if (type.isConst()) {
                 CONSTANTS.remove(name);
             }
@@ -461,9 +458,28 @@ public final class CalcExpEvaluator {
                 FACTOR_OPERATORS.remove(name);
             }
             else if (type.isSelfOperator()) {
-                NUMBER_SUFFIX_OPERATOR.remove(name);
+                NUMBER_SUFFIX_OPERATORS.remove(name);
             }
         }
+    }
+
+    public @NotNull Set<String> getConstantNames() {
+        return Set.copyOf(CONSTANTS.keySet());
+    }
+
+    public @NotNull Set<String> getFunctionNames() {
+        return Set.copyOf(FUNCTIONS.keySet());
+    }
+
+    public @NotNull Set<String> getOperatorNames() {
+        final Set<String> set = new HashSet<>(Set.copyOf(POLYNOMIAL_OPERATORS.keySet()));
+        set.addAll(MONOMIAL_OPERATORS.keySet());
+        set.addAll(FACTOR_OPERATORS.keySet());
+        return Set.copyOf(set);
+    }
+
+    public @NotNull Set<String> getSelfOperatorNames() {
+        return Set.copyOf(NUMBER_SUFFIX_OPERATORS.keySet());
     }
 
     @Override
@@ -474,36 +490,36 @@ public final class CalcExpEvaluator {
     public static @NotNull CalcExpEvaluator getDefaultEvaluator() {
         final CalcExpEvaluator evaluator = new CalcExpEvaluator();
 
-        evaluator.define("NaN", ExpressionDefinition.CONSTANT, Double.NaN);
-        evaluator.define("PI", ExpressionDefinition.CONSTANT, Math.PI);
-        evaluator.define("TAU", ExpressionDefinition.CONSTANT, Math.TAU);
-        evaluator.define("E", ExpressionDefinition.CONSTANT, Math.E);
-        evaluator.define("Infinity", ExpressionDefinition.CONSTANT, Double.POSITIVE_INFINITY);
+        evaluator.declare("NaN", DeclarationKey.CONSTANT, Double.NaN);
+        evaluator.declare("PI", DeclarationKey.CONSTANT, Math.PI);
+        evaluator.declare("TAU", DeclarationKey.CONSTANT, Math.TAU);
+        evaluator.declare("E", DeclarationKey.CONSTANT, Math.E);
+        evaluator.declare("Infinity", DeclarationKey.CONSTANT, Double.POSITIVE_INFINITY);
 
-        evaluator.define("random", ExpressionDefinition.FUNCTION_NO_ARG, Math::random);
+        evaluator.declare("random", DeclarationKey.FUNCTION_NO_ARGS, Math::random);
 
-        evaluator.define("sqrt", ExpressionDefinition.FUNCTION_1_ARG, Math::sqrt);
-        evaluator.define("cbrt", ExpressionDefinition.FUNCTION_1_ARG, Math::cbrt);
-        evaluator.define("abs", ExpressionDefinition.FUNCTION_1_ARG, Math::abs);
-        evaluator.define("floor", ExpressionDefinition.FUNCTION_1_ARG, Math::floor);
-        evaluator.define("ceil", ExpressionDefinition.FUNCTION_1_ARG, Math::ceil);
-        evaluator.define("round", ExpressionDefinition.FUNCTION_1_ARG, Math::round);
-        evaluator.define("sin", ExpressionDefinition.FUNCTION_1_ARG, Math::sin);
-        evaluator.define("cos", ExpressionDefinition.FUNCTION_1_ARG, Math::cos);
-        evaluator.define("tan", ExpressionDefinition.FUNCTION_1_ARG, Math::tan);
-        evaluator.define("asin", ExpressionDefinition.FUNCTION_1_ARG, Math::asin);
-        evaluator.define("acos", ExpressionDefinition.FUNCTION_1_ARG, Math::acos);
-        evaluator.define("atan", ExpressionDefinition.FUNCTION_1_ARG, Math::atan);
-        evaluator.define("exp", ExpressionDefinition.FUNCTION_1_ARG, Math::exp);
-        evaluator.define("to_degrees", ExpressionDefinition.FUNCTION_1_ARG, Math::toDegrees);
-        evaluator.define("to_radians", ExpressionDefinition.FUNCTION_1_ARG, Math::toRadians);
-        evaluator.define("log10", ExpressionDefinition.FUNCTION_1_ARG, Math::log10);
+        evaluator.declare("sqrt", DeclarationKey.FUNCTION_1_ARG, Math::sqrt);
+        evaluator.declare("cbrt", DeclarationKey.FUNCTION_1_ARG, Math::cbrt);
+        evaluator.declare("abs", DeclarationKey.FUNCTION_1_ARG, Math::abs);
+        evaluator.declare("floor", DeclarationKey.FUNCTION_1_ARG, Math::floor);
+        evaluator.declare("ceil", DeclarationKey.FUNCTION_1_ARG, Math::ceil);
+        evaluator.declare("round", DeclarationKey.FUNCTION_1_ARG, Math::round);
+        evaluator.declare("sin", DeclarationKey.FUNCTION_1_ARG, Math::sin);
+        evaluator.declare("cos", DeclarationKey.FUNCTION_1_ARG, Math::cos);
+        evaluator.declare("tan", DeclarationKey.FUNCTION_1_ARG, Math::tan);
+        evaluator.declare("asin", DeclarationKey.FUNCTION_1_ARG, Math::asin);
+        evaluator.declare("acos", DeclarationKey.FUNCTION_1_ARG, Math::acos);
+        evaluator.declare("atan", DeclarationKey.FUNCTION_1_ARG, Math::atan);
+        evaluator.declare("exp", DeclarationKey.FUNCTION_1_ARG, Math::exp);
+        evaluator.declare("to_degrees", DeclarationKey.FUNCTION_1_ARG, Math::toDegrees);
+        evaluator.declare("to_radians", DeclarationKey.FUNCTION_1_ARG, Math::toRadians);
+        evaluator.declare("log10", DeclarationKey.FUNCTION_1_ARG, Math::log10);
 
-        evaluator.define("log", ExpressionDefinition.FUNCTION_2_ARG, (a, b) -> Math.log(b) / Math.log(a));
-        evaluator.define("atan2", ExpressionDefinition.FUNCTION_2_ARG, Math::atan2);
-        evaluator.define("min", ExpressionDefinition.FUNCTION_2_ARG, Math::min);
-        evaluator.define("max", ExpressionDefinition.FUNCTION_2_ARG, Math::max);
-        evaluator.define("pow", ExpressionDefinition.FUNCTION_2_ARG, Math::pow);
+        evaluator.declare("log", DeclarationKey.FUNCTION_2_ARGS, (a, b) -> Math.log(b) / Math.log(a));
+        evaluator.declare("atan2", DeclarationKey.FUNCTION_2_ARGS, Math::atan2);
+        evaluator.declare("min", DeclarationKey.FUNCTION_2_ARGS, Math::min);
+        evaluator.declare("max", DeclarationKey.FUNCTION_2_ARGS, Math::max);
+        evaluator.declare("pow", DeclarationKey.FUNCTION_2_ARGS, Math::pow);
 
         return evaluator;
     }

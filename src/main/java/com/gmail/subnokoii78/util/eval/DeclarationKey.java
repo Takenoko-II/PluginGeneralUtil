@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.function.*;
 
-public abstract class ExpressionDefinition<T, U> {
-    private ExpressionDefinition() {}
+public abstract class DeclarationKey<T> {
+    private DeclarationKey() {}
 
     public boolean isConst() {
         return false;
@@ -40,7 +40,7 @@ public abstract class ExpressionDefinition<T, U> {
         throw new IllegalStateException();
     }
 
-    public static final ExpressionDefinition<Number, Double> CONSTANT = new ExpressionDefinition<>() {
+    public static final DeclarationKey<Number> CONSTANT = new DeclarationKey<>() {
         @Override
         public @NotNull Double constant(@NotNull Number value) {
             return value.doubleValue();
@@ -52,7 +52,19 @@ public abstract class ExpressionDefinition<T, U> {
         }
     };
 
-    public static final ExpressionDefinition<DoubleSupplier, Function<List<Double>, Double>> FUNCTION_NO_ARG = new ExpressionDefinition<>() {
+    public static final DeclarationKey<Function<List<Double>, Double>> FUNCTION_VARIABLE_LENGTH_ARGS = new DeclarationKey<>() {
+        @Override
+        public @NotNull Function<List<Double>, Double> function(@NotNull Function<List<Double>, Double> function) {
+            return function;
+        }
+
+        @Override
+        public boolean isFunction() {
+            return true;
+        }
+    };
+
+    public static final DeclarationKey<DoubleSupplier> FUNCTION_NO_ARGS = new DeclarationKey<>() {
         @Override
         public @NotNull Function<List<Double>, Double> function(@NotNull DoubleSupplier supplier) {
             return list -> {
@@ -69,7 +81,7 @@ public abstract class ExpressionDefinition<T, U> {
         }
     };
 
-    public static final ExpressionDefinition<DoubleUnaryOperator, Function<List<Double>, Double>> FUNCTION_1_ARG = new ExpressionDefinition<>() {
+    public static final DeclarationKey<DoubleUnaryOperator> FUNCTION_1_ARG = new DeclarationKey<>() {
         @Override
         public @NotNull Function<List<Double>, Double> function(@NotNull DoubleUnaryOperator unaryOperator) {
             return list -> {
@@ -86,7 +98,7 @@ public abstract class ExpressionDefinition<T, U> {
         }
     };
 
-    public static final ExpressionDefinition<DoubleBinaryOperator, Function<List<Double>, Double>> FUNCTION_2_ARG = new ExpressionDefinition<>() {
+    public static final DeclarationKey<DoubleBinaryOperator> FUNCTION_2_ARGS = new DeclarationKey<>() {
         @Override
         public @NotNull Function<List<Double>, Double> function(@NotNull DoubleBinaryOperator binaryOperator) {
             return list -> {
@@ -103,7 +115,7 @@ public abstract class ExpressionDefinition<T, U> {
         }
     };
 
-    public static final ExpressionDefinition<DoubleBinaryOperator, DoubleBinaryOperator> OPERATOR_POLYNOMIAL = new ExpressionDefinition<>() {
+    public static final DeclarationKey<DoubleBinaryOperator> OPERATOR_POLYNOMIAL = new DeclarationKey<>() {
         @Override
         public @NotNull DoubleBinaryOperator operator(@NotNull DoubleBinaryOperator binaryOperator) {
             return binaryOperator;
@@ -115,7 +127,7 @@ public abstract class ExpressionDefinition<T, U> {
         }
     };
 
-    public static final ExpressionDefinition<DoubleBinaryOperator, DoubleBinaryOperator> OPERATOR_MONOMIAL = new ExpressionDefinition<>() {
+    public static final DeclarationKey<DoubleBinaryOperator> OPERATOR_MONOMIAL = new DeclarationKey<>() {
         @Override
         public @NotNull DoubleBinaryOperator operator(@NotNull DoubleBinaryOperator binaryOperator) {
             return binaryOperator;
@@ -127,7 +139,7 @@ public abstract class ExpressionDefinition<T, U> {
         }
     };
 
-    public static final ExpressionDefinition<DoubleBinaryOperator, DoubleBinaryOperator> OPERATOR_FACTOR = new ExpressionDefinition<>() {
+    public static final DeclarationKey<DoubleBinaryOperator> OPERATOR_FACTOR = new DeclarationKey<>() {
         @Override
         public @NotNull DoubleBinaryOperator operator(@NotNull DoubleBinaryOperator binaryOperator) {
             return binaryOperator;
@@ -139,12 +151,33 @@ public abstract class ExpressionDefinition<T, U> {
         }
     };
 
-    public static final ExpressionDefinition<DoubleUnaryOperator, DoubleUnaryOperator> SELF_OPERATOR_NUMBER_SUFFIX = new ExpressionDefinition<>() {
+    public static final DeclarationKey<DoubleUnaryOperator> SELF_OPERATOR_NUMBER_SUFFIX = new DeclarationKey<>() {
         @Override
         public @NotNull DoubleUnaryOperator selfOperator(@NotNull DoubleUnaryOperator unaryOperator) {
             return unaryOperator;
         }
 
+        @Override
+        public boolean isSelfOperator() {
+            return true;
+        }
+    };
+
+    public static final DeclarationKey<Void> ABSTRACT_FUNCTION = new DeclarationKey<>() {
+        @Override
+        public boolean isFunction() {
+            return true;
+        }
+    };
+
+    public static final DeclarationKey<Void> ABSTRACT_OPERATOR = new DeclarationKey<>() {
+        @Override
+        public boolean isOperator() {
+            return true;
+        }
+    };
+
+    public static final DeclarationKey<Void> ABSTRACT_SELF_OPERATOR = new DeclarationKey<>() {
         @Override
         public boolean isSelfOperator() {
             return true;
