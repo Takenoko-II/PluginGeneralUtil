@@ -22,6 +22,20 @@ public final class CalcExpEvaluator {
 
     private static final char PARENTHESIS_END = ')';
 
+    private static void throwIfInvalidChar(@NotNull String word) {
+        if (word.contains(String.valueOf(PARENTHESIS_START))
+            || word.contains(String.valueOf(PARENTHESIS_END))
+            || word.contains(String.valueOf(FUNCTION_ARGUMENT_SEPARATOR)))
+        {
+            throw new IllegalArgumentException(String.format(
+                "次の文字を含む名前は使用できません: ['%c'], ['%c'], ['%c']",
+                PARENTHESIS_START,
+                PARENTHESIS_END,
+                FUNCTION_ARGUMENT_SEPARATOR
+            ));
+        }
+    }
+
     private final Map<String, DoubleBinaryOperator> MONOMIAL_OPERATORS = new HashMap<>(Map.of(
         "*", (a, b) -> a * b,
         "/", (a, b) -> {
@@ -359,19 +373,37 @@ public final class CalcExpEvaluator {
         throw new CalcExpEvaluationException("関数を取得できませんでした");
     }
 
-    private void checkExtra() {
+    private double index() {
+        if (location != 0) {
+            throw new CalcExpEvaluationException("カーソル位置が0ではありませんでした: インスタンス自身がevaluate()を呼び出した可能性があります");
+        }
+
+        if (isOver()) throw new CalcExpEvaluationException("空文字は計算できません");
+
+        final double value = polynomial();
+
         if (!expression.substring(location).isEmpty()) {
             throw new CalcExpEvaluationException("式の終了後に無効な文字を検出しました: " + expression.substring(location));
         }
+
+        return value;
     }
 
-    private boolean isInvalidName(@NotNull String word) {
-        return word.contains(String.valueOf(PARENTHESIS_START))
-            || word.contains(String.valueOf(PARENTHESIS_END))
-            || word.contains(String.valueOf(FUNCTION_ARGUMENT_SEPARATOR));
+    public double evaluate(@NotNull String expression) throws CalcExpEvaluationException {
+        this.expression = expression;
+
+        final double value = index();
+
+        location = 0;
+
+        if (Double.isNaN(value)) {
+            throw new CalcExpEvaluationException("式からNaNが出力されました");
+        }
+
+        return value;
     }
 
-    public boolean isDeclared(@NotNull String name, @NotNull DeclarationKey.DeclarationCategory category) {
+    public boolean isDeclared(@NotNull String name, @NotNull DeclarationCategory category) {
         return switch (category) {
             case CONSTANT -> CONSTANTS.containsKey(name);
             case FUNCTION -> FUNCTIONS.containsKey(name);
@@ -382,33 +414,8 @@ public final class CalcExpEvaluator {
         };
     }
 
-    public double evaluate(@NotNull String expression) throws CalcExpEvaluationException {
-        if (location != 0) {
-            throw new CalcExpEvaluationException("カーソル位置が0ではありませんでした インスタンス自身がevaluate()を呼び出した可能性があります");
-        }
-
-        this.expression = expression;
-        if (isOver()) throw new CalcExpEvaluationException("空文字は計算できません");
-        final double value = polynomial();
-        checkExtra();
-        location = 0;
-
-        if (Double.isNaN(value)) {
-            throw new CalcExpEvaluationException("式からNaNが出力されました");
-        }
-
-        return value;
-    }
-
     public <T> void declare(@NotNull String name, @NotNull DeclarationKey<T> key, @NotNull T value) {
-        if (isInvalidName(name)) {
-            throw new IllegalArgumentException(String.format(
-                "予約済み文字を含む名前は使用できません: ['%c'], ['%c'], ['%c']",
-                PARENTHESIS_START,
-                PARENTHESIS_END,
-                FUNCTION_ARGUMENT_SEPARATOR
-            ));
-        }
+        throwIfInvalidChar(name);
 
         switch (key.getCategory()) {
             case CONSTANT -> CONSTANTS.put(name, key.constant(value));
@@ -430,7 +437,7 @@ public final class CalcExpEvaluator {
         }
     }
 
-    public void undeclare(@NotNull String name, @NotNull DeclarationKey.DeclarationCategory category) {
+    public void undeclare(@NotNull String name, @NotNull DeclarationCategory category) {
         if (isDeclared(name, category)) {
             switch (category) {
                 case CONSTANT -> CONSTANTS.remove(name);
@@ -445,7 +452,7 @@ public final class CalcExpEvaluator {
         }
     }
 
-    public @NotNull Set<String> getDeclarationNames(@NotNull DeclarationKey.DeclarationCategory category) {
+    public @NotNull Set<String> getDeclarationNames(@NotNull DeclarationCategory category) {
         return switch (category) {
             case CONSTANT -> Set.copyOf(CONSTANTS.keySet());
             case FUNCTION -> Set.copyOf(FUNCTIONS.keySet());

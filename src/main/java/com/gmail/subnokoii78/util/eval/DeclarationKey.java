@@ -110,10 +110,4 @@ public abstract class DeclarationKey<T> {
         }
     };
 
-    public enum DeclarationCategory {
-        CONSTANT,
-        FUNCTION,
-        OPERATOR,
-        SELF_OPERATOR
-    }
 }
