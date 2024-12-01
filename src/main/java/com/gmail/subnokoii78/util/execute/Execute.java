@@ -142,7 +142,7 @@ public class Execute {
         public @NotNull Execute $(@NotNull String input) {
             return execute.redirect(stack -> {
                 stack.write(stack.readCoordinates(input));
-                stack.write(EntityAnchorType.FEET);
+                stack.write(EntityAnchor.FEET);
             });
         }
 
@@ -260,7 +260,7 @@ public class Execute {
          * @param selector 参照するエンティティ
          * @return that
          */
-        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector, @NotNull EntityAnchorType anchor) {
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector, @NotNull EntityAnchor.Type anchorType) {
             return execute.fork(stack -> stack.getEntities(selector)
                 .stream()
                 .map(entity -> {
@@ -269,7 +269,7 @@ public class Execute {
                         .add(copy.getEntityAnchor().getOffset())
                         .getDirectionTo(
                             Vector3Builder.from(entity)
-                                .add(anchor.provideOffset(entity))
+                                .add(anchorType.getOffset(entity))
                         );
                     copy.write(direction.getRotation2d());
                     return copy;
@@ -283,8 +283,26 @@ public class Execute {
          * @param selector 参照するエンティティ
          * @return that
          */
-        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Builder<T> selector, @NotNull EntityAnchorType anchor) {
-            return entity(selector.build(), anchor);
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Builder<T> selector, @NotNull EntityAnchor.Type anchorType) {
+            return entity(selector.build(), anchorType);
+        }
+
+        /**
+         * 参照するエンティティのセレクターの入力によって実行方向を変更します。
+         * @param selector 参照するエンティティ
+         * @return that
+         */
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector<T> selector, @NotNull String anchorTypeId) {
+            return entity(selector, EntityAnchor.Type.get(anchorTypeId));
+        }
+
+        /**
+         * 参照するエンティティのセレクターの入力によって実行方向を変更します。
+         * @param selector 参照するエンティティ
+         * @return that
+         */
+        public <T extends Entity> @NotNull Execute entity(@NotNull EntitySelector.Builder<T> selector, @NotNull String anchorTypeId) {
+            return entity(selector.build(), EntityAnchor.Type.get(anchorTypeId));
         }
     }
 
@@ -308,11 +326,20 @@ public class Execute {
 
     /**
      * サブコマンドanchored
-     * @param anchor 実行アンカー
+     * @param anchorType 実行アンカー
      * @return this
      */
-    public @NotNull Execute anchored(@NotNull EntityAnchorType anchor) {
-        return redirect(stack -> stack.write(anchor));
+    public @NotNull Execute anchored(@NotNull EntityAnchor.Type anchorType) {
+        return redirect(stack -> stack.write(anchorType));
+    }
+
+    /**
+     * サブコマンドanchored
+     * @param anchorTypeId 実行アンカー
+     * @return this
+     */
+    public @NotNull Execute anchored(@NotNull String anchorTypeId) {
+        return anchored(EntityAnchor.Type.get(anchorTypeId));
     }
 
     /**

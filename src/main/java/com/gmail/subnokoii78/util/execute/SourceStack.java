@@ -1,7 +1,5 @@
 package com.gmail.subnokoii78.util.execute;
 
-import com.gmail.subnokoii78.util.scoreboard.ScoreObjective;
-import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
 import org.bukkit.Bukkit;
@@ -31,7 +29,7 @@ public class SourceStack {
 
     private final DualAxisRotationBuilder rotation = new DualAxisRotationBuilder();
 
-    private EntityAnchor anchor = new EntityAnchor(EntityAnchorType.FEET, this);
+    private final EntityAnchor entityAnchor = new EntityAnchor(this);
 
     private ResultCallback resultCallback = ResultCallback.EMPTY;
 
@@ -149,7 +147,7 @@ public class SourceStack {
      * @return 実行アンカー(デフォルトでfeet)
      */
     public @NotNull EntityAnchor getEntityAnchor() {
-        return anchor;
+        return entityAnchor;
     }
 
     public @NotNull ResultCallback getCallback() {
@@ -172,8 +170,8 @@ public class SourceStack {
         this.rotation.yaw(rotation.yaw()).pitch(rotation.pitch());
     }
 
-    protected void write(@NotNull EntityAnchorType anchor) {
-        this.anchor = new EntityAnchor(anchor, this);
+    protected void write(@NotNull EntityAnchor.Type type) {
+        this.entityAnchor.setType(type);
     }
 
     protected void write(@NotNull StoreTarget storeTarget, @NotNull ResultConsumer resultConsumer) {
@@ -373,7 +371,7 @@ public class SourceStack {
         stack.write(executor);
         stack.write(location.copy());
         stack.write(rotation.copy());
-        stack.write(anchor.getType());
+        stack.write(entityAnchor.getType());
         stack.resultCallback = resultCallback;
         return stack;
     }
@@ -400,7 +398,7 @@ public class SourceStack {
                 "execute %s as %s anchored %s run %s",
                 common,
                 executor.getUniqueId(),
-                anchor.getType().getId(),
+                entityAnchor.getType().getId(),
                 command
             );
         }
@@ -408,7 +406,7 @@ public class SourceStack {
             commandString = String.format(
                 "execute %s anchored %s run %s",
                 common,
-                anchor.getType().getId(),
+                entityAnchor.getType().getId(),
                 command
             );
         }
