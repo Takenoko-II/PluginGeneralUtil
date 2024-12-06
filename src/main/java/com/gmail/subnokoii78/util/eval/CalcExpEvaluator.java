@@ -3,7 +3,9 @@ package com.gmail.subnokoii78.util.eval;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.function.*;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleUnaryOperator;
+import java.util.function.Function;
 
 public final class CalcExpEvaluator {
     private static final Set<Character> IGNORED = Set.of(' ', '\n');
@@ -40,6 +42,7 @@ public final class CalcExpEvaluator {
         "*", (a, b) -> a * b,
         "/", (a, b) -> {
             if (a == 0 && b == 0) {
+                location = 0;
                 throw new CalcExpEvaluationException("式 '0 / 0'はNaNを返します");
             }
 
@@ -47,6 +50,7 @@ public final class CalcExpEvaluator {
         },
         "%", (a, b) -> {
             if (a == 0 && b == 0) {
+                location = 0;
                 throw new CalcExpEvaluationException("式 '0 % 0'はNaNを返します");
             }
 
@@ -66,12 +70,15 @@ public final class CalcExpEvaluator {
     private final Map<String, DoubleUnaryOperator> NUMBER_SUFFIX_OPERATORS = new HashMap<>(Map.of(
         "!", value -> {
             if (value != (double) (int) value) {
+                location = 0;
                 throw new CalcExpEvaluationException("階乗演算子は実質的な整数の値にのみ使用できます");
             }
             else if (value < 0) {
+                location = 0;
                 throw new CalcExpEvaluationException("階乗演算子は負の値に使用できません");
             }
             else if (value > 127) {
+                location = 0;
                 throw new CalcExpEvaluationException("階乗演算子は127!を超えた値を計算できないよう制限されています");
             }
 
@@ -101,6 +108,7 @@ public final class CalcExpEvaluator {
 
     private char next() {
         if (isOver()) {
+            location = 0;
             throw new CalcExpEvaluationException("文字数を超えた位置へのアクセスが発生しました");
         }
 
@@ -154,6 +162,7 @@ public final class CalcExpEvaluator {
             ignore();
 
             if (isOver()) {
+                location = 0;
                 throw new CalcExpEvaluationException("符号の後には数が必要です");
             }
         }
@@ -189,6 +198,7 @@ public final class CalcExpEvaluator {
                 if (NUMBERS.contains(current)) stringBuilder.append(current);
                 else if (current == DECIMAL_POINT) {
                     if (dotAlreadyAppended) {
+                        location = 0;
                         throw new CalcExpEvaluationException("無効な小数点を検知しました");
                     }
 
@@ -206,6 +216,7 @@ public final class CalcExpEvaluator {
             return NUMBER_PARSER.apply(stringBuilder.toString());
         }
         catch (NumberFormatException e) {
+            location = 0;
             throw new CalcExpEvaluationException("数値の解析に失敗しました: " + expression.substring(location), e);
         }
     }
@@ -218,6 +229,7 @@ public final class CalcExpEvaluator {
             return -value;
         }
         else {
+            location = 0;
             throw new CalcExpEvaluationException("無効な符号です: " + sign);
         }
     }
@@ -284,19 +296,26 @@ public final class CalcExpEvaluator {
 
         if (current == PARENTHESIS_START) {
             double value = polynomial();
-            if (isOver()) throw new CalcExpEvaluationException("括弧が閉じられていません");
+            if (isOver()) {
+                location = 0;
+                throw new CalcExpEvaluationException("括弧が閉じられていません");
+            }
             final char next = next();
             if (next == PARENTHESIS_END) {
                 ignore();
                 return value;
             }
-            else throw new CalcExpEvaluationException("括弧が閉じられていません: " + next);
+            else {
+                location = 0;
+                throw new CalcExpEvaluationException("括弧が閉じられていません: " + next);
+            }
         }
         else {
             location--;
             double num = number();
 
             if (Double.isNaN(num)) {
+                location = 0;
                 throw new CalcExpEvaluationException("関数または定数からNaNが出力されました");
             }
             return num;
@@ -307,6 +326,7 @@ public final class CalcExpEvaluator {
         final List<Double> args = new ArrayList<>();
 
         if (!nextIf(String.valueOf(PARENTHESIS_START))) {
+            location = 0;
             throw new CalcExpEvaluationException("関数の呼び出しには括弧が必要です");
         }
 
@@ -315,7 +335,10 @@ public final class CalcExpEvaluator {
         }
 
         while (true) {
-            if (isOver()) throw new CalcExpEvaluationException("引数の探索中に文字列外に来ました");
+            if (isOver()) {
+                location = 0;
+                throw new CalcExpEvaluationException("引数の探索中に文字列外に来ました");
+            }
             double value = polynomial();
             final char next = next();
             if (next == FUNCTION_ARGUMENT_SEPARATOR) {
@@ -326,7 +349,10 @@ public final class CalcExpEvaluator {
                 ignore();
                 return args;
             }
-            else throw new CalcExpEvaluationException("関数の引数の区切りが見つかりません: " + next);
+            else {
+                location = 0;
+                throw new CalcExpEvaluationException("関数の引数の区切りが見つかりません: " + next);
+            }
         }
     }
 
@@ -347,6 +373,7 @@ public final class CalcExpEvaluator {
             }
         }
 
+        location = 0;
         throw new CalcExpEvaluationException("定数を取得できませんでした");
     }
 
@@ -364,25 +391,31 @@ public final class CalcExpEvaluator {
     }
 
     private Function<List<Double>, Double> getFunction() {
-        for (final String name : FUNCTIONS.keySet()) {
+        for (final String name : FUNCTIONS.keySet().stream().sorted((a, b) -> b.length() - a.length()).toList()) {
             if (nextIf(name) && ignoringStartsWith(String.valueOf(PARENTHESIS_START))) {
                 return FUNCTIONS.get(name);
             }
         }
 
+        location = 0;
         throw new CalcExpEvaluationException("関数を取得できませんでした");
     }
 
     private double index() {
         if (location != 0) {
+            location = 0;
             throw new CalcExpEvaluationException("カーソル位置が0ではありませんでした: インスタンス自身がevaluate()を呼び出した可能性があります");
         }
 
-        if (isOver()) throw new CalcExpEvaluationException("空文字は計算できません");
+        if (isOver()) {
+            location = 0;
+            throw new CalcExpEvaluationException("空文字は計算できません");
+        }
 
         final double value = polynomial();
 
         if (!expression.substring(location).isEmpty()) {
+            location = 0;
             throw new CalcExpEvaluationException("式の終了後に無効な文字を検出しました: " + expression.substring(location));
         }
 
