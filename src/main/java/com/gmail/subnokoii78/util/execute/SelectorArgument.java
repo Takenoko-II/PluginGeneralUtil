@@ -15,8 +15,6 @@ import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
-import java.util.function.BiPredicate;
 
 /**
  * セレクター引数を表現するクラス
@@ -47,6 +45,11 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "!";
         }
+
+        @Override
+        public @NotNull Class<SelectorArgument> getArgumentType() {
+            return SelectorArgument.class;
+        }
     };
 
     /**
@@ -62,6 +65,11 @@ public abstract class SelectorArgument {
         @Override
         public @NotNull String getId() {
             return "x";
+        }
+
+        @Override
+        public @NotNull Class<Double> getArgumentType() {
+            return Double.class;
         }
     };
 
@@ -79,6 +87,11 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "y";
         }
+
+        @Override
+        public @NotNull Class<Double> getArgumentType() {
+            return Double.class;
+        }
     };
 
     /**
@@ -94,6 +107,11 @@ public abstract class SelectorArgument {
         @Override
         public @NotNull String getId() {
             return "z";
+        }
+
+        @Override
+        public @NotNull Class<Double> getArgumentType() {
+            return Double.class;
         }
     };
 
@@ -111,6 +129,11 @@ public abstract class SelectorArgument {
         @Override
         public @NotNull String getId() {
             return "type";
+        }
+
+        @Override
+        public @NotNull Class<EntityType> getArgumentType() {
+            return EntityType.class;
         }
     };
 
@@ -140,6 +163,11 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "name";
         }
+
+        @Override
+        public @NotNull Class<String> getArgumentType() {
+            return String.class;
+        }
     };
 
     /**
@@ -156,6 +184,11 @@ public abstract class SelectorArgument {
         @Override
         public @NotNull String getId() {
             return "tag";
+        }
+
+        @Override
+        public @NotNull Class<String> getArgumentType() {
+            return String.class;
         }
     };
 
@@ -178,6 +211,11 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "distance";
         }
+
+        @Override
+        public @NotNull Class<NumberRange.DistanceRange> getArgumentType() {
+            return NumberRange.DistanceRange.class;
+        }
     };
 
     /**
@@ -192,6 +230,11 @@ public abstract class SelectorArgument {
         @Override
         public @NotNull String getId() {
             return "sort";
+        }
+
+        @Override
+        public @NotNull Class<SelectorSortOrder> getArgumentType() {
+            return SelectorSortOrder.class;
         }
     };
 
@@ -220,6 +263,11 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "dxyz";
         }
+
+        @Override
+        public @NotNull Class<Vector3Builder> getArgumentType() {
+            return Vector3Builder.class;
+        }
     };
 
     /**
@@ -241,6 +289,11 @@ public abstract class SelectorArgument {
         @Override
         public @NotNull String getId() {
             return "gamemode";
+        }
+
+        @Override
+        public @NotNull Class<GameMode> getArgumentType() {
+            return GameMode.class;
         }
     };
 
@@ -264,6 +317,11 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "level";
         }
+
+        @Override
+        public @NotNull Class<NumberRange.LevelRange> getArgumentType() {
+            return NumberRange.LevelRange.class;
+        }
     };
 
     /**
@@ -280,6 +338,11 @@ public abstract class SelectorArgument {
         @Override
         public @NotNull String getId() {
             return "x_rotation";
+        }
+
+        @Override
+        public @NotNull Class<NumberRange.RotationRange> getArgumentType() {
+            return NumberRange.RotationRange.class;
         }
     };
 
@@ -298,6 +361,11 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "y_rotation";
         }
+
+        @Override
+        public @NotNull Class<NumberRange.RotationRange> getArgumentType() {
+            return NumberRange.RotationRange.class;
+        }
     };
 
     /**
@@ -315,14 +383,19 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "team";
         }
+
+        @Override
+        public @NotNull Class<Team> getArgumentType() {
+            return Team.class;
+        }
     };
 
     /**
      * セレクター引数advancements=
      */
-    public static final Builder<Map<Advancement, Boolean>> ADVANCEMENTS = new Builder<>() {
+    public static final Builder<Advancements> ADVANCEMENTS = new Builder<>() {
         @Override
-        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Map<Advancement, Boolean> argument) {
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Advancements argument) {
             return entities.stream()
                 .filter(entity -> {
                     if (entity instanceof Player player) {
@@ -344,15 +417,20 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "advancements";
         }
+
+        @Override
+        public @NotNull Class<Advancements> getArgumentType() {
+            return Advancements.class;
+        }
     };
 
     /**
      * セレクター引数scores=
      */
-    public static final Builder<Map<String, NumberRange.ScoreRange>> SCORES = new Builder<>() {
+    public static final Builder<Scores> SCORES = new Builder<>() {
         @Override
         @NotNull
-        List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Map<String, NumberRange.ScoreRange> argument) {
+        List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull Scores argument) {
             return entities.stream()
                 .filter(entity -> {
                     for (final String name : argument.keySet()) {
@@ -375,6 +453,11 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "scores";
         }
+
+        @Override
+        public @NotNull Class<Scores> getArgumentType() {
+            return Scores.class;
+        }
     };
 
     /**
@@ -390,14 +473,19 @@ public abstract class SelectorArgument {
         public @NotNull String getId() {
             return "limit";
         }
+
+        @Override
+        public @NotNull Class<Integer> getArgumentType() {
+            return Integer.class;
+        }
     };
 
     /**
      * 任意の条件に一致することを条件とするセレクター引数
      */
-    public static final Builder<BiPredicate<Entity, SourceStack>> PREDICATE = new Builder<>() {
+    public static final Builder<EntityPredicate> PREDICATE = new Builder<>() {
         @Override
-        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull BiPredicate<Entity, SourceStack> argument) {
+        @NotNull List<Entity> modify(@NotNull List<Entity> entities, @NotNull SourceStack stack, @NotNull EntityPredicate argument) {
             return entities.stream()
                 .filter(entity -> argument.test(entity, stack.copy()))
                 .toList();
@@ -406,6 +494,11 @@ public abstract class SelectorArgument {
         @Override
         public @NotNull String getId() {
             return "predicate";
+        }
+
+        @Override
+        public @NotNull Class<EntityPredicate> getArgumentType() {
+            return EntityPredicate.class;
         }
     };
 
@@ -431,6 +524,8 @@ public abstract class SelectorArgument {
          * @return ID
          */
         public abstract @NotNull String getId();
+
+        public abstract @NotNull Class<U> getArgumentType();
 
         @NotNull
         SelectorArgument build(@NotNull U parameter) {

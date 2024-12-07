@@ -36,6 +36,11 @@ public final class EntitySelector<T extends Entity> {
         return builder.equals(S) || builder.equals(P) || builder.equals(N);
     }
 
+    void addArgument(@NotNull SelectorArgument argument) {
+        arguments.add(argument);
+        arguments.sort((a, b) -> b.getPriority() - a.getPriority());
+    }
+
     /**
      * セレクターに引数を追加します。
      * @param modifier セレクター引数の種類
@@ -50,8 +55,7 @@ public final class EntitySelector<T extends Entity> {
             throw new IllegalArgumentException("既に指定された引数を使用することはできません");
         }
 
-        arguments.add(modifier.build(value));
-        arguments.sort((a, b) -> b.getPriority() - a.getPriority());
+        addArgument(modifier.build(value));
         return this;
     }
 
@@ -62,8 +66,7 @@ public final class EntitySelector<T extends Entity> {
      * @return thisをそのまま返す
      */
     public <U> @NotNull EntitySelector<T> notArg(@NotNull SelectorArgument.Builder<U> modifier, @NotNull U value) {
-        arguments.add(SelectorArgument.NOT.build(modifier.build(value)));
-        arguments.sort((a, b) -> b.getPriority() - a.getPriority());
+        addArgument(SelectorArgument.NOT.build(modifier.build(value)));
         return this;
     }
 

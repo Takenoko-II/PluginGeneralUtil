@@ -1,6 +1,7 @@
 package com.gmail.subnokoii78.util.execute;
 
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,7 +11,9 @@ import java.util.*;
 public class SelectorParser {
     private static final Set<Character> IGNORED = Set.of(' ', '\n');
 
-    private static final Map<String, EntitySelector.Builder<? extends Entity>> ENTITY_SELECTOR_TYPES = new HashMap<>(Map.of(
+    private static final Set<Character> INTEGERS = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+
+    private static final Map<String, EntitySelector.Builder<? extends Entity>> SELECTOR_TYPES = new HashMap<>(Map.of(
         "@p", EntitySelector.P,
         "@a", EntitySelector.A,
         "@r", EntitySelector.R,
@@ -19,11 +22,30 @@ public class SelectorParser {
         "@n", EntitySelector.N
     ));
 
-    private static final List<Character> PARAMETER_BRACES = List.of('[', ']');
+    private static final List<Character> SELECTOR_ARGUMENT_BRACES = List.of('[', ']');
 
-    private static final Map<String, SelectorArgument.Builder<?>> PARAMETERS = new HashMap<>(Map.of(
-        "type", SelectorArgument.TYPE
-    ));
+    private static final Map<String, SelectorArgument.Builder<?>> ARGUMENT_TYPES = new HashMap<>();
+
+    static {
+        ARGUMENT_TYPES.put("x", SelectorArgument.X); // decimal
+        ARGUMENT_TYPES.put("y", SelectorArgument.Y); // decimal
+        ARGUMENT_TYPES.put("z", SelectorArgument.Z); // decimal
+        ARGUMENT_TYPES.put("type", SelectorArgument.TYPE);
+        ARGUMENT_TYPES.put("name", SelectorArgument.NAME);
+        ARGUMENT_TYPES.put("tag", SelectorArgument.TAG);
+        ARGUMENT_TYPES.put("distance", SelectorArgument.DISTANCE); // decimalRange()
+        ARGUMENT_TYPES.put("sort", SelectorArgument.SORT);
+        ARGUMENT_TYPES.put("dxyz", SelectorArgument.DXYZ); // vec3()?
+        ARGUMENT_TYPES.put("gamemode", SelectorArgument.GAMEMODE);
+        ARGUMENT_TYPES.put("level", SelectorArgument.LEVEL); // intRange()
+        ARGUMENT_TYPES.put("x_rotation", SelectorArgument.X_ROTATION); // decimalRange()
+        ARGUMENT_TYPES.put("y_rotation", SelectorArgument.Y_ROTATION); // decimalRange()
+        ARGUMENT_TYPES.put("team", SelectorArgument.TEAM);
+        ARGUMENT_TYPES.put("advancements", SelectorArgument.ADVANCEMENTS); // booleanMap()
+        ARGUMENT_TYPES.put("scores", SelectorArgument.SCORES); // intRangeMap()
+        ARGUMENT_TYPES.put("limit", SelectorArgument.LIMIT);
+        ARGUMENT_TYPES.put("predicate", SelectorArgument.PREDICATE); // entityPredicate()
+    }
 
     private final String text;
 
@@ -49,6 +71,10 @@ public class SelectorParser {
         return current;
     }
 
+    private void back() {
+        location--;
+    }
+
     private boolean test(@NotNull String next) {
         if (isOver()) return false;
 
@@ -63,7 +89,7 @@ public class SelectorParser {
         return test(String.valueOf(next));
     }
 
-    private boolean expect(@NotNull String next) {
+    private boolean next(@NotNull String next) {
         if (isOver()) return false;
 
         ignore();
@@ -79,8 +105,18 @@ public class SelectorParser {
         return false;
     }
 
-    private boolean expect(char next) {
-        return expect(String.valueOf(next));
+    private boolean next(char next) {
+        return next(String.valueOf(next));
+    }
+
+    private void expect(@NotNull String next) {
+        if (!test(next)) {
+            throw new SelectorParseException("位置 " + location + "では文字列 '" + next + "' が期待されていましたが、テストが偽を返しました");
+        }
+    }
+
+    private void expect(char next) {
+        expect(String.valueOf(next));
     }
 
     private void ignore() {
@@ -103,39 +139,129 @@ public class SelectorParser {
 
         ignore();
 
-        for (final String type : ENTITY_SELECTOR_TYPES.keySet().stream().sorted((a, b) -> b.length() - a.length()).toList()) {
-            if (expect(type)) {
-                return ENTITY_SELECTOR_TYPES.get(type).build();
+        for (final String type : SELECTOR_TYPES.keySet().stream().sorted((a, b) -> b.length() - a.length()).toList()) {
+            if (next(type)) {
+                return SELECTOR_TYPES.get(type).build();
             }
         }
 
         throw new IllegalStateException();
     }
-/*
-    private @NotNull Set<SelectorArgument> parameters() {
+
+    private @NotNull Set<SelectorArgument> arguments() {
         if (isOver()) {
             throw new IllegalStateException();
         }
 
         final Set<SelectorArgument> arguments = new HashSet<>();
 
-        if (expect(PARAMETER_BRACES.get(0))) {
-            for (final var name : PARAMETERS.keySet().stream().sorted((a, b) -> b.length() - a.length()).toList()) {
-                if (expect(name) && expect('=')) {
-                    final SelectorArgument.Builder<?> builder = PARAMETERS.get(name);
-                    //arguments.add(builder.build(parameterValue()));
+        expect(SELECTOR_ARGUMENT_BRACES.get(0));
+
+        do {
+            for (final var name : ARGUMENT_TYPES.keySet().stream().sorted((a, b) -> b.length() - a.length()).toList()) {
+                if (next(name) && next('=')) {
+                    final SelectorArgument.Builder<Object> builder = (SelectorArgument.Builder<Object>) ARGUMENT_TYPES.get(name);
+                    arguments.add(builder.build(
+                        argumentValue(builder.getArgumentType())
+                    ));
                 }
             }
+        }
+        while (next(','));
 
-            expect(PARAMETER_BRACES.get(1));
+        expect(SELECTOR_ARGUMENT_BRACES.get(1));
+
+        return arguments;
+    }
+
+    private @NotNull Object argumentValue(@NotNull Class<?> clazz) {
+        if (clazz.equals(String.class)) {
+            return string();
+        }
+        else if (clazz.equals(Integer.class)) {
+            return integer();
+        }
+        else if (clazz.equals(Boolean.class)) {
+            return bool();
+        }
+        else if (clazz.equals(EntityType.class)) {
+            final EntityType type = EntityType.fromName(string());
+            if (type == null) {
+                throw new SelectorParseException("不明なエンティティタイプです");
+            }
+            return type;
+        }
+
+        throw new SelectorParseException("パーサーが対応していない型が渡されました");
+    }
+
+    private @NotNull String string() {
+        final String string;
+
+        if (next('"')) {
+            string = text.substring(location).split("(?<!\\\\)\"")[0];
+            location += string.length();
+            expect('"');
+        }
+        else {
+           string = text.substring(location).split(",")[0];
+           location += string.length();
+        }
+
+        return string;
+    }
+
+    private int integer() {
+        final StringBuilder stringBuilder = new StringBuilder();
+
+        while (true) {
+           final char next = next();
+
+           if (INTEGERS.contains(next)) {
+               stringBuilder.append(next);
+           }
+           else {
+               back();
+               break;
+           }
+        }
+
+        return Integer.parseInt(stringBuilder.toString());
+    }
+
+    private boolean bool() {
+        if (next("true")) return true;
+        else if (next("false")) return false;
+        else throw new SelectorParseException("真偽値の解析に失敗しました");
+    }
+    /*
+    private NumberRange.DistanceRange doubleRange() {
+        final String s = text.substring(location);
+        for (int i = 0; i < s.length() - 1; i++) {
+
+        }
+    }
+*/
+    private void extra() {
+        ignore();
+
+        if (!text.substring(location).isEmpty()) {
+            throw new SelectorParseException("解析終了後に無効な文字列を検知しました: " + text.substring(location));
         }
     }
 
-    private <U> @NotNull U parameterValue(@NotNull SelectorArgument.Builder<U> builder) {
-        //builder.getId();
+    private @NotNull EntitySelector<? extends Entity> parse() {
+        final EntitySelector<? extends Entity> selector = type();
+        for (final SelectorArgument argument : arguments()) {
+            selector.addArgument(argument);
+        }
+
+        extra();
+
+        return selector;
     }
 
-    public @NotNull EntitySelector<? extends Entity> parse() {
-        return List.of(type(), parameters());
-    }*/
+    public static @NotNull EntitySelector<? extends Entity> parse(@NotNull String selector) {
+        return new SelectorParser(selector).parse();
+    }
 }
