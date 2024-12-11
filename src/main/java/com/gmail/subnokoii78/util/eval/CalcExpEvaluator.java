@@ -173,7 +173,13 @@ public final class CalcExpEvaluator {
         final char futureNext = expression.charAt(location);
 
         if (isFunction()) {
-            stringBuilder.append(getFunction().apply(arguments()));
+            try {
+                stringBuilder.append(getFunction().apply(arguments()));
+            }
+            catch (CalcExpEvaluationException e) {
+                location = 0;
+                throw e;
+            }
         }
         else if (isConst()) {
             stringBuilder.append(getConst());

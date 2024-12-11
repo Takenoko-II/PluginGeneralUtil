@@ -1,6 +1,6 @@
 package com.gmail.subnokoii78.util.file.json;
 
-import com.gmail.subnokoii78.util.execute.VanillaDimensionProvider;
+import com.gmail.subnokoii78.util.execute.DimensionProvider;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.TripleAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
@@ -156,7 +156,7 @@ public abstract class JSONValueConverter<T> {
             else if (!(jsonObject.hasKey("dimension") && jsonObject.hasKey("location") && jsonObject.hasKey("rotation"))) return null;
             else if (!(jsonObject.getTypeOfKey("dimension").equals(JSONValueType.STRING))) return null;
 
-            final World dimension = VanillaDimensionProvider.get(jsonObject.getKey("dimension", JSONValueType.STRING)).getWorld();
+            final World dimension = DimensionProvider.of(jsonObject.getKey("dimension", JSONValueType.STRING)).getWorld();
             final Object location = jsonObject.getKey("location", jsonObject.getTypeOfKey("location"));
             final Object rotation = jsonObject.getKey("rotation", jsonObject.getTypeOfKey("rotation"));
 

@@ -1,5 +1,6 @@
 package com.gmail.subnokoii78.util.execute;
 
+import org.intellij.lang.annotations.RegExp;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
@@ -114,45 +115,51 @@ public class NumberRange<T extends Number> {
         }
     }
 
+    @RegExp
+    private static final String INTEGER_PATTERN = "\\d+";
+
+    @RegExp
+    private static final String DECIMAL_PATTERN = "(?:\\d+\\.?\\d*|\\.\\d+)";
+
     private static final Parser<Byte> BYTE_PARSER = new Parser<>(
         Byte.MIN_VALUE,
         Byte.MAX_VALUE,
-        "\\d+",
+        INTEGER_PATTERN,
         Byte::parseByte
     );
 
     private static final Parser<Short> SHORT_PARSER = new Parser<>(
         Short.MIN_VALUE,
         Short.MAX_VALUE,
-        "\\d+",
+        INTEGER_PATTERN,
         Short::parseShort
     );
 
     private static final Parser<Integer> INTEGER_PARSER = new Parser<>(
         Integer.MIN_VALUE,
         Integer.MAX_VALUE,
-        "\\d+",
+        INTEGER_PATTERN,
         Integer::parseInt
     );
 
     private static final Parser<Long> LONG_PARSER = new Parser<>(
         Long.MIN_VALUE,
         Long.MAX_VALUE,
-        "\\d+",
+        INTEGER_PATTERN,
         Long::parseLong
     );
 
     private static final Parser<Float> FLOAT_PARSER = new Parser<>(
         Float.POSITIVE_INFINITY,
         Float.NEGATIVE_INFINITY,
-        "(?:\\d+\\.?\\d*|\\.\\d+)",
+        DECIMAL_PATTERN,
         Float::parseFloat
     );
 
     private static final Parser<Double> DOUBLE_PARSER = new Parser<>(
         Double.POSITIVE_INFINITY,
         Double.NEGATIVE_INFINITY,
-        "(?:\\d+\\.?\\d*|\\.\\d+)",
+        DECIMAL_PATTERN,
         Double::parseDouble
     );
 

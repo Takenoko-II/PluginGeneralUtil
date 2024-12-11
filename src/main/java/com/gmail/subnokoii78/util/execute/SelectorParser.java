@@ -2,6 +2,7 @@ package com.gmail.subnokoii78.util.execute;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.util.noise.PerlinNoiseGenerator;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,6 +13,10 @@ public class SelectorParser {
     private static final Set<Character> IGNORED = Set.of(' ', '\n');
 
     private static final Set<Character> INTEGERS = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+
+    private static final char DECIMAL_POINT = '.';
+
+    private static final Set<Character> SIGNS = Set.of('+', '-');
 
     private static final Map<String, EntitySelector.Builder<? extends Entity>> SELECTOR_TYPES = new HashMap<>(Map.of(
         "@p", EntitySelector.P,
@@ -27,22 +32,22 @@ public class SelectorParser {
     private static final Map<String, SelectorArgument.Builder<?>> ARGUMENT_TYPES = new HashMap<>();
 
     static {
-        ARGUMENT_TYPES.put("x", SelectorArgument.X); // decimal
-        ARGUMENT_TYPES.put("y", SelectorArgument.Y); // decimal
-        ARGUMENT_TYPES.put("z", SelectorArgument.Z); // decimal
+        ARGUMENT_TYPES.put("x", SelectorArgument.X);
+        ARGUMENT_TYPES.put("y", SelectorArgument.Y);
+        ARGUMENT_TYPES.put("z", SelectorArgument.Z);
         ARGUMENT_TYPES.put("type", SelectorArgument.TYPE);
         ARGUMENT_TYPES.put("name", SelectorArgument.NAME);
         ARGUMENT_TYPES.put("tag", SelectorArgument.TAG);
-        ARGUMENT_TYPES.put("distance", SelectorArgument.DISTANCE); // decimalRange()
+        ARGUMENT_TYPES.put("distance", SelectorArgument.DISTANCE); // distanceRange()
         ARGUMENT_TYPES.put("sort", SelectorArgument.SORT);
         ARGUMENT_TYPES.put("dxyz", SelectorArgument.DXYZ); // vec3()?
         ARGUMENT_TYPES.put("gamemode", SelectorArgument.GAMEMODE);
-        ARGUMENT_TYPES.put("level", SelectorArgument.LEVEL); // intRange()
-        ARGUMENT_TYPES.put("x_rotation", SelectorArgument.X_ROTATION); // decimalRange()
-        ARGUMENT_TYPES.put("y_rotation", SelectorArgument.Y_ROTATION); // decimalRange()
+        ARGUMENT_TYPES.put("level", SelectorArgument.LEVEL); // levelRange()
+        ARGUMENT_TYPES.put("x_rotation", SelectorArgument.X_ROTATION); // rotationRange()
+        ARGUMENT_TYPES.put("y_rotation", SelectorArgument.Y_ROTATION); // rotationRange()
         ARGUMENT_TYPES.put("team", SelectorArgument.TEAM);
-        ARGUMENT_TYPES.put("advancements", SelectorArgument.ADVANCEMENTS); // booleanMap()
-        ARGUMENT_TYPES.put("scores", SelectorArgument.SCORES); // intRangeMap()
+        ARGUMENT_TYPES.put("advancements", SelectorArgument.ADVANCEMENTS); // advancements()
+        ARGUMENT_TYPES.put("scores", SelectorArgument.SCORES); // scores()
         ARGUMENT_TYPES.put("limit", SelectorArgument.LIMIT);
         ARGUMENT_TYPES.put("predicate", SelectorArgument.PREDICATE); // entityPredicate()
     }
@@ -184,6 +189,12 @@ public class SelectorParser {
         else if (clazz.equals(Boolean.class)) {
             return bool();
         }
+        else if (clazz.equals(Double.class)) {
+            return decimal();
+        }
+        else if (clazz.equals(Float.class)) {
+            return (float) decimal();
+        }
         else if (clazz.equals(EntityType.class)) {
             final EntityType type = EntityType.fromName(string());
             if (type == null) {
@@ -214,7 +225,13 @@ public class SelectorParser {
     private int integer() {
         final StringBuilder stringBuilder = new StringBuilder();
 
-        while (true) {
+        final char initial = next();
+
+        if (SIGNS.contains(initial)) {
+            stringBuilder.append(initial);
+        }
+
+        while (!isOver()) {
            final char next = next();
 
            if (INTEGERS.contains(next)) {
@@ -226,7 +243,12 @@ public class SelectorParser {
            }
         }
 
-        return Integer.parseInt(stringBuilder.toString());
+        try {
+            return Integer.parseInt(stringBuilder.toString());
+        }
+        catch (NumberFormatException e) {
+            throw new SelectorParseException("小数の解析に失敗しました", e);
+        }
     }
 
     private boolean bool() {
@@ -234,8 +256,46 @@ public class SelectorParser {
         else if (next("false")) return false;
         else throw new SelectorParseException("真偽値の解析に失敗しました");
     }
+
+    private double decimal() {
+        final StringBuilder stringBuilder = new StringBuilder();
+
+        boolean intAppeared = false;
+        boolean pointAppeared = false;
+
+        final char initial = next();
+
+        if (SIGNS.contains(initial)) {
+            stringBuilder.append(initial);
+        }
+
+        while (!isOver()) {
+            final char next = next();
+
+            if (INTEGERS.contains(next)) {
+                stringBuilder.append(next);
+                intAppeared = true;
+            }
+            else if (next == DECIMAL_POINT && intAppeared && !pointAppeared) {
+                stringBuilder.append(next);
+                pointAppeared = true;
+            }
+            else {
+                back();
+                break;
+            }
+        }
+
+        try {
+            return Double.parseDouble(stringBuilder.toString());
+        }
+        catch (NumberFormatException e) {
+            throw new SelectorParseException("小数の解析に失敗しました", e);
+        }
+    }
+
     /*
-    private NumberRange.DistanceRange doubleRange() {
+    private NumberRange.DistanceRange distanceRange() {
         final String s = text.substring(location);
         for (int i = 0; i < s.length() - 1; i++) {
 
@@ -261,6 +321,7 @@ public class SelectorParser {
         return selector;
     }
 
+    @ApiStatus.Experimental
     public static @NotNull EntitySelector<? extends Entity> parse(@NotNull String selector) {
         return new SelectorParser(selector).parse();
     }

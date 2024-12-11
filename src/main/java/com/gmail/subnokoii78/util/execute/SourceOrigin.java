@@ -104,7 +104,7 @@ public abstract class SourceOrigin<T> {
 
         @Override
         public @NotNull Location getLocation() {
-            return new Location(VanillaDimensionProvider.OVERWORLD.getWorld(), 0d, 0d, 0d, 0f, 0f);
+            return new Location(DimensionProvider.OVERWORLD.getWorld(), 0d, 0d, 0d, 0f, 0f);
         }
 
         @Override
@@ -125,7 +125,7 @@ public abstract class SourceOrigin<T> {
 
         @Override
         public @NotNull Location getLocation() {
-            return new Location(VanillaDimensionProvider.OVERWORLD.getWorld(), 0d, 0d, 0d, 0f, 0f);
+            return new Location(DimensionProvider.OVERWORLD.getWorld(), 0d, 0d, 0d, 0f, 0f);
         }
 
         @Override

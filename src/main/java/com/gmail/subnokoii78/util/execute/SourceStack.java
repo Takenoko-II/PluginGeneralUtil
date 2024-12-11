@@ -9,7 +9,6 @@ import org.bukkit.block.Block;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +23,7 @@ public class SourceStack {
 
     private Entity executor = null;
 
-    private World dimension = VanillaDimensionProvider.OVERWORLD.getWorld();
+    private World dimension = DimensionProvider.OVERWORLD.getWorld();
 
     private final Vector3Builder location = new Vector3Builder();
 
@@ -125,7 +124,7 @@ public class SourceStack {
             return location.withRotationAndWorld(rotation, dimension);
         }
 
-        final Location loc = new Location(VanillaDimensionProvider.OVERWORLD.getWorld(), 0d, 0d, 0d, 0f, 0f);
+        final Location loc = new Location(DimensionProvider.OVERWORLD.getWorld(), 0d, 0d, 0d, 0f, 0f);
 
         if (set.contains(LocationGetOption.DIMENSION)) {
             loc.setWorld(dimension);
@@ -387,7 +386,7 @@ public class SourceStack {
     public boolean runCommand(@NotNull String command) {
         final String common = String.format(
             "in %s positioned %s rotated %s",
-            VanillaDimensionProvider.get(dimension).getId(),
+            DimensionProvider.of(dimension).getId(),
             location.format("$c $c $c", 5),
             rotation.format("$c $c", 5)
         );
