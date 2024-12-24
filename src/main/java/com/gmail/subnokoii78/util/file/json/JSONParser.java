@@ -26,14 +26,14 @@ public final class JSONParser {
     private @NotNull JSONArray parseArray() {
         reset();
         if (next() != '[') {
-            throw new IllegalStateException("配列は[で開始される必要があります");
+            throw getException("配列は[で開始される必要があります");
         }
 
         if (array() instanceof List<Object> list) {
             remainingChars();
             return new JSONArray(list);
         }
-        else throw new IllegalArgumentException("配列ではありません");
+        else throw getException("配列ではありません");
     }
 
     private void reset() {
@@ -47,7 +47,7 @@ public final class JSONParser {
 
     private char next() {
         if (location == text.length()) {
-            throw new IllegalStateException("文字列の長さが期待より不足しています");
+            throw getException("文字列の長さが期待より不足しています");
         }
 
         final char next = text.charAt(location++);
@@ -61,7 +61,7 @@ public final class JSONParser {
 
     private char nextIncludesWhiteSpace() {
         if (location == text.length()) {
-            throw new IllegalStateException("文字列の長さが期待より不足しています");
+            throw getException("文字列の長さが期待より不足しています");
         }
 
         return text.charAt(location++);
@@ -76,13 +76,13 @@ public final class JSONParser {
             case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-' -> number(current);
             case 't', 'f' -> bool(current);
             case 'n' -> __null__();
-            default -> throw new IllegalStateException("要素から次の要素への移動中に無効な文字を検知しました: " + current);
+            default -> throw getException("要素から次の要素への移動中に無効な文字を検知しました");
         };
     }
 
     private JSONParser parseObjectCommon() {
         if (next() != '{') {
-            throw new IllegalStateException("オブジェクトは{で開始される必要があります");
+            throw getException("オブジェクトは{で開始される必要があります");
         }
 
         final char current = next();
@@ -94,11 +94,11 @@ public final class JSONParser {
                 key();
                 char expectedBraceEnd = next();
                 if (expectedBraceEnd != '}') {
-                    throw new IllegalStateException("オブジェクトの解析中に無効な文字を検知しました: " + expectedBraceEnd);
+                    throw getException("オブジェクトの解析中に無効な文字を検知しました");
                 }
                 break;
             default:
-                throw new IllegalStateException("オブジェクトの解析中に無効な文字を検知しました: " + current);
+                throw getException("オブジェクトの解析中に無効な文字を検知しました");
         }
 
         return this;
@@ -107,7 +107,7 @@ public final class JSONParser {
     private void remainingChars() {
         while (text.length() > location) {
             if (text.charAt(location++) != ' ') {
-                throw new IllegalStateException("json文字列の後に無効な文字を検知しました: " + text.charAt(location - 1));
+                throw getException("json文字列の後に無効な文字を検知しました");
             }
         }
     }
@@ -121,16 +121,16 @@ public final class JSONParser {
             if (commaOrBrace == ',') {
                 final char quote = next();
                 if (quote == '"') key();
-                else throw new IllegalStateException("ペアの解析中に無効な文字を検知しました: " + quote);
+                else throw getException("ペアの解析中に無効な文字を検知しました");
             }
             else if (commaOrBrace == '}') {
                 back();
             }
             else {
-                throw new IllegalStateException("閉じ括弧が見つかりません");
+                throw getException("閉じ括弧が見つかりません");
             }
         }
-        else throw new IllegalStateException("ペアの解析中に無効な文字を検知しました: " + current);
+        else throw getException("ペアの解析中に無効な文字を検知しました");
     }
 
     private Map<String, Object> object() {
@@ -156,7 +156,7 @@ public final class JSONParser {
         while (next == ',');
 
         if (next == ']') return list;
-        else throw new IllegalStateException("配列は]で終了される必要があります");
+        else throw getException("配列は]で終了される必要があります");
     }
 
     private String string() {
@@ -198,7 +198,7 @@ public final class JSONParser {
                 back();
                 break;
             }
-            else throw new IllegalStateException("数値の解析中に無効な文字を検知しました: " + current);
+            else throw getException("数値の解析中に無効な文字を検知しました");
 
             previous = current;
             current = next();
@@ -215,26 +215,29 @@ public final class JSONParser {
 
             String built = str.toString();
 
-            IllegalStateException e = new IllegalStateException("真偽値の解析中に無効な文字を検知しました: " + built.charAt(built.length() - 1));
             if (built.startsWith("true")) {
                 if (built.equals("true")) return true;
-                else throw e;
+                else throw getException("真偽値の解析中に無効な文字を検知しました");
             }
             else if (built.startsWith("false")) {
                 if (built.equals("false")) return false;
-                else throw e;
+                else throw getException("真偽値の解析中に無効な文字を検知しました");
             }
         }
     }
 
     private @Nullable Object __null__() {
         char u = next();
+        if (u != 'u') throw getException("null値の解析中に無効な文字を検知しました");
         char l = next();
+        if (l != 'l') throw getException("null値の解析中に無効な文字を検知しました");
         char l_2 = next();
-        if (u != 'u') throw new IllegalStateException("null値の解析中に無効な文字を検知しました: " + u);
-        if (l != 'l') throw new IllegalStateException("null値の解析中に無効な文字を検知しました: " + l);
-        if (l_2 != 'l') throw new IllegalStateException("null値の解析中に無効な文字を検知しました: " + l_2);
+        if (l_2 != 'l') throw getException("null値の解析中に無効な文字を検知しました");
         return null;
+    }
+
+    private @NotNull JSONParseException getException(@NotNull String message) {
+        return new JSONParseException(message, text, location);
     }
 
     public static @NotNull JSONObject parseObject(@NotNull String text) {
@@ -243,5 +246,13 @@ public final class JSONParser {
 
     public static @NotNull JSONArray parseArray(@NotNull String text) {
         return new JSONParser(text).parseArray();
+    }
+
+    public static boolean isObject(@NotNull String text) {
+        return new JSONParser(text).next() == '{';
+    }
+
+    public static boolean isArray(@NotNull String text) {
+        return new JSONParser(text).next() == '[';
     }
 }
