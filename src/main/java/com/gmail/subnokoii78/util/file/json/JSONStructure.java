@@ -1,5 +1,7 @@
 package com.gmail.subnokoii78.util.file.json;
 
-public interface JSONStructure {
+import org.jetbrains.annotations.NotNull;
 
+public interface JSONStructure {
+    @NotNull JSONStructure copy();
 }

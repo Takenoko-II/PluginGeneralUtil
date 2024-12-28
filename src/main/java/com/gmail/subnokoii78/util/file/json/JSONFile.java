@@ -30,17 +30,22 @@ public class JSONFile {
         this(file.toPath());
     }
 
-    protected @NotNull String readAsString() throws IllegalStateException {
-        try {
+    public @NotNull Path getPath() {
+        return path;
+    }
+
+    protected @NotNull String readFromFile() throws IllegalStateException {
+        if (exists()) try {
             return String.join("\n", Files.readAllLines(path));
         }
         catch (IOException e) {
             throw new IllegalStateException("ファイルの読み取りに失敗しました", e);
         }
+        else throw new IllegalStateException("ファイルが存在しません");
     }
 
-    protected void writeDirectly(@NotNull String json) throws IllegalStateException {
-        try {
+    protected void writeToFile(@NotNull String json) throws IllegalStateException {
+        if (exists()) try {
             Files.write(
                 path,
                 Arrays.asList(json.split("\\n")),
@@ -51,6 +56,7 @@ public class JSONFile {
         catch (IOException e) {
             throw new IllegalStateException("ファイルの書き込みに失敗しました", e);
         }
+        else throw new IllegalStateException("ファイルが存在しません");
     }
 
     public boolean exists() {
@@ -58,9 +64,7 @@ public class JSONFile {
     }
 
     public void create() throws IllegalStateException {
-        if (exists()) {
-            throw new IllegalStateException("既にファイルは存在します");
-        }
+        if (exists()) throw new IllegalStateException("既にファイルは存在します");
         else try {
             Files.createFile(path);
         }
@@ -76,50 +80,36 @@ public class JSONFile {
         catch (IOException e) {
             throw new IllegalStateException("ファイルの削除に失敗しました", e);
         }
-        else {
-            throw new IllegalStateException("ファイルが存在しません");
-        }
+        else throw new IllegalStateException("ファイルが存在しません");
     }
 
     public long getSize() throws IllegalStateException {
-        try {
+        if (exists()) try {
             return Files.size(path);
         }
         catch (IOException e) {
             throw new IllegalStateException("ファイルサイズの取得に失敗しました", e);
         }
+        else throw new IllegalStateException("ファイルが存在しません");
     }
 
-    public @NotNull File getAsFile() {
-        return path.toFile();
-    }
-
-    public @NotNull JSONObject readAsObject() throws IllegalStateException {
-        return JSONParser.parseObject(readAsString());
-    }
-
-    public @NotNull JSONArray readAsArray() throws IllegalStateException {
-        return JSONParser.parseArray(readAsString());
+    public @NotNull JSONStructure read() throws JSONParseException {
+        return JSONParser.parse(readFromFile());
     }
 
     public void write(@NotNull JSONStructure structure) throws IllegalStateException {
-        writeDirectly(JSONSerializer.serialize(structure));
+        writeToFile(JSONSerializer.serialize(structure));
+    }
+
+    public @NotNull JSONObject readAsObject() throws JSONParseException {
+        return JSONParser.parseObject(readFromFile());
+    }
+
+    public @NotNull JSONArray readAsArray() throws JSONParseException {
+        return JSONParser.parseArray(readFromFile());
     }
 
     public void edit(@NotNull Function<JSONStructure, JSONStructure> function) throws IllegalStateException {
-        final String text = readAsString();
-        final JSONStructure structure;
-
-        if (JSONParser.isObject(text)) {
-            structure = function.apply(JSONParser.parseObject(text));
-        }
-        else if (JSONParser.isArray(text)) {
-            structure = function.apply(JSONParser.parseArray(text));
-        }
-        else {
-            throw new IllegalStateException("JSON文字列として無効です");
-        }
-
-        write(structure);
+        write(function.apply(read()));
     }
 }

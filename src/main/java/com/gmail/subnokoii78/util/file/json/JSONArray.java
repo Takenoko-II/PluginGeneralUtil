@@ -134,6 +134,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
         return list;
     }
 
+    @Override
     public @NotNull JSONArray copy() {
         return new JSONArray(asList());
     }

@@ -28,7 +28,7 @@ public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T>
         return value.isEmpty();
     }
 
-    public boolean checkTypeAt(int index) {
+    protected boolean checkTypeAt(int index) {
         if (!has(index)) {
             throw new IllegalArgumentException("インデックス '" + index + "' は存在しません");
         }
@@ -98,6 +98,11 @@ public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T>
 
     public int length() {
         return value.size();
+    }
+
+    @Override
+    public @NotNull TypedJSONArray<T> copy() {
+        return new TypedJSONArray<>(type, value);
     }
 
     @Override

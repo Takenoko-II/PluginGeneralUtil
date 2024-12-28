@@ -94,6 +94,7 @@ public final class JSONObject extends JSONValue<Map<String, Object>> implements 
         return map;
     }
 
+    @Override
     public @NotNull JSONObject copy() {
         return new JSONObject(asMap());
     }

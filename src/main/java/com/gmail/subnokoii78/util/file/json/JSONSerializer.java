@@ -12,11 +12,11 @@ public final class JSONSerializer {
         this.indentationSpaceCount = indentationSpaceCount;
     }
 
-    private StringBuilder serialize() {
+    private StringBuilder serialize() throws JSONSerializeException {
         return serialize(this.value, 1);
     }
 
-    private StringBuilder serialize(Object value, int indentation) {
+    private StringBuilder serialize(Object value, int indentation) throws JSONSerializeException {
         return switch (value) {
             case Boolean v -> bool(v);
             case Number v -> number(v);
@@ -26,7 +26,7 @@ public final class JSONSerializer {
             case TypedJSONArray<?> v -> array(v.untyped(), indentation);
             case JSONValue<?> v -> serialize(v.value, indentation);
             case null -> new StringBuilder("null");
-            default -> throw new IllegalArgumentException("このオブジェクトは無効な型の値を含みます");
+            default -> throw new JSONSerializeException("このオブジェクトは無効な型の値を含みます");
         };
     }
 
@@ -51,7 +51,7 @@ public final class JSONSerializer {
                     .append(serialize(childValue, indentation + 1));
             }
             catch (IllegalArgumentException e) {
-                throw new IllegalStateException("キー'" + key + "における無効な型: " + value.getTypeOfKey(key), e);
+                throw new JSONSerializeException("キー'" + key + "における無効な型: " + value.getTypeOfKey(key), e);
             }
 
             if (i != keys.length - 1) {
@@ -82,7 +82,7 @@ public final class JSONSerializer {
                     .append(serialize(element, indentation + 1));
             }
             catch (IllegalArgumentException e) {
-                throw new IllegalStateException("インデックス'" + i + "における無効な型: " + array.getTypeAt(i), e);
+                throw new JSONSerializeException("インデックス'" + i + "における無効な型: " + array.getTypeAt(i), e);
             }
 
             if (i != array.length() - 1) {

@@ -16,14 +16,14 @@ public final class JSONParser {
         this.text = json.replaceAll("\n", "");
     }
 
-    private @NotNull JSONObject parseObject() {
+    private @NotNull JSONObject parseObject() throws JSONParseException {
         reset();
         parseObjectCommon();
         remainingChars();
         return new JSONObject(map);
     }
 
-    private @NotNull JSONArray parseArray() {
+    private @NotNull JSONArray parseArray() throws JSONParseException {
         reset();
         if (next() != '[') {
             throw getException("配列は[で開始される必要があります");
@@ -240,12 +240,22 @@ public final class JSONParser {
         return new JSONParseException(message, text, location);
     }
 
-    public static @NotNull JSONObject parseObject(@NotNull String text) {
+    public static @NotNull JSONObject parseObject(@NotNull String text) throws JSONParseException {
         return new JSONParser(text).parseObject();
     }
 
-    public static @NotNull JSONArray parseArray(@NotNull String text) {
+    public static @NotNull JSONArray parseArray(@NotNull String text) throws JSONParseException {
         return new JSONParser(text).parseArray();
+    }
+
+    public static @NotNull JSONStructure parse(@NotNull String text) throws JSONParseException {
+        if (isObject(text)) {
+            return parseObject(text);
+        }
+        else if (isArray(text)) {
+            return parseArray(text);
+        }
+        else throw new JSONParseException("文字列の解析に失敗しました", text.trim(), 0);
     }
 
     public static boolean isObject(@NotNull String text) {

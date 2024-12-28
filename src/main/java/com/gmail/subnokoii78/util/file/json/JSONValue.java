@@ -6,4 +6,9 @@ public class JSONValue<T> {
     protected JSONValue(T value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return (value == null) ? "null" : value.toString();
+    }
 }

@@ -202,4 +202,28 @@ public class NumberRange<T extends Number> {
     public static @NotNull DistanceRange distance(@NotNull String input) {
         return new DistanceRange(DOUBLE_PARSER.parse(input, false));
     }
+
+    public static @NotNull NumberRange<Byte> ofByte(@NotNull String input) {
+        return BYTE_PARSER.parse(input, true);
+    }
+
+    public static @NotNull NumberRange<Short> ofShort(@NotNull String input) {
+        return SHORT_PARSER.parse(input, true);
+    }
+
+    public static @NotNull NumberRange<Integer> ofInt(@NotNull String input) {
+        return INTEGER_PARSER.parse(input, true);
+    }
+
+    public static @NotNull NumberRange<Long> ofLong(@NotNull String input) {
+        return LONG_PARSER.parse(input, true);
+    }
+
+    public static @NotNull NumberRange<Float> ofFloat(@NotNull String input) {
+        return FLOAT_PARSER.parse(input, true);
+    }
+
+    public static @NotNull NumberRange<Double> ofDouble(@NotNull String input) {
+        return DOUBLE_PARSER.parse(input, true);
+    }
 }
