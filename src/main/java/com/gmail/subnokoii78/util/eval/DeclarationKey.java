@@ -51,7 +51,7 @@ public abstract class DeclarationKey<T> {
         public @NotNull Function<List<Double>, Double> function(@NotNull DoubleSupplier supplier) {
             return list -> {
                 if (!list.isEmpty()) {
-                    throw new CalcExpEvaluationException("引数の数は0つが期待されています");
+                    throw new IllegalArgumentException("引数の数は0つが期待されています");
                 }
                 return supplier.getAsDouble();
             };
@@ -63,7 +63,7 @@ public abstract class DeclarationKey<T> {
         public @NotNull Function<List<Double>, Double> function(@NotNull DoubleUnaryOperator unaryOperator) {
             return list -> {
                 if (list.size() != 1) {
-                    throw new CalcExpEvaluationException("引数の数は1つが期待されています");
+                    throw new IllegalArgumentException("引数の数は1つが期待されています");
                 }
                 return unaryOperator.applyAsDouble(list.getFirst());
             };
@@ -75,7 +75,7 @@ public abstract class DeclarationKey<T> {
         public @NotNull Function<List<Double>, Double> function(@NotNull DoubleBinaryOperator binaryOperator) {
             return list -> {
                 if (list.size() != 2) {
-                    throw new CalcExpEvaluationException("引数の数は2つが期待されています");
+                    throw new IllegalArgumentException("引数の数は2つが期待されています");
                 }
                 return binaryOperator.applyAsDouble(list.get(0), list.get(1));
             };

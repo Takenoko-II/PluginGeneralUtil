@@ -3,6 +3,7 @@ package com.gmail.subnokoii78.util.execute;
 import org.intellij.lang.annotations.RegExp;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
 import java.util.function.Function;
 
 public class NumberRange<T extends Number> {
@@ -51,6 +52,66 @@ public class NumberRange<T extends Number> {
 
     public boolean within(double value) {
         return min.doubleValue() <= value && value <= max.doubleValue();
+    }
+
+    public byte clamp(byte value) {
+        if (value < min.byteValue()) {
+            return min.byteValue();
+        }
+        else if (value > max.byteValue()) {
+            return max.byteValue();
+        }
+        else return value;
+    }
+
+    public short clamp(short value) {
+        if (value < min.shortValue()) {
+            return min.shortValue();
+        }
+        else if (value > max.shortValue()) {
+            return max.shortValue();
+        }
+        else return value;
+    }
+
+    public int clamp(int value) {
+        if (value < min.intValue()) {
+            return min.intValue();
+        }
+        else if (value > max.intValue()) {
+            return max.intValue();
+        }
+        else return value;
+    }
+
+    public long clamp(long value) {
+        if (value < min.longValue()) {
+            return min.longValue();
+        }
+        else if (value > max.longValue()) {
+            return max.longValue();
+        }
+        else return value;
+    }
+
+    public float clamp(float value) {
+        if (value < min.floatValue()) {
+            return min.floatValue();
+        }
+        else if (value > max.floatValue()) {
+            return max.floatValue();
+        }
+        else return value;
+    }
+
+    public double clamp(double value) {
+        if (value < min.doubleValue()) {
+            return min.doubleValue();
+        }
+        else if (value > max.doubleValue()) {
+            return max.doubleValue();
+        }
+        else return value;
     }
 
     private static final class Parser<T extends Number> {
@@ -225,5 +286,9 @@ public class NumberRange<T extends Number> {
 
     public static @NotNull NumberRange<Double> ofDouble(@NotNull String input) {
         return DOUBLE_PARSER.parse(input, true);
+    }
+
+    public static <T extends Number> @NotNull NumberRange<T> of(@NotNull T value1, @NotNull T value2) {
+        return new NumberRange<>(value1, value2);
     }
 }

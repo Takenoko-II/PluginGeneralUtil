@@ -93,23 +93,23 @@ public class JSONFile {
         else throw new IllegalStateException("ファイルが存在しません");
     }
 
-    public @NotNull JSONStructure read() throws JSONParseException {
+    public @NotNull JSONStructure read() throws JSONParseException, IllegalStateException {
         return JSONParser.parse(readFromFile());
     }
 
-    public void write(@NotNull JSONStructure structure) throws IllegalStateException {
+    public void write(@NotNull JSONStructure structure) throws JSONSerializeException, IllegalStateException {
         writeToFile(JSONSerializer.serialize(structure));
     }
 
-    public @NotNull JSONObject readAsObject() throws JSONParseException {
+    public @NotNull JSONObject readAsObject() throws JSONParseException, IllegalStateException {
         return JSONParser.parseObject(readFromFile());
     }
 
-    public @NotNull JSONArray readAsArray() throws JSONParseException {
+    public @NotNull JSONArray readAsArray() throws JSONParseException, IllegalStateException {
         return JSONParser.parseArray(readFromFile());
     }
 
-    public void edit(@NotNull Function<JSONStructure, JSONStructure> function) throws IllegalStateException {
+    public void edit(@NotNull Function<JSONStructure, JSONStructure> function) throws JSONParseException, JSONSerializeException, IllegalStateException {
         write(function.apply(read()));
     }
 }
