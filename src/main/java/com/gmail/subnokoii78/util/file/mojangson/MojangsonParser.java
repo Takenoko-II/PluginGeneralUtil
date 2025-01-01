@@ -29,7 +29,7 @@ public class MojangsonParser {
 
     private static final Set<Character> NUMBERS = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
 
-    private static final String[] BOOLEANS = {"true", "false"};
+    private static final String[] BOOLEANS = {"false", "true"};
 
     private static final Function<String, ? extends Number> DEFAULT_INT_PARSER = Integer::parseInt;
 
@@ -102,19 +102,13 @@ public class MojangsonParser {
         SYMBOLS_ON_STRING.add(DECIMAL_POINT);
     }
 
-    private static final class CompoundLikeMap extends HashMap<String, Object> {
+    private static final class StringObjectMap extends HashMap<String, Object> {}
 
-    }
+    private static final class ObjectList extends ArrayList<Object> {}
 
-    private static final class ObjectList extends ArrayList<Object> {
+    private String text;
 
-    }
-
-    protected final MojangsonParseException.ExceptionCreator exceptionCreator = new MojangsonParseException.ExceptionCreator(this);
-
-    protected String text;
-
-    protected int location = 0;
+    private int location = 0;
 
     private MojangsonParser() {}
 
@@ -124,7 +118,7 @@ public class MojangsonParser {
 
     private char next(boolean ignorable) {
         if (isOver()) {
-            throw exceptionCreator.create("文字列の長さが期待より不足しています");
+            throw new MojangsonParseException("文字列の長さが期待より不足しています");
         }
 
         final char next = text.charAt(location++);
@@ -188,7 +182,7 @@ public class MojangsonParser {
 
     private void expect(@NotNull String next) {
         if (!next(next)) {
-            throw exceptionCreator.create("期待された文字列は" + next + "でしたが、テストが偽を返しました");
+            throw new MojangsonParseException("期待された文字列は" + next + "でしたが、テストが偽を返しました");
         }
     }
 
@@ -219,7 +213,7 @@ public class MojangsonParser {
         else {
             while (!WHITESPACE.contains(current) && current != COLON && current != COMPOUND_BRACES[1] && current != ARRAY_LIST_BRACES[1] && current != COMMA) {
                 if (SYMBOLS_ON_STRING.contains(current)) {
-                    throw exceptionCreator.create("クオーテーションで囲まれていない文字列において利用できない文字("+ current +")を検出しました");
+                    throw new MojangsonParseException("クオーテーションで囲まれていない文字列において利用できない文字("+ current +")を検出しました");
                 }
 
                 sb.append(current);
@@ -277,7 +271,7 @@ public class MojangsonParser {
         }
 
         if (!NUMBERS.contains(sb.charAt(sb.length() - 1))) {
-            throw exceptionCreator.create("数値は数字で終わる必要があります");
+            throw new MojangsonParseException("数値は数字で終わる必要があります");
         }
 
         if (parser == null) {
@@ -287,14 +281,14 @@ public class MojangsonParser {
         return parser.apply(sb.toString());
     }
 
-    private @Nullable Byte booleanAlias() {
+    private @Nullable Byte booleanAsByte() {
         int loc = location;
         final String s = string();
         if (s.equals(BOOLEANS[0])) {
-            return 1;
+            return 0;
         }
         else if (s.equals(BOOLEANS[1])) {
-            return 0;
+            return 1;
         }
         else {
             location = loc;
@@ -302,10 +296,10 @@ public class MojangsonParser {
         }
     }
 
-    private @NotNull CompoundLikeMap compound() {
+    private @NotNull StringObjectMap compound() {
         expect(COMPOUND_BRACES[0]);
 
-        final CompoundLikeMap map = new CompoundLikeMap();
+        final StringObjectMap map = new StringObjectMap();
 
         if (next(COMPOUND_BRACES[1])) {
             return map;
@@ -348,21 +342,21 @@ public class MojangsonParser {
         final Object value = converter.apply(list);
 
         if (value instanceof Class<?> clazz) {
-            throw exceptionCreator.create(clazz.getSimpleName().toLowerCase() + "型の値が見つかったため、プリミティブ配列への変換に失敗しました");
+            throw new MojangsonParseException(clazz.getSimpleName().toLowerCase() + "型の値が見つかったため、プリミティブ配列への変換に失敗しました");
         }
         else return value;
     }
 
-    private void keyValues(@NotNull CompoundLikeMap map) {
+    private void keyValues(@NotNull StringObjectMap map) {
         final String key = string();
-        if (!next(COLON)) throw exceptionCreator.create("コロンが必要です");
+        if (!next(COLON)) throw new MojangsonParseException("コロンが必要です");
         map.put(key, value());
 
         final char commaOrBrace = next(true);
 
         if (commaOrBrace == COMMA) keyValues(map);
         else if (commaOrBrace == COMPOUND_BRACES[1]) back();
-        else throw exceptionCreator.create("閉じ括弧が見つかりません" + map);
+        else throw new MojangsonParseException("閉じ括弧が見つかりません");
     }
 
     private void elements(@NotNull ObjectList list) {
@@ -372,7 +366,7 @@ public class MojangsonParser {
 
         if (commaOrBrace == COMMA) elements(list);
         else if (commaOrBrace == ARRAY_LIST_BRACES[1]) back();
-        else throw exceptionCreator.create("カンマまたは閉じ括弧が必要です: '" + commaOrBrace + "'");
+        else throw new MojangsonParseException("閉じ括弧が見つかりません");
     }
 
     private @NotNull Object value() {
@@ -388,7 +382,7 @@ public class MojangsonParser {
                 return number;
             }
 
-            final Byte byteValue = booleanAlias();
+            final Byte byteValue = booleanAsByte();
             if (byteValue != null) {
                 return byteValue;
             }
@@ -398,12 +392,12 @@ public class MojangsonParser {
     }
 
     private void remainingChars() {
-        if (!isOver()) throw exceptionCreator.create("解析終了後、末尾に無効な文字列(" + text.substring(location) + ")を検出しました");
+        if (!isOver()) throw new MojangsonParseException("解析終了後、末尾に無効な文字列(" + text.substring(location) + ")を検出しました");
     }
 
     private @NotNull Object parse() {
         if (text == null) {
-            throw exceptionCreator.create("textがnullです");
+            throw new MojangsonParseException("textがnullです");
         }
 
         final Object value = value();
@@ -419,36 +413,32 @@ public class MojangsonParser {
         if (clazz.isInstance(value)) {
             return clazz.cast(value);
         }
-        else throw parser.exceptionCreator.create("期待された型(" + clazz.getName() + ")と取得した値(" + value.getClass().getName() + ")が一致しません");
+        else throw new MojangsonParseException("期待された型(" + clazz.getName() + ")と取得した値(" + value.getClass().getName() + ")が一致しません");
     }
 
-    public static @NotNull Object parseAsObject(@NotNull String text) {
+    public static @NotNull Object object(@NotNull String text) {
         final MojangsonParser parser = new MojangsonParser();
         parser.text = text;
         return parser.parse();
     }
 
-    public static @NotNull Map<String, Object> parseAsCompound(@NotNull String text) {
-        return parseAs(text, CompoundLikeMap.class);
+    public static @NotNull Map<String, Object> compound(@NotNull String text) {
+        return parseAs(text, StringObjectMap.class);
     }
 
-    public static @NotNull List<Object> parseAsList(@NotNull String text) {
+    public static @NotNull List<Object> list(@NotNull String text) {
         return parseAs(text, ObjectList.class);
     }
 
-    public static byte[] parseAsBytes(@NotNull String text) {
+    public static byte[] byteArray(@NotNull String text) {
         return parseAs(text, byte[].class);
     }
 
-    public static int[] parseAsInts(@NotNull String text) {
+    public static int[] intArray(@NotNull String text) {
         return parseAs(text, int[].class);
     }
 
-    public static long[] parseAsLongs(@NotNull String text) {
+    public static long[] longArray(@NotNull String text) {
         return parseAs(text, long[].class);
-    }
-
-    public static void main(String[] args) {
-        System.out.println(parseAsCompound("{key:string,a:number,b:boolean}"));
     }
 }
