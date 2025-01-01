@@ -8,7 +8,7 @@ public class JSONParseException extends RuntimeException {
     }
 
     protected JSONParseException(@NotNull String message, @NotNull String json, int location, @NotNull Throwable cause) {
-        super(JSONParseException.createMessage(message,json, location), cause);
+        super(JSONParseException.createMessage(message, json, location), cause);
     }
 
     protected static @NotNull String createMessage(@NotNull String message, @NotNull String json, int location) {
