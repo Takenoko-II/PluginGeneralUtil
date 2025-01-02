@@ -110,7 +110,7 @@ public class MojangsonSerializer {
     }
 
     private StringBuilder string(@NotNull String value) {
-        return new StringBuilder(value);
+        return new StringBuilder(value); // くぉーとつけたほがいーかも
     }
 
     private StringBuilder bool(boolean value) {

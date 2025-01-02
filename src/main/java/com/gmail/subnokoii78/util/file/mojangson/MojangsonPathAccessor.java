@@ -1,7 +1,6 @@
 package com.gmail.subnokoii78.util.file.mojangson;
 
-import com.gmail.subnokoii78.util.file.mojangson.values.MojangsonCompound;
-import com.gmail.subnokoii78.util.file.mojangson.values.MojangsonList;
+import com.gmail.subnokoii78.util.file.mojangson.values.*;
 import com.gmail.subnokoii78.util.other.TupleLR;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -69,11 +68,34 @@ public final class MojangsonPathAccessor {
         final String key = path.removeFirst();
 
         if (path.isEmpty()) {
-            if (currentStructure instanceof MojangsonList list && key.startsWith(ARRAY_INDEX_PREFIX)) {
+            if (currentStructure instanceof MojangsonIterable<?> iterable && key.startsWith(ARRAY_INDEX_PREFIX)) {
                 final int index = parseIndexKey(key);
-                final T r = callback.apply(MojangsonLocationAccess.listAccess(list, index));
-                previousPair.set(list);
-                return r;
+                switch (iterable) {
+                    case MojangsonList list -> {
+                        final T r = callback.apply(MojangsonLocationAccess.listAccess(list, index));
+                        previousPair.set(list);
+                        return r;
+                    }
+                    case MojangsonByteArray bytes -> {
+                        final MojangsonList list = bytes.toList();
+                        final T r = callback.apply(MojangsonLocationAccess.listAccess(list, index));
+                        previousPair.set(MojangsonByteArray.toArray(list));
+                        return r;
+                    }
+                    case MojangsonIntArray ints -> {
+                        final MojangsonList list = ints.toList();
+                        final T r = callback.apply(MojangsonLocationAccess.listAccess(list, index));
+                        previousPair.set(MojangsonIntArray.toArray(list));
+                        return r;
+                    }
+                    case MojangsonLongArray longs -> {
+                        final MojangsonList list = longs.toList();
+                        final T r = callback.apply(MojangsonLocationAccess.listAccess(list, index));
+                        previousPair.set(MojangsonLongArray.toArray(list));
+                        return r;
+                    }
+                    default -> throw new RuntimeException("NEVER HAPPENS");
+                }
             }
             else if (currentStructure instanceof MojangsonCompound compound) {
                 final T r = callback.apply(MojangsonLocationAccess.compoundAccess(compound, key));
@@ -104,14 +126,43 @@ public final class MojangsonPathAccessor {
                 }
                 else yield null;
             }
-            case MojangsonList list -> {
+            case MojangsonIterable<?> iterable -> {
                 if (key.startsWith(ARRAY_INDEX_PREFIX)) {
                     final int index = parseIndexKey(key);
-                    if (list.has(index)) {
-                        final Object nextStructure = list.get(index, list.getTypeAt(index));
-                        yield new TupleLR<>(nextStructure, MojangsonLocationAccess.listAccess(list, index));
-                    }
-                    else yield null;
+                    yield switch (iterable) {
+                        case MojangsonList list -> {
+                            if (list.has(index)) {
+                                final Object nextStructure = list.get(index, list.getTypeAt(index));
+                                yield new TupleLR<>(nextStructure, MojangsonLocationAccess.listAccess(list, index));
+                            }
+                            else yield null;
+                        }
+                        case MojangsonByteArray bytes -> {
+                            final MojangsonList list = bytes.toList();
+                            if (list.has(index)) {
+                                final Object nextStructure = list.get(index, list.getTypeAt(index));
+                                yield new TupleLR<>(nextStructure, MojangsonLocationAccess.listAccess(list, index));
+                            }
+                            else yield null;
+                        }
+                        case MojangsonIntArray ints -> {
+                            final MojangsonList list = ints.toList();
+                            if (list.has(index)) {
+                                final Object nextStructure = list.get(index, list.getTypeAt(index));
+                                yield new TupleLR<>(nextStructure, MojangsonLocationAccess.listAccess(list, index));
+                            }
+                            else yield null;
+                        }
+                        case MojangsonLongArray longs -> {
+                            final MojangsonList list = longs.toList();
+                            if (list.has(index)) {
+                                final Object nextStructure = list.get(index, list.getTypeAt(index));
+                                yield new TupleLR<>(nextStructure, MojangsonLocationAccess.listAccess(list, index));
+                            }
+                            else yield null;
+                        }
+                        default -> throw new RuntimeException("NEVER HAPPENS");
+                    };
                 }
                 else yield null;
             }

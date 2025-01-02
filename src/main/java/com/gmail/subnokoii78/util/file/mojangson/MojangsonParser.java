@@ -183,6 +183,7 @@ public class MojangsonParser {
                 }
 
                 sb.append(current);
+                if (isOver()) return sb.toString();
                 current = next(false);
             }
 
@@ -326,12 +327,12 @@ public class MojangsonParser {
         else throw new MojangsonParseException("閉じ括弧が見つかりません");
     }
 
-    private @NotNull Object value() {
+    private @NotNull MojangsonValue<?> value() {
         if (test(COMPOUND_BRACES[0])) {
             return compound();
         }
         else if (test(ARRAY_LIST_BRACES[0])) {
-            return iterable();
+            return (MojangsonValue<?>) iterable();
         }
         else {
             final MojangsonNumber<?> number = number();
@@ -344,7 +345,12 @@ public class MojangsonParser {
                 return byteValue;
             }
 
-            return string();
+            final String string = string();
+
+            if (string.equals(MojangsonNull.NULL.toString())) {
+                return MojangsonNull.NULL;
+            }
+            else return MojangsonString.valueOf(string);
         }
     }
 
@@ -352,12 +358,12 @@ public class MojangsonParser {
         if (!isOver()) throw new MojangsonParseException("解析終了後、末尾に無効な文字列(" + text.substring(location) + ")を検出しました");
     }
 
-    private @NotNull Object parse() {
+    private @NotNull MojangsonValue<?> parse() {
         if (text == null) {
             throw new MojangsonParseException("textがnullです");
         }
 
-        final Object value = value();
+        final MojangsonValue<?> value = value();
         remainingChars();
         return value;
     }
@@ -365,7 +371,7 @@ public class MojangsonParser {
     private static <T> @NotNull T parseAs(@NotNull String text, @NotNull Class<T> clazz) {
         final MojangsonParser parser = new MojangsonParser();
         parser.text = text;
-        final Object value = parser.parse();
+        final MojangsonValue<?> value = parser.parse();
 
         if (clazz.isInstance(value)) {
             return clazz.cast(value);
@@ -373,7 +379,7 @@ public class MojangsonParser {
         else throw new MojangsonParseException("期待された型(" + clazz.getName() + ")と取得した値(" + value.getClass().getName() + ")が一致しません");
     }
 
-    public static @NotNull Object object(@NotNull String text) {
+    public static @NotNull MojangsonValue<?> object(@NotNull String text) {
         final MojangsonParser parser = new MojangsonParser();
         parser.text = text;
         return parser.parse();

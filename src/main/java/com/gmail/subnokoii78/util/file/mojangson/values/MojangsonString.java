@@ -1,9 +1,8 @@
 package com.gmail.subnokoii78.util.file.mojangson.values;
 
-import com.gmail.subnokoii78.util.file.mojangson.MojangsonValue;
 import org.jetbrains.annotations.NotNull;
 
-public class MojangsonString extends MojangsonValue<String> {
+public class MojangsonString extends MojangsonPrimitive<String> {
     private MojangsonString(@NotNull String value) {
         super(value);
     }

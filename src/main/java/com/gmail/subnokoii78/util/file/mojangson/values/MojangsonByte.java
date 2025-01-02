@@ -7,6 +7,11 @@ public final class MojangsonByte extends MojangsonNumber<Byte> {
         super(value);
     }
 
+    @Override
+    public Byte getValue() {
+        return super.getValue();
+    }
+
     public static @NotNull MojangsonByte valueOf(byte value) {
         return new MojangsonByte(value);
     }
