@@ -19,7 +19,7 @@ public class JSONInterface {
     private final JSONObject struct;
 
     public JSONInterface(@NotNull String mojangson) {
-        struct = new JSONObject(MojangsonParser.compound(mojangson));
+        struct = new JSONObject(MojangsonParser.compound(mojangson).asRawMap());
         checkIsValidObject(struct);
     }
 
@@ -40,29 +40,29 @@ public class JSONInterface {
 
             final Object value = struct.get(key, struct.getTypeOfKey(key));
 
-            if (value instanceof String id) {
-                if (!types.get(id).equals(jsonObject.getTypeOfKey(key))) {
-                    return false;
+            switch (value) {
+                case String id -> {
+                    if (!types.get(id).equals(jsonObject.getTypeOfKey(key))) {
+                        return false;
+                    }
                 }
-            }
-            else if (value instanceof JSONObject object) {
-                if (!jsonObject.getTypeOfKey(key).equals(JSONValueType.OBJECT)) {
-                    return false;
+                case JSONObject object -> {
+                    if (!jsonObject.getTypeOfKey(key).equals(JSONValueType.OBJECT)) {
+                        return false;
+                    }
+                    if (!matchObject(object, jsonObject.get(key, JSONValueType.OBJECT))) {
+                        return false;
+                    }
                 }
-                if (!matchObject(object, jsonObject.get(key, JSONValueType.OBJECT))) {
-                    return false;
+                case JSONArray array -> {
+                    if (!jsonObject.getTypeOfKey(key).equals(JSONValueType.ARRAY)) {
+                        return false;
+                    }
+                    if (!matchArray(array, jsonObject.get(key, JSONValueType.ARRAY))) {
+                        return false;
+                    }
                 }
-            }
-            else if (value instanceof JSONArray array) {
-                if (!jsonObject.getTypeOfKey(key).equals(JSONValueType.ARRAY)) {
-                    return false;
-                }
-                if (!matchArray(array, jsonObject.get(key, JSONValueType.ARRAY))) {
-                    return false;
-                }
-            }
-            else {
-                throw new IllegalArgumentException("無効な型の値です");
+                default -> throw new IllegalArgumentException("無効な型の値です");
             }
         }
 
@@ -73,29 +73,29 @@ public class JSONInterface {
         for (int i = 0; i < struct.length(); i++) {
             final Object element = struct.get(i, struct.getTypeAt(i));
 
-            if (element instanceof String id) {
-                if (!types.get(id).equals(JSONValueType.of(element))) {
-                    return false;
+            switch (element) {
+                case String id -> {
+                    if (!types.get(id).equals(JSONValueType.of(element))) {
+                        return false;
+                    }
                 }
-            }
-            else if (element instanceof JSONObject object) {
-                if (!struct.getTypeAt(i).equals(JSONValueType.OBJECT)) {
-                    return false;
+                case JSONObject object -> {
+                    if (!struct.getTypeAt(i).equals(JSONValueType.OBJECT)) {
+                        return false;
+                    }
+                    else if (!matchObject(object, struct.get(i, JSONValueType.OBJECT))) {
+                        return false;
+                    }
                 }
-                else if (!matchObject(object, struct.get(i, JSONValueType.OBJECT))) {
-                    return false;
+                case JSONArray array -> {
+                    if (!jsonArray.getTypeAt(i).equals(struct.getTypeAt(i))) {
+                        return false;
+                    }
+                    if (!matchArray(array, jsonArray.get(i, JSONValueType.ARRAY))) {
+                        return false;
+                    }
                 }
-            }
-            else if (element instanceof JSONArray array) {
-                if (!jsonArray.getTypeAt(i).equals(struct.getTypeAt(i))) {
-                    return false;
-                }
-                if (!matchArray(array, jsonArray.get(i, JSONValueType.ARRAY))) {
-                    return false;
-                }
-            }
-            else {
-                throw new IllegalArgumentException("無効な型の要素です");
+                case null, default -> throw new IllegalArgumentException("無効な型の要素です");
             }
         }
 
@@ -106,50 +106,36 @@ public class JSONInterface {
         for (final String key : struct.keys()) {
             final Object value = struct.get(key, struct.getTypeOfKey(key));
 
-            if (value instanceof String string) {
-                if (!types.containsKey(string)) {
-                    throw new IllegalArgumentException("型として無効なIDです");
+            switch (value) {
+                case String string -> {
+                    if (!types.containsKey(string)) {
+                        throw new IllegalArgumentException("型として無効なIDです");
+                    }
                 }
-            }
-            else if (value instanceof JSONObject jsonObject) {
-                checkIsValidObject(jsonObject);
-            }
-            else if (value instanceof JSONArray jsonArray) {
-                checkIsValidArray(jsonArray);
+                case JSONObject jsonObject -> checkIsValidObject(jsonObject);
+                case JSONArray jsonArray -> checkIsValidArray(jsonArray);
+                default -> throw new IllegalArgumentException("文字列ではない値が見つかりました");
             }
         }
     }
 
     private static void checkIsValidArray(@NotNull JSONArray struct) {
         for (final Object element : struct) {
-            if (element instanceof String string) {
-                if (!types.containsKey(string)) {
-                    throw new IllegalArgumentException("型として無効なIDです");
+            switch (element) {
+                case String string -> {
+                    if (!types.containsKey(string)) {
+                        throw new IllegalArgumentException("型として無効なIDです");
+                    }
                 }
-            }
-            else if (element instanceof JSONObject jsonObject) {
-                checkIsValidObject(jsonObject);
-            }
-            else if (element instanceof JSONArray jsonArray) {
-                checkIsValidArray(jsonArray);
+                case JSONObject jsonObject -> checkIsValidObject(jsonObject);
+                case JSONArray jsonArray -> checkIsValidArray(jsonArray);
+                default -> throw new IllegalArgumentException("文字列ではない値が見つかりました");
             }
         }
     }
 
     public static void main(String[] args) {
-        final JSONInterface jsonInterface = new JSONInterface("{foo:string,bar:number,baz:boolean,struct:{test:string}}");
-
-        System.out.println(jsonInterface.matches(
-            JSONParser.parseObject("""
-                {
-                    "foo": "s",
-                    "bar": 0,
-                    "baz": false,
-                    "struct": {
-                        "test": "hoge"
-                    }
-                }
-            """)
-        ));
+        final JSONInterface jsonInterface = new JSONInterface("{foo:string?,bar:number,baz:boolean,struct:{test:string}}");
+        jsonInterface.matches(new JSONObject());
     }
 }

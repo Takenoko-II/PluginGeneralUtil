@@ -1,5 +1,6 @@
 package com.gmail.subnokoii78.util.file.mojangson;
 
+import com.gmail.subnokoii78.util.file.mojangson.values.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +24,7 @@ public class MojangsonParser {
 
     private static final char[] ARRAY_LIST_BRACES = {'[', ']'};
 
-    private static final char[] SIGNS = {'+', '-'};
+    private static final Set<Character> SIGNS = Set.of('+', '-');
 
     private static final char DECIMAL_POINT = '.';
 
@@ -48,40 +49,10 @@ public class MojangsonParser {
         'D', Double::parseDouble
     ));
 
-    private static final Map<Character, Function<ObjectList, Object>> PRIMITIVE_ARRAY_CONVERTERS = new HashMap<>(Map.of(
-        'B', list -> {
-            byte[] array = new byte[list.size()];
-            for (int i = 0; i < list.size(); i++) {
-                final Object value = list.get(i);
-                if (value instanceof Byte byteValue) {
-                    array[i] = byteValue;
-                }
-                else return value.getClass();
-            }
-            return array;
-        },
-        'I', list -> {
-            int[] array = new int[list.size()];
-            for (int i = 0; i < list.size(); i++) {
-                final Object value = list.get(i);
-                if (value instanceof Integer intValue) {
-                    array[i] = intValue;
-                }
-                else return value.getClass();
-            }
-            return array;
-        },
-        'L', list -> {
-            long[] array = new long[list.size()];
-            for (int i = 0; i < list.size(); i++) {
-                final Object value = list.get(i);
-                if (value instanceof Long longValue) {
-                    array[i] = longValue;
-                }
-                else return value.getClass();
-            }
-            return array;
-        }
+    private static final Map<Character, Function<MojangsonList, MojangsonIterable<? extends MojangsonNumber<?>>>> PRIMITIVE_ARRAY_CONVERTERS = new HashMap<>(Map.of(
+        'B', MojangsonByteArray::toArray,
+        'I', MojangsonIntArray::toArray,
+        'L', MojangsonLongArray::toArray
     ));
 
     private static final Set<Character> SYMBOLS_ON_STRING = new HashSet<>();
@@ -97,14 +68,9 @@ public class MojangsonParser {
         SYMBOLS_ON_STRING.add(COMPOUND_BRACES[1]);
         SYMBOLS_ON_STRING.add(ARRAY_LIST_BRACES[0]);
         SYMBOLS_ON_STRING.add(ARRAY_LIST_BRACES[1]);
-        SYMBOLS_ON_STRING.add(SIGNS[0]);
-        SYMBOLS_ON_STRING.add(SIGNS[1]);
+        SYMBOLS_ON_STRING.addAll(SIGNS);
         SYMBOLS_ON_STRING.add(DECIMAL_POINT);
     }
-
-    private static final class StringObjectMap extends HashMap<String, Object> {}
-
-    private static final class ObjectList extends ArrayList<Object> {}
 
     private String text;
 
@@ -226,13 +192,13 @@ public class MojangsonParser {
         return sb.toString();
     }
 
-    private @Nullable Number number() {
+    private @Nullable MojangsonNumber<?> number() {
         final int loc = location;
 
         final StringBuilder sb = new StringBuilder();
         char current = next(false);
 
-        if (current == SIGNS[0] || current == SIGNS[1] || NUMBERS.contains(current)) {
+        if (SIGNS.contains(current) || NUMBERS.contains(current)) {
             sb.append(current);
         }
         else {
@@ -278,17 +244,17 @@ public class MojangsonParser {
             parser = decimalPointAppeared ? DEFAULT_DECIMAL_PARSER : DEFAULT_INT_PARSER;
         }
 
-        return parser.apply(sb.toString());
+        return MojangsonNumber.toSubClass(parser.apply(sb.toString()));
     }
 
-    private @Nullable Byte booleanAsByte() {
+    private @Nullable MojangsonByte booleanAsByte() {
         int loc = location;
         final String s = string();
         if (s.equals(BOOLEANS[0])) {
-            return 0;
+            return MojangsonByte.valueOf((byte) 0);
         }
         else if (s.equals(BOOLEANS[1])) {
-            return 1;
+            return MojangsonByte.valueOf((byte) 1);
         }
         else {
             location = loc;
@@ -296,27 +262,27 @@ public class MojangsonParser {
         }
     }
 
-    private @NotNull StringObjectMap compound() {
+    private @NotNull MojangsonCompound compound() {
         expect(COMPOUND_BRACES[0]);
 
-        final StringObjectMap map = new StringObjectMap();
+        final MojangsonCompound compound = new MojangsonCompound();
 
         if (next(COMPOUND_BRACES[1])) {
-            return map;
+            return compound;
         }
 
-        keyValues(map);
+        keyValues(compound);
 
         expect(COMPOUND_BRACES[1]);
 
-        return map;
+        return compound;
     }
 
-    private @NotNull Object arrayOrList() {
+    private @NotNull MojangsonIterable<?> iterable() {
         expect(ARRAY_LIST_BRACES[0]);
 
-        final ObjectList list = new ObjectList();
-        Function<ObjectList, Object> arrayConverter = null;
+        final MojangsonList list = new MojangsonList();
+        Function<MojangsonList, MojangsonIterable<? extends MojangsonNumber<?>>> arrayConverter = null;
 
         for (char c : PRIMITIVE_ARRAY_CONVERTERS.keySet()) {
             final String prefix = String.valueOf(c) + SEMICOLON;
@@ -328,38 +294,29 @@ public class MojangsonParser {
         }
 
         if (next(ARRAY_LIST_BRACES[1])) {
-            return arrayConverter == null ? list : primitiveArray(list, arrayConverter);
+            return arrayConverter == null ? list : arrayConverter.apply(list);
         }
 
         elements(list);
 
         expect(ARRAY_LIST_BRACES[1]);
 
-        return arrayConverter == null ? list : primitiveArray(list, arrayConverter);
+        return arrayConverter == null ? list : arrayConverter.apply(list);
     }
 
-    private @NotNull Object primitiveArray(@NotNull ObjectList list, @NotNull Function<ObjectList, Object> converter) {
-        final Object value = converter.apply(list);
-
-        if (value instanceof Class<?> clazz) {
-            throw new MojangsonParseException(clazz.getSimpleName().toLowerCase() + "型の値が見つかったため、プリミティブ配列への変換に失敗しました");
-        }
-        else return value;
-    }
-
-    private void keyValues(@NotNull StringObjectMap map) {
+    private void keyValues(@NotNull MojangsonCompound compound) {
         final String key = string();
         if (!next(COLON)) throw new MojangsonParseException("コロンが必要です");
-        map.put(key, value());
+        compound.setKey(key, value());
 
         final char commaOrBrace = next(true);
 
-        if (commaOrBrace == COMMA) keyValues(map);
+        if (commaOrBrace == COMMA) keyValues(compound);
         else if (commaOrBrace == COMPOUND_BRACES[1]) back();
         else throw new MojangsonParseException("閉じ括弧が見つかりません");
     }
 
-    private void elements(@NotNull ObjectList list) {
+    private void elements(@NotNull MojangsonList list) {
         list.add(value());
 
         final char commaOrBrace = next(true);
@@ -374,15 +331,15 @@ public class MojangsonParser {
             return compound();
         }
         else if (test(ARRAY_LIST_BRACES[0])) {
-            return arrayOrList();
+            return iterable();
         }
         else {
-            final Number number = number();
+            final MojangsonNumber<?> number = number();
             if (number != null) {
                 return number;
             }
 
-            final Byte byteValue = booleanAsByte();
+            final MojangsonByte byteValue = booleanAsByte();
             if (byteValue != null) {
                 return byteValue;
             }
@@ -422,23 +379,23 @@ public class MojangsonParser {
         return parser.parse();
     }
 
-    public static @NotNull Map<String, Object> compound(@NotNull String text) {
-        return parseAs(text, StringObjectMap.class);
+    public static @NotNull MojangsonCompound compound(@NotNull String text) {
+        return parseAs(text, MojangsonCompound.class);
     }
 
-    public static @NotNull List<Object> list(@NotNull String text) {
-        return parseAs(text, ObjectList.class);
+    public static @NotNull MojangsonList list(@NotNull String text) {
+        return parseAs(text, MojangsonList.class);
     }
 
-    public static byte[] byteArray(@NotNull String text) {
-        return parseAs(text, byte[].class);
+    public static @NotNull MojangsonByteArray byteArray(@NotNull String text) {
+        return parseAs(text, MojangsonByteArray.class);
     }
 
-    public static int[] intArray(@NotNull String text) {
-        return parseAs(text, int[].class);
+    public static @NotNull MojangsonIntArray intArray(@NotNull String text) {
+        return parseAs(text, MojangsonIntArray.class);
     }
 
-    public static long[] longArray(@NotNull String text) {
-        return parseAs(text, long[].class);
+    public static @NotNull MojangsonLongArray longArray(@NotNull String text) {
+        return parseAs(text, MojangsonLongArray.class);
     }
 }
