@@ -5,7 +5,9 @@ import com.gmail.subnokoii78.util.file.mojangson.values.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class MojangsonSerializer {
     private final int indentationSpaceCount;
@@ -37,7 +39,7 @@ public class MojangsonSerializer {
     private StringBuilder compound(MojangsonCompound compound, int indentation) {
         final String[] keys = compound.keys().toArray(String[]::new);
 
-        final StringBuilder stringBuilder = new StringBuilder().append(OBJECT_BRACE_START);
+        final StringBuilder stringBuilder = new StringBuilder().append(COMPOUND_BRACES[0]);
 
         for (int i = 0; i < keys.length; i++) {
             final String key = keys[i];
@@ -47,7 +49,7 @@ public class MojangsonSerializer {
                 stringBuilder
                     .append(LINE_BREAK)
                     .append(indentation(indentation + 1))
-                    .append(key)
+                    .append(string(key))
                     .append(COLON)
                     .append(WHITESPACE)
                     .append(serialize(childValue, indentation + 1));
@@ -67,13 +69,13 @@ public class MojangsonSerializer {
                 .append(indentation(indentation));
         }
 
-        stringBuilder.append(OBJECT_BRACE_END);
+        stringBuilder.append(COMPOUND_BRACES[1]);
 
         return stringBuilder;
     }
 
     private StringBuilder iterable(@NotNull MojangsonIterable<?> iterable, int indentation) {
-        StringBuilder stringBuilder = new StringBuilder().append(ARRAY_BRACE_START);
+        StringBuilder stringBuilder = new StringBuilder().append(ARRAY_LIST_BRACES[0]);
 
         if (ITERABLE_TYPE_SYMBOLS.containsKey(iterable.getClass())) {
             stringBuilder
@@ -106,11 +108,18 @@ public class MojangsonSerializer {
                 .append(indentation(indentation));
         }
 
-        return stringBuilder.append(ARRAY_BRACE_END);
+        return stringBuilder.append(ARRAY_LIST_BRACES[1]);
     }
 
     private StringBuilder string(@NotNull String value) {
-        return new StringBuilder(value); // くぉーとつけたほがいーかも
+        boolean requireQuote = SYMBOLS_ON_STRING.stream().anyMatch(sym -> value.contains(sym.toString()));
+        final StringBuilder stringBuilder = new StringBuilder();
+
+        if (requireQuote) stringBuilder.append(QUOTE);
+        stringBuilder.append(value.replaceAll(String.valueOf(QUOTE), String.valueOf(ESCAPE).repeat(2) + QUOTE));
+        if (requireQuote) stringBuilder.append(QUOTE);
+
+        return stringBuilder;
     }
 
     private StringBuilder bool(boolean value) {
@@ -145,6 +154,36 @@ public class MojangsonSerializer {
 
     private static final char SEMICOLON = ';';
 
+    private static final char[] COMPOUND_BRACES = {'{', '}'};
+
+    private static final char[] ARRAY_LIST_BRACES = {'[', ']'};
+
+    private static final char WHITESPACE = ' ';
+
+    private static final char ESCAPE = '\\';
+
+    private static final Set<Character> SIGNS = Set.of('+', '-');
+
+    private static final char DECIMAL_POINT = '.';
+
+    private static final Set<Character> SYMBOLS_ON_STRING = new HashSet<>();
+
+    static {
+        SYMBOLS_ON_STRING.add(WHITESPACE);
+        SYMBOLS_ON_STRING.add(LINE_BREAK);
+        SYMBOLS_ON_STRING.add(COMMA);
+        SYMBOLS_ON_STRING.add(COLON);
+        SYMBOLS_ON_STRING.add(SEMICOLON);
+        SYMBOLS_ON_STRING.add(ESCAPE);
+        SYMBOLS_ON_STRING.add(QUOTE);
+        SYMBOLS_ON_STRING.add(COMPOUND_BRACES[0]);
+        SYMBOLS_ON_STRING.add(COMPOUND_BRACES[1]);
+        SYMBOLS_ON_STRING.add(ARRAY_LIST_BRACES[0]);
+        SYMBOLS_ON_STRING.add(ARRAY_LIST_BRACES[1]);
+        SYMBOLS_ON_STRING.addAll(SIGNS);
+        SYMBOLS_ON_STRING.add(DECIMAL_POINT);
+    }
+
     private static final Map<Class<? extends MojangsonIterable<?>>, Character> ITERABLE_TYPE_SYMBOLS = new HashMap<>(Map.of(
         MojangsonByteArray.class, 'B',
         MojangsonIntArray.class, 'I',
@@ -163,16 +202,6 @@ public class MojangsonSerializer {
         Float.class, 'f',
         Double.class, 'd'
     ));
-
-    private static final char OBJECT_BRACE_START = '{';
-
-    private static final char OBJECT_BRACE_END = '}';
-
-    private static final char ARRAY_BRACE_START = '[';
-
-    private static final char ARRAY_BRACE_END = ']';
-
-    private static final char WHITESPACE = ' ';
 
     public static @NotNull String serialize(@NotNull MojangsonStructure structure) {
         return new MojangsonSerializer(structure, 4).serialize().toString();

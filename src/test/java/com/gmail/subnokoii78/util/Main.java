@@ -1,8 +1,7 @@
 package com.gmail.subnokoii78.util;
 
-import com.gmail.subnokoii78.util.file.mojangson.MojangsonParser;
-import com.gmail.subnokoii78.util.file.mojangson.MojangsonValueTypes;
-import com.gmail.subnokoii78.util.file.mojangson.values.MojangsonCompound;
+import com.gmail.subnokoii78.util.file.mojangson.*;
+import com.gmail.subnokoii78.util.file.mojangson.values.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -31,5 +30,6 @@ public class Main {
 
         compound.set("components.minecraft:custom_data.foo", "baz");
         System.out.println(compound.get("components.minecraft:custom_data.compounds[2].c", MojangsonValueTypes.INT)); // 3
+        System.out.println(MojangsonSerializer.serialize(compound));
     }
 }
