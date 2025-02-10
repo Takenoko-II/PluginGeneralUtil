@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class MojangsonCompound extends MojangsonValue<Map<String, MojangsonValue<?>>> implements MojangsonStructure {
-    private final MojangsonPathAccessor accessor = new MojangsonPathAccessor(this);
+    private final MojangsonPathAccessor accessor = MojangsonPathAccessor.newAccessor(this);
 
     public MojangsonCompound(@NotNull Map<String, MojangsonValue<?>> value) {
         super(value);

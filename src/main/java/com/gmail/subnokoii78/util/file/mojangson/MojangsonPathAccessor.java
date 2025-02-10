@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 public final class MojangsonPathAccessor {
     private final MojangsonCompound initialCompound;
 
-    public MojangsonPathAccessor(@NotNull MojangsonCompound initialCompound) {
+    private MojangsonPathAccessor(@NotNull MojangsonCompound initialCompound) {
         this.initialCompound = initialCompound;
     }
 
@@ -323,5 +323,9 @@ public final class MojangsonPathAccessor {
                 structure.delete(key);
             }
         }
+    }
+
+    public static @NotNull MojangsonPathAccessor newAccessor(@NotNull MojangsonCompound compound) {
+        return new MojangsonPathAccessor(compound);
     }
 }

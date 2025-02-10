@@ -66,7 +66,7 @@ public class ArmorButton extends ItemButton {
     @Override
     protected @NotNull ItemStack build() {
         itemStackBuilder.trim().setShowInTooltip(false);
-        itemStackBuilder.attributeModifiers().addModifier(new TypedAttributeModifier(Attribute.GENERIC_ARMOR));
+        itemStackBuilder.attributeModifiers().addModifier(new TypedAttributeModifier(Attribute.ARMOR));
         itemStackBuilder.attributeModifiers().setShowInTooltip(false);
         return super.build();
     }
