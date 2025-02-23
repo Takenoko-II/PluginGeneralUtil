@@ -1,268 +1,328 @@
 package com.gmail.subnokoii78.util.file.json;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Function;
 
-public final class JSONParser {
-    private final String text;
+public class JSONParser {
+    private static final Set<Character> WHITESPACE = Set.of(' ', '\n');
 
-    private final Map<String, Object> map = new LinkedHashMap<>();
+    private static final char COMMA = ',';
+
+    private static final char COLON = ':';
+
+    private static final char SEMICOLON = ';';
+
+    private static final char ESCAPE = '\\';
+
+    private static final Set<Character> QUOTES = Set.of('"');
+
+    private static final char[] OBJECT_BRACES = {'{', '}'};
+
+    private static final char[] ARRAY_BRACES = {'[', ']'};
+
+    private static final Set<Character> SIGNS = Set.of('+', '-');
+
+    private static final char DECIMAL_POINT = '.';
+
+    private static final Set<Character> NUMBERS = Set.of('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+
+    private static final String[] BOOLEANS = {"false", "true"};
+
+    private static final Function<String, Double> NUMBER_PARSER = Double::parseDouble;
+
+    private static final Set<Character> SYMBOLS_ON_STRING = new HashSet<>();
+
+    private static final String NULL = "null";
+
+    static {
+        SYMBOLS_ON_STRING.addAll(WHITESPACE);
+        SYMBOLS_ON_STRING.add(COMMA);
+        SYMBOLS_ON_STRING.add(COLON);
+        SYMBOLS_ON_STRING.add(SEMICOLON);
+        SYMBOLS_ON_STRING.add(ESCAPE);
+        SYMBOLS_ON_STRING.addAll(QUOTES);
+        SYMBOLS_ON_STRING.add(OBJECT_BRACES[0]);
+        SYMBOLS_ON_STRING.add(OBJECT_BRACES[1]);
+        SYMBOLS_ON_STRING.add(ARRAY_BRACES[0]);
+        SYMBOLS_ON_STRING.add(ARRAY_BRACES[1]);
+        SYMBOLS_ON_STRING.addAll(SIGNS);
+        SYMBOLS_ON_STRING.add(DECIMAL_POINT);
+    }
+
+    private String text;
 
     private int location = 0;
 
-    private JSONParser(@NotNull String json) {
-        this.text = json.replaceAll("\n", "");
+    private JSONParser() {}
+
+    private @NotNull JSONParseException newException(@NotNull String message) {
+        return new JSONParseException(message, text, location);
     }
 
-    private @NotNull JSONObject parseObject() throws JSONParseException {
-        reset();
-        parseObjectCommon();
-        remainingChars();
-        return new JSONObject(map);
+    private boolean isOver() {
+        return location >= text.length();
     }
 
-    private @NotNull JSONArray parseArray() throws JSONParseException {
-        reset();
-        if (next() != '[') {
-            throw getException("配列は[で開始される必要があります");
-        }
-
-        if (array() instanceof List<Object> list) {
-            remainingChars();
-            return new JSONArray(list);
-        }
-        else throw getException("配列ではありません");
-    }
-
-    private void reset() {
-        map.clear();
-        location = 0;
-    }
-
-    private void back() {
-        location--;
-    }
-
-    private char next() {
-        if (location == text.length()) {
-            throw getException("文字列の長さが期待より不足しています");
+    private char next(boolean ignorable) {
+        if (isOver()) {
+            throw newException("文字列の長さが期待より不足しています");
         }
 
         final char next = text.charAt(location++);
 
-        if (next == ' ') {
-            return next();
+        if (ignorable) {
+            return WHITESPACE.contains(next) ? next(true) : next;
         }
-
         return next;
     }
 
-    private char nextIncludesWhiteSpace() {
-        if (location == text.length()) {
-            throw getException("文字列の長さが期待より不足しています");
-        }
-
-        return text.charAt(location++);
+    private void back() {
+        if (location > 0) location--;
     }
 
-    private Object element() {
-        final char current = next();
-        return switch (current) {
-            case '{' -> object();
-            case '[' -> array();
-            case '"' -> string();
-            case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-' -> number(current);
-            case 't', 'f' -> bool(current);
-            case 'n' -> __null__();
-            default -> throw getException("要素から次の要素への移動中に無効な文字を検知しました");
-        };
+    private void whitespace() {
+        if (isOver()) return;
+
+        final char current = text.charAt(location++);
+
+        if (WHITESPACE.contains(current)) {
+            whitespace();
+        }
+        else {
+            location--;
+        }
     }
 
-    private JSONParser parseObjectCommon() {
-        if (next() != '{') {
-            throw getException("オブジェクトは{で開始される必要があります");
+    private boolean test(@NotNull String next) {
+        if (isOver()) return false;
+
+        whitespace();
+
+        final String str = text.substring(location);
+
+        return str.startsWith(next);
+    }
+
+    private boolean test(char next) {
+        return test(String.valueOf(next));
+    }
+
+    private boolean next(@NotNull String next) {
+        if (isOver()) return false;
+
+        whitespace();
+
+        final String str = text.substring(location);
+
+        if (str.startsWith(next)) {
+            location += next.length();
+            whitespace();
+            return true;
         }
 
-        final char current = next();
+        return false;
+    }
 
-        switch (current) {
-            case '}':
-                break;
-            case '"':
-                key();
-                char expectedBraceEnd = next();
-                if (expectedBraceEnd != '}') {
-                    throw getException("オブジェクトの解析中に無効な文字を検知しました");
+    private boolean next(char next) {
+        return next(String.valueOf(next));
+    }
+
+    private void expect(@NotNull String next) {
+        if (!next(next)) {
+            throw newException("期待された文字列は" + next + "でしたが、テストが偽を返しました");
+        }
+    }
+
+    private void expect(char next) {
+        expect(String.valueOf(next));
+    }
+
+    private @NotNull String stringValue() {
+        final StringBuilder sb = new StringBuilder();
+        char current = next(true);
+
+        if (QUOTES.contains(current)) {
+            final char quote = current;
+            char previous = current;
+            current = next(false);
+
+            while (previous == ESCAPE || current != quote) {
+                if (previous == ESCAPE && current == quote) {
+                    sb.delete(sb.length() - 1, sb.length());
                 }
-                break;
-            default:
-                throw getException("オブジェクトの解析中に無効な文字を検知しました");
-        }
 
-        return this;
+                sb.append(current);
+
+                previous = current;
+                current = next(false);
+            }
+
+            return sb.toString();
+        }
+        else throw newException("文字列はクォーテーションで開始される必要があります");
     }
 
-    private void remainingChars() {
-        while (text.length() > location) {
-            if (text.charAt(location++) != ' ') {
-                throw getException("json文字列の後に無効な文字を検知しました");
-            }
+    private @NotNull Double numberValue() {
+        final StringBuilder sb = new StringBuilder();
+        char current = next(false);
+
+        if (SIGNS.contains(current) || NUMBERS.contains(current)) {
+            sb.append(current);
         }
-    }
-
-    private void key() {
-        final String key = string();
-        final char current = next();
-        if (current == ':') {
-            map.put(key, element());
-            final char commaOrBrace = next();
-            if (commaOrBrace == ',') {
-                final char quote = next();
-                if (quote == '"') key();
-                else throw getException("ペアの解析中に無効な文字を検知しました");
-            }
-            else if (commaOrBrace == '}') {
-                back();
-            }
-            else {
-                throw getException("閉じ括弧が見つかりません");
-            }
-        }
-        else throw getException("ペアの解析中に無効な文字を検知しました");
-    }
-
-    private Map<String, Object> object() {
-        var object = new JSONParser(text.substring(location - 1)).parseObjectCommon();
-        location += object.location - 1;
-        return object.map;
-    }
-
-    private List<Object> array() {
-        var list = new ArrayList<>();
-        var next = next();
-
-        if (next == ']') {
-            return list;
+        else {
+            throw newException("数値の解析中に無効な文字を検出しました: " + current);
         }
 
-        back();
+        char previous;
+        boolean decimalPointAppeared = false;
 
-        do {
-            list.add(element());
-            next = next();
-        }
-        while (next == ',');
-
-        if (next == ']') return list;
-        else throw getException("配列は]で終了される必要があります");
-    }
-
-    private String string() {
-        char previous = '"';
-        char current = nextIncludesWhiteSpace();
-        StringBuilder str = new StringBuilder();
-        while (true) {
-            if (previous != '\\' && current == '"') {
-                break;
-            }
-            else if (previous == '\\' && current == '"') {
-                str.delete(str.length() - 1, str.length());
-            }
-
-            str.append(current);
-
+        while (!isOver()) {
             previous = current;
-            current = nextIncludesWhiteSpace();
-        }
+            current = next(false);
 
-        return str.toString();
-    }
-
-    private double number(char start) {
-        char previous = start;
-        char current = next();
-        boolean includesDot = false;
-        StringBuilder str = new StringBuilder();
-        str.append(previous);
-        while (true) {
-            if ("0123456789".contains(String.valueOf(current))) {
-                str.append(current);
+            if (NUMBERS.contains(current)) {
+                sb.append(current);
             }
-            else if ("0123456789".contains(String.valueOf(previous)) && current == '.' && !includesDot) {
-                str.append(current);
-                includesDot = true;
+            else if (NUMBERS.contains(previous) && current == DECIMAL_POINT && !decimalPointAppeared) {
+                sb.append(current);
+                decimalPointAppeared = true;
             }
-            else if (current == ',' || current == '}' || current == ']') {
+            else if (SYMBOLS_ON_STRING.contains(current)) {
                 back();
                 break;
             }
-            else throw getException("数値の解析中に無効な文字を検知しました");
-
-            previous = current;
-            current = next();
+            else throw newException("数値の解析中に無効な文字を検出しました: " + current);
         }
 
-        return Double.parseDouble(str.toString());
-    }
-
-    private boolean bool(char start) {
-        StringBuilder str = new StringBuilder();
-        str.append(start);
-        while (true) {
-            str.append(next());
-
-            String built = str.toString();
-
-            if (built.startsWith("true")) {
-                if (built.equals("true")) return true;
-                else throw getException("真偽値の解析中に無効な文字を検知しました");
-            }
-            else if (built.startsWith("false")) {
-                if (built.equals("false")) return false;
-                else throw getException("真偽値の解析中に無効な文字を検知しました");
-            }
+        if (!NUMBERS.contains(sb.charAt(sb.length() - 1))) {
+            throw newException("数値は数字で終わる必要があります");
         }
+
+        return NUMBER_PARSER.apply(sb.toString());
     }
 
-    private @Nullable Object __null__() {
-        char u = next();
-        if (u != 'u') throw getException("null値の解析中に無効な文字を検知しました");
-        char l = next();
-        if (l != 'l') throw getException("null値の解析中に無効な文字を検知しました");
-        char l_2 = next();
-        if (l_2 != 'l') throw getException("null値の解析中に無効な文字を検知しました");
-        return null;
-    }
-
-    private @NotNull JSONParseException getException(@NotNull String message) {
-        return new JSONParseException(message, text, location);
-    }
-
-    public static @NotNull JSONObject parseObject(@NotNull String text) throws JSONParseException {
-        return new JSONParser(text).parseObject();
-    }
-
-    public static @NotNull JSONArray parseArray(@NotNull String text) throws JSONParseException {
-        return new JSONParser(text).parseArray();
-    }
-
-    public static @NotNull JSONStructure parse(@NotNull String text) throws JSONParseException {
-        if (isObject(text)) {
-            return parseObject(text);
+    private @NotNull Boolean booleanValue() {
+        if (next(BOOLEANS[0])) {
+            return false;
         }
-        else if (isArray(text)) {
-            return parseArray(text);
+        else if (next(BOOLEANS[1])) {
+            return true;
         }
-        else throw new JSONParseException("文字列の解析に失敗しました", text.trim(), 0);
+        else throw newException("真偽値が見つかりませんでした");
     }
 
-    public static boolean isObject(@NotNull String text) {
-        return new JSONParser(text).next() == '{';
+    private @NotNull JSONObject objectValue() {
+        expect(OBJECT_BRACES[0]);
+
+        final JSONObject jsonObject = new JSONObject();
+
+        if (next(OBJECT_BRACES[1])) {
+            return jsonObject;
+        }
+
+        keyValues(jsonObject);
+
+        expect(OBJECT_BRACES[1]);
+
+        return jsonObject;
     }
 
-    public static boolean isArray(@NotNull String text) {
-        return new JSONParser(text).next() == '[';
+    private @NotNull JSONArray arrayValue() {
+        expect(ARRAY_BRACES[0]);
+
+        final JSONArray array = new JSONArray();
+
+        if (next(ARRAY_BRACES[1])) {
+            return array;
+        }
+
+        elements(array);
+
+        expect(ARRAY_BRACES[1]);
+
+        return array;
+    }
+
+    private void keyValues(@NotNull JSONObject jsonObject) {
+        final String key = stringValue();
+        if (!next(COLON)) throw newException("コロンが必要です");
+        jsonObject.setKey(key, value());
+
+        final char commaOrBrace = next(true);
+
+        if (commaOrBrace == COMMA) keyValues(jsonObject);
+        else if (commaOrBrace == OBJECT_BRACES[1]) back();
+        else throw newException("閉じ括弧が見つかりません");
+    }
+
+    private void elements(@NotNull JSONArray array) {
+        array.add(value());
+
+        final char commaOrBrace = next(true);
+
+        if (commaOrBrace == COMMA) elements(array);
+        else if (commaOrBrace == ARRAY_BRACES[1]) back();
+        else throw newException("閉じ括弧が見つかりません");
+    }
+
+    private @NotNull  Object value() {
+        if (test(OBJECT_BRACES[0])) {
+            return objectValue();
+        }
+        else if (test(ARRAY_BRACES[0])) {
+            return arrayValue();
+        }
+        else if (QUOTES.stream().anyMatch(this::test)) {
+            return stringValue();
+        }
+        else if (Arrays.stream(BOOLEANS).anyMatch(this::test)) {
+            return booleanValue();
+        }
+        else if (SIGNS.stream().anyMatch(this::test) || NUMBERS.stream().anyMatch(this::test)) {
+            return numberValue();
+        }
+        else if (next(NULL)) {
+            return JSONNull.NULL;
+        }
+        else throw newException("値が見つかりませんでした");
+    }
+
+    private void extraChars() {
+        if (!isOver()) throw newException("解析終了後、末尾に無効な文字列(" + text.substring(location) + ")を検出しました");
+    }
+
+    private @NotNull Object parse() {
+        if (text == null) {
+            throw newException("textがnullです");
+        }
+
+        final Object value = value();
+        extraChars();
+        return value;
+    }
+
+    private static <T> @NotNull T parseAs(@NotNull String text, @NotNull Class<T> clazz) {
+        final JSONParser parser = new JSONParser();
+        parser.text = text;
+        final Object value = parser.parse();
+
+        if (clazz.isInstance(value)) {
+            return clazz.cast(value);
+        }
+        else throw new IllegalArgumentException("期待された型(" + clazz.getName() + ")と取得した値(" + value.getClass().getName() + ")が一致しません");
+    }
+
+    public static @NotNull JSONObject object(@NotNull String text) throws JSONParseException {
+        return parseAs(text, JSONObject.class);
+    }
+
+    public static @NotNull JSONArray array(@NotNull String text) throws JSONParseException {
+        return parseAs(text, JSONArray.class);
+    }
+
+    public static @NotNull JSONStructure structure(@NotNull String text) throws JSONParseException {
+        return parseAs(text, JSONStructure.class);
     }
 }

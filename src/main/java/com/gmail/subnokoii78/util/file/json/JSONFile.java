@@ -94,7 +94,7 @@ public class JSONFile {
     }
 
     public @NotNull JSONStructure read() throws JSONParseException, IllegalStateException {
-        return JSONParser.parse(readFromFile());
+        return JSONParser.structure(readFromFile());
     }
 
     public void write(@NotNull JSONStructure structure) throws JSONSerializeException, IllegalStateException {
@@ -102,11 +102,11 @@ public class JSONFile {
     }
 
     public @NotNull JSONObject readAsObject() throws JSONParseException, IllegalStateException {
-        return JSONParser.parseObject(readFromFile());
+        return JSONParser.object(readFromFile());
     }
 
     public @NotNull JSONArray readAsArray() throws JSONParseException, IllegalStateException {
-        return JSONParser.parseArray(readFromFile());
+        return JSONParser.array(readFromFile());
     }
 
     public void edit(@NotNull Function<JSONStructure, JSONStructure> function) throws JSONParseException, JSONSerializeException, IllegalStateException {

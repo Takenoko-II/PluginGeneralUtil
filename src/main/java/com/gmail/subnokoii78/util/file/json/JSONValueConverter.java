@@ -31,7 +31,7 @@ public abstract class JSONValueConverter<T> {
     public static final JSONValueConverter<Vector3Builder> VECTOR3 = new JSONValueConverter<>(Vector3Builder.class) {
         private boolean isNumberKey(@NotNull JSONObject jsonObject, @NotNull String key) {
             if (jsonObject.hasKey(key)) {
-                return jsonObject.getTypeOfKey(key).equals(JSONValueType.NUMBER);
+                return jsonObject.getTypeOfKey(key).equals(JSONValueTypes.NUMBER);
             }
             else return false;
         }
@@ -39,17 +39,17 @@ public abstract class JSONValueConverter<T> {
         private @Nullable Vector3Builder object(@NotNull JSONObject jsonObject) {
             if (isNumberKey(jsonObject, "x") && isNumberKey(jsonObject, "y") && isNumberKey(jsonObject, "z")) {
                 return new Vector3Builder(
-                    jsonObject.getKey("x", JSONValueType.NUMBER).doubleValue(),
-                    jsonObject.getKey("y", JSONValueType.NUMBER).doubleValue(),
-                    jsonObject.getKey("z", JSONValueType.NUMBER).doubleValue()
+                    jsonObject.getKey("x", JSONValueTypes.NUMBER).doubleValue(),
+                    jsonObject.getKey("y", JSONValueTypes.NUMBER).doubleValue(),
+                    jsonObject.getKey("z", JSONValueTypes.NUMBER).doubleValue()
                 );
             }
             else return null;
         }
 
         private @Nullable Vector3Builder array(@NotNull JSONArray jsonArray) {
-            if (jsonArray.length() == 3 && jsonArray.isArrayOf(JSONValueType.NUMBER)) {
-                final TypedJSONArray<Number> typedJSONArray = jsonArray.typed(JSONValueType.NUMBER);
+            if (jsonArray.length() == 3 && jsonArray.isArrayOf(JSONValueTypes.NUMBER)) {
+                final TypedJSONArray<Number> typedJSONArray = jsonArray.typed(JSONValueTypes.NUMBER);
                 return new Vector3Builder(
                     typedJSONArray.get(0).doubleValue(),
                     typedJSONArray.get(1).doubleValue(),
@@ -72,7 +72,7 @@ public abstract class JSONValueConverter<T> {
     public static final JSONValueConverter<DualAxisRotationBuilder> DUAL_AXIS_ROTATION = new JSONValueConverter<>(DualAxisRotationBuilder.class) {
         private boolean isNumberKey(@NotNull JSONObject jsonObject, @NotNull String key) {
             if (jsonObject.hasKey(key)) {
-                return jsonObject.getTypeOfKey(key).equals(JSONValueType.NUMBER);
+                return jsonObject.getTypeOfKey(key).equals(JSONValueTypes.NUMBER);
             }
             else return false;
         }
@@ -80,16 +80,16 @@ public abstract class JSONValueConverter<T> {
         private @Nullable DualAxisRotationBuilder object(@NotNull JSONObject jsonObject) {
             if (isNumberKey(jsonObject, "yaw") && isNumberKey(jsonObject, "pitch")) {
                 return new DualAxisRotationBuilder(
-                    jsonObject.getKey("yaw", JSONValueType.NUMBER).floatValue(),
-                    jsonObject.getKey("pitch", JSONValueType.NUMBER).floatValue()
+                    jsonObject.getKey("yaw", JSONValueTypes.NUMBER).floatValue(),
+                    jsonObject.getKey("pitch", JSONValueTypes.NUMBER).floatValue()
                 );
             }
             else return null;
         }
 
         private @Nullable DualAxisRotationBuilder array(@NotNull JSONArray jsonArray) {
-            if (jsonArray.length() == 2 && jsonArray.isArrayOf(JSONValueType.NUMBER)) {
-                final TypedJSONArray<Number> typedJSONArray = jsonArray.typed(JSONValueType.NUMBER);
+            if (jsonArray.length() == 2 && jsonArray.isArrayOf(JSONValueTypes.NUMBER)) {
+                final TypedJSONArray<Number> typedJSONArray = jsonArray.typed(JSONValueTypes.NUMBER);
                 return new DualAxisRotationBuilder(
                     typedJSONArray.get(0).floatValue(),
                     typedJSONArray.get(1).floatValue()
@@ -111,7 +111,7 @@ public abstract class JSONValueConverter<T> {
     public static final JSONValueConverter<TripleAxisRotationBuilder> TRIPLE_AXIS_ROTATION = new JSONValueConverter<>(TripleAxisRotationBuilder.class) {
         private boolean isNumberKey(@NotNull JSONObject jsonObject, @NotNull String key) {
             if (jsonObject.hasKey(key)) {
-                return jsonObject.getTypeOfKey(key).equals(JSONValueType.NUMBER);
+                return jsonObject.getTypeOfKey(key).equals(JSONValueTypes.NUMBER);
             }
             else return false;
         }
@@ -119,17 +119,17 @@ public abstract class JSONValueConverter<T> {
         private @Nullable TripleAxisRotationBuilder object(@NotNull JSONObject jsonObject) {
             if (isNumberKey(jsonObject, "yaw") && isNumberKey(jsonObject, "pitch") && isNumberKey(jsonObject, "roll")) {
                 return new TripleAxisRotationBuilder(
-                    jsonObject.getKey("yaw", JSONValueType.NUMBER).floatValue(),
-                    jsonObject.getKey("pitch", JSONValueType.NUMBER).floatValue(),
-                    jsonObject.getKey("roll", JSONValueType.NUMBER).floatValue()
+                    jsonObject.getKey("yaw", JSONValueTypes.NUMBER).floatValue(),
+                    jsonObject.getKey("pitch", JSONValueTypes.NUMBER).floatValue(),
+                    jsonObject.getKey("roll", JSONValueTypes.NUMBER).floatValue()
                 );
             }
             else return null;
         }
 
         private @Nullable TripleAxisRotationBuilder array(@NotNull JSONArray jsonArray) {
-            if (jsonArray.length() == 3 && jsonArray.isArrayOf(JSONValueType.NUMBER)) {
-                final TypedJSONArray<Number> typedJSONArray = jsonArray.typed(JSONValueType.NUMBER);
+            if (jsonArray.length() == 3 && jsonArray.isArrayOf(JSONValueTypes.NUMBER)) {
+                final TypedJSONArray<Number> typedJSONArray = jsonArray.typed(JSONValueTypes.NUMBER);
                 return new TripleAxisRotationBuilder(
                     typedJSONArray.get(0).floatValue(),
                     typedJSONArray.get(1).floatValue(),
@@ -154,9 +154,9 @@ public abstract class JSONValueConverter<T> {
         protected @Nullable Location tryConvert(@NotNull Object value) {
             if (!(value instanceof JSONObject jsonObject)) return null;
             else if (!(jsonObject.hasKey("dimension") && jsonObject.hasKey("location") && jsonObject.hasKey("rotation"))) return null;
-            else if (!(jsonObject.getTypeOfKey("dimension").equals(JSONValueType.STRING))) return null;
+            else if (!(jsonObject.getTypeOfKey("dimension").equals(JSONValueTypes.STRING))) return null;
 
-            final World dimension = DimensionProvider.of(jsonObject.getKey("dimension", JSONValueType.STRING)).getWorld();
+            final World dimension = DimensionProvider.of(jsonObject.getKey("dimension", JSONValueTypes.STRING)).getWorld();
             final Object location = jsonObject.getKey("location", jsonObject.getTypeOfKey("location"));
             final Object rotation = jsonObject.getKey("rotation", jsonObject.getTypeOfKey("rotation"));
 

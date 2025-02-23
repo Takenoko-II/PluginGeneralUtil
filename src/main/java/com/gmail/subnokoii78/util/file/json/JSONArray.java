@@ -29,7 +29,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
             throw new IllegalArgumentException("インデックス '" + index + "' は存在しません");
         }
 
-        return JSONValueType.of(value.get(index));
+        return JSONValueTypes.get(value.get(index));
     }
 
     public <T> T get(int index, @NotNull JSONValueType<T> type) {
@@ -41,7 +41,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
             throw new IllegalArgumentException("インデックス '" + index + "' は期待される型の値と紐づけられていません");
         }
 
-        return type.get(value.get(index));
+        return type.cast(value.get(index));
     }
 
     public <T> @NotNull T get(int index, @NotNull JSONValueConverter<T> converter) {
@@ -53,7 +53,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
             throw new IllegalArgumentException("そのインデックスは使用できません");
         }
 
-        JSONValueType.throwIfInvalid(value);
+        JSONValueTypes.checkIsValid(value);
 
         if (value instanceof JSONValue<?> jsonValue) {
             this.value.add(index, jsonValue);
@@ -64,7 +64,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
     }
 
     public void add(Object value) {
-        JSONValueType.throwIfInvalid(value);
+        JSONValueTypes.checkIsValid(value);
 
         if (value instanceof JSONValue<?> jsonValue) {
             this.value.add(jsonValue);
@@ -79,7 +79,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
             throw new IllegalArgumentException("そのインデックスは使用できません");
         }
 
-        JSONValueType.throwIfInvalid(value);
+        JSONValueTypes.checkIsValid(value);
 
         if (value instanceof JSONValue<?> jsonValue) {
             this.value.set(index, jsonValue.value);
@@ -118,12 +118,12 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
         for (int i = 0; i < length(); i++) {
             final JSONValueType<?> type = getTypeAt(i);
 
-            if (type.equals(JSONValueType.OBJECT)) {
-                final JSONObject object = get(i, JSONValueType.OBJECT);
+            if (type.equals(JSONValueTypes.OBJECT)) {
+                final JSONObject object = get(i, JSONValueTypes.OBJECT);
                 list.add(object.asMap());
             }
-            else if (type.equals(JSONValueType.ARRAY)) {
-                final JSONArray array = get(i, JSONValueType.ARRAY);
+            else if (type.equals(JSONValueTypes.ARRAY)) {
+                final JSONArray array = get(i, JSONValueTypes.ARRAY);
                 list.add(array.asList());
             }
             else {

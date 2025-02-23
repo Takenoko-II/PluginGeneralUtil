@@ -379,29 +379,27 @@ public class MojangsonParser {
         else throw new MojangsonParseException("期待された型(" + clazz.getName() + ")と取得した値(" + value.getClass().getName() + ")が一致しません");
     }
 
-    public static @NotNull MojangsonValue<?> object(@NotNull String text) {
-        final MojangsonParser parser = new MojangsonParser();
-        parser.text = text;
-        return parser.parse();
+    public static @NotNull MojangsonValue<?> object(@NotNull String text) throws MojangsonParseException {
+        return parseAs(text, MojangsonValue.class);
     }
 
-    public static @NotNull MojangsonCompound compound(@NotNull String text) {
+    public static @NotNull MojangsonCompound compound(@NotNull String text) throws MojangsonParseException {
         return parseAs(text, MojangsonCompound.class);
     }
 
-    public static @NotNull MojangsonList list(@NotNull String text) {
+    public static @NotNull MojangsonList list(@NotNull String text) throws MojangsonParseException {
         return parseAs(text, MojangsonList.class);
     }
 
-    public static @NotNull MojangsonByteArray byteArray(@NotNull String text) {
+    public static @NotNull MojangsonByteArray byteArray(@NotNull String text) throws MojangsonParseException {
         return parseAs(text, MojangsonByteArray.class);
     }
 
-    public static @NotNull MojangsonIntArray intArray(@NotNull String text) {
+    public static @NotNull MojangsonIntArray intArray(@NotNull String text) throws MojangsonParseException {
         return parseAs(text, MojangsonIntArray.class);
     }
 
-    public static @NotNull MojangsonLongArray longArray(@NotNull String text) {
+    public static @NotNull MojangsonLongArray longArray(@NotNull String text) throws MojangsonParseException {
         return parseAs(text, MojangsonLongArray.class);
     }
 }

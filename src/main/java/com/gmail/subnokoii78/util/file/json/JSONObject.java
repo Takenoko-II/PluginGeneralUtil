@@ -28,7 +28,7 @@ public final class JSONObject extends JSONValue<Map<String, Object>> implements 
             throw new IllegalArgumentException("キー '" + key + "' は存在しません");
         }
 
-        return JSONValueType.of(value.get(key));
+        return JSONValueTypes.get(value.get(key));
     }
 
     public @NotNull <T> T getKey(@NotNull String key, JSONValueType<T> type) {
@@ -40,11 +40,11 @@ public final class JSONObject extends JSONValue<Map<String, Object>> implements 
             throw new IllegalArgumentException("キー '" + key + "' は期待される型の値と紐づけられていません");
         }
 
-        return type.get(value.get(key));
+        return type.cast(value.get(key));
     }
 
     public void setKey(@NotNull String key, Object value) {
-        JSONValueType.throwIfInvalid(value);
+        JSONValueTypes.checkIsValid(value);
 
         if (value instanceof JSONValue<?> jsonValue) {
             this.value.put(key, jsonValue.value);
@@ -78,12 +78,12 @@ public final class JSONObject extends JSONValue<Map<String, Object>> implements 
         for (String key : keys()) {
             final JSONValueType<?> type = getTypeOfKey(key);
 
-            if (type.equals(JSONValueType.OBJECT)) {
-                final JSONObject object = getKey(key, JSONValueType.OBJECT);
+            if (type.equals(JSONValueTypes.OBJECT)) {
+                final JSONObject object = getKey(key, JSONValueTypes.OBJECT);
                 map.put(key, object.asMap());
             }
-            else if (type.equals(JSONValueType.ARRAY)) {
-                final JSONArray array = getKey(key, JSONValueType.ARRAY);
+            else if (type.equals(JSONValueTypes.ARRAY)) {
+                final JSONArray array = getKey(key, JSONValueTypes.ARRAY);
                 map.put(key, array.asList());
             }
             else {

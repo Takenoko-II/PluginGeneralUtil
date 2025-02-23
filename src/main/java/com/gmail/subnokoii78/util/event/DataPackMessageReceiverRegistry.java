@@ -2,6 +2,7 @@ package com.gmail.subnokoii78.util.event;
 
 import com.gmail.subnokoii78.util.file.json.JSONObject;
 import com.gmail.subnokoii78.util.file.json.JSONValueType;
+import com.gmail.subnokoii78.util.file.json.JSONValueTypes;
 import com.gmail.subnokoii78.util.scoreboard.ScoreObjective;
 import com.gmail.subnokoii78.util.scoreboard.ScoreboardUtils;
 import org.jetbrains.annotations.NotNull;
@@ -23,8 +24,8 @@ public final class DataPackMessageReceiverRegistry {
         final JSONObject message = event.getMessage();
 
         if (!message.hasKey("id")) return;
-        else if (!message.getTypeOfKey("id").equals(JSONValueType.STRING)) return;
-        final String id = message.getKey("id", JSONValueType.STRING);
+        else if (!message.getTypeOfKey("id").equals(JSONValueTypes.STRING)) return;
+        final String id = message.getKey("id", JSONValueTypes.STRING);
 
         for (final String receiverId : receivers.keySet()) {
             if (receiverId.equals(id)) {

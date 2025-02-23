@@ -33,7 +33,7 @@ public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T>
             throw new IllegalArgumentException("インデックス '" + index + "' は存在しません");
         }
 
-        return JSONValueType.of(value.get(index)).equals(type);
+        return JSONValueTypes.get(value.get(index)).equals(type);
     }
 
     public T get(int index) {

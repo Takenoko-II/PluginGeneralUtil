@@ -64,7 +64,7 @@ public final class PaperVelocityManager implements PluginMessageListener {
                     throw new RuntimeException("データの読み取りに失敗しました");
                 }
 
-                final JSONObject jsonObject = JSONParser.parseObject(jsonString);
+                final JSONObject jsonObject = JSONParser.object(jsonString);
 
                 customPluginMessageReceivers.forEach(receiver -> {
                     receiver.accept(jsonObject);

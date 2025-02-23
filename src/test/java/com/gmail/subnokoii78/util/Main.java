@@ -1,7 +1,11 @@
 package com.gmail.subnokoii78.util;
 
+import com.gmail.subnokoii78.util.file.json.JSONObject;
+import com.gmail.subnokoii78.util.file.json.JSONParser;
+import com.gmail.subnokoii78.util.file.json.JSONValueType;
+import com.gmail.subnokoii78.util.file.json.JSONValueTypes;
 import com.gmail.subnokoii78.util.file.mojangson.MojangsonParser;
-import com.gmail.subnokoii78.util.file.mojangson.values.MojangsonCompound;
+import com.gmail.subnokoii78.util.file.mojangson.values.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -27,5 +31,11 @@ public class Main {
             }
             """
         );
+
+        final JSONObject jsonObject = JSONParser.object("{\"key\": \"value\"}");
+        final String string = jsonObject.get("key", JSONValueTypes.STRING);
+        System.out.println(string);
+        jsonObject.set("foo.bar", JSONParser.array("[1, 2, 3]"));
+        System.out.println(jsonObject.get("foo.bar", JSONValueTypes.ARRAY));
     }
 }
