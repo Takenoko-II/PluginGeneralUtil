@@ -15,7 +15,7 @@ public class MojangsonIntArray extends MojangsonValue<int[]> implements Mojangso
     }
 
     @Override
-    public @NotNull MojangsonStructure copy() {
+    public @NotNull MojangsonIntArray copy() {
         return toArray(toList());
     }
 

@@ -245,7 +245,7 @@ public class MojangsonParser {
             parser = decimalPointAppeared ? DEFAULT_DECIMAL_PARSER : DEFAULT_INT_PARSER;
         }
 
-        return MojangsonNumber.toSubClass(parser.apply(sb.toString()));
+        return MojangsonNumber.upcastedValueOf(parser.apply(sb.toString()));
     }
 
     private @Nullable MojangsonByte booleanAsByte() {

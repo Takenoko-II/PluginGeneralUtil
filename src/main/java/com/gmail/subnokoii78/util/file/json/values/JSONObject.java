@@ -1,17 +1,18 @@
-package com.gmail.subnokoii78.util.file.json;
+package com.gmail.subnokoii78.util.file.json.values;
 
+import com.gmail.subnokoii78.util.file.json.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public final class JSONObject extends JSONValue<Map<String, Object>> implements JSONStructure {
+public final class JSONObject extends JSONValue<Map<String, JSONValue<?>>> implements JSONStructure {
     private final JSONPathAccessor accessor = new JSONPathAccessor(this);
 
     public JSONObject() {
         super(new HashMap<>());
     }
 
-    public JSONObject(@NotNull Map<String, Object> map) {
+    public JSONObject(@NotNull Map<String, JSONValue<?>> map) {
         super(map);
     }
 
@@ -31,7 +32,7 @@ public final class JSONObject extends JSONValue<Map<String, Object>> implements 
         return JSONValueTypes.get(value.get(key));
     }
 
-    public @NotNull <T> T getKey(@NotNull String key, JSONValueType<T> type) {
+    public @NotNull <T extends JSONValue<?>> T getKey(@NotNull String key, JSONValueType<T> type) {
         if (!hasKey(key)) {
             throw new IllegalArgumentException("キー '" + key + "' は存在しません");
         }
@@ -44,14 +45,7 @@ public final class JSONObject extends JSONValue<Map<String, Object>> implements 
     }
 
     public void setKey(@NotNull String key, Object value) {
-        JSONValueTypes.checkIsValid(value);
-
-        if (value instanceof JSONValue<?> jsonValue) {
-            this.value.put(key, jsonValue.value);
-        }
-        else {
-            this.value.put(key, value);
-        }
+        this.value.put(key, JSONValueTypes.get(value).cast(value));
     }
 
     public void deleteKey(@NotNull String key) {
@@ -96,7 +90,7 @@ public final class JSONObject extends JSONValue<Map<String, Object>> implements 
 
     @Override
     public @NotNull JSONObject copy() {
-        return new JSONObject(asMap());
+        return JSONValueTypes.OBJECT.cast(asMap());
     }
 
     public boolean has(@NotNull String path) {
@@ -107,11 +101,11 @@ public final class JSONObject extends JSONValue<Map<String, Object>> implements 
         return accessor.getTypeOf(path);
     }
 
-    public <T> @NotNull T get(@NotNull String path, @NotNull JSONValueType<T> type) {
+    public <T extends JSONValue<?>> @NotNull T get(@NotNull String path, @NotNull JSONValueType<T> type) {
         return accessor.get(path, type);
     }
 
-    public <T> @NotNull T get(@NotNull String path, @NotNull JSONValueConverter<T> converter) {
+    public <T extends JSONValue<?>> @NotNull T get(@NotNull String path, @NotNull JSONValueConverter<T> converter) {
         final T v = accessor.access(path, false, accessor -> {
             final Object value = accessor.get(accessor.getType());
             return converter.convert(value);

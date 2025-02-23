@@ -15,7 +15,7 @@ public class MojangsonLongArray extends MojangsonValue<long[]> implements Mojang
     }
 
     @Override
-    public @NotNull MojangsonStructure copy() {
+    public @NotNull MojangsonLongArray copy() {
         return toArray(toList());
     }
 

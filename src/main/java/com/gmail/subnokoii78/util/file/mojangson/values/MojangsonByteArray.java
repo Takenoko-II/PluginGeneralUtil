@@ -15,7 +15,7 @@ public class MojangsonByteArray extends MojangsonValue<byte[]> implements Mojang
     }
 
     @Override
-    public @NotNull MojangsonStructure copy() {
+    public @NotNull MojangsonByteArray copy() {
         return toArray(toList());
     }
 

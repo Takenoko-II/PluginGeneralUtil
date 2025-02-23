@@ -32,7 +32,7 @@ public class MojangsonNumber<T extends Number> extends MojangsonPrimitive<T> {
         return value.doubleValue();
     }
 
-    public static @NotNull MojangsonNumber<?> toSubClass(@NotNull Number value) {
+    public static @NotNull MojangsonNumber<?> upcastedValueOf(@NotNull Number value) {
         return (MojangsonNumber<?>) MojangsonValueTypes.get(value).cast(value);
     }
 }

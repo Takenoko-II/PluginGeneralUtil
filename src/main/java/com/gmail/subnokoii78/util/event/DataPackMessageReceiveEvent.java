@@ -1,6 +1,6 @@
 package com.gmail.subnokoii78.util.event;
 
-import com.gmail.subnokoii78.util.file.json.JSONObject;
+import com.gmail.subnokoii78.util.file.json.values.JSONObject;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;

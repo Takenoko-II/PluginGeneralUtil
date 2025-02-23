@@ -1,19 +1,19 @@
-package com.gmail.subnokoii78.util.file.json;
+package com.gmail.subnokoii78.util.file.json.values;
 
+import com.gmail.subnokoii78.util.file.json.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-public final class JSONArray extends JSONValue<List<Object>> implements Iterable<Object>, JSONStructure {
+public final class JSONArray extends JSONValue<List<JSONValue<?>>> implements JSONIterable<JSONValue<?>>, JSONStructure {
     public JSONArray() {
         super(new ArrayList<>());
     }
 
-    public JSONArray(@NotNull Collection<?> collection) {
-        super(new ArrayList<>(collection));
+    public JSONArray(@NotNull List<JSONValue<?>> list) {
+        super(new ArrayList<>(list));
     }
 
     public boolean has(int index) {
@@ -32,7 +32,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
         return JSONValueTypes.get(value.get(index));
     }
 
-    public <T> T get(int index, @NotNull JSONValueType<T> type) {
+    public <T extends JSONValue<?>> T get(int index, @NotNull JSONValueType<T> type) {
         if (!has(index)) {
             throw new IllegalArgumentException("インデックス '" + index + "' は存在しません");
         }
@@ -53,25 +53,11 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
             throw new IllegalArgumentException("そのインデックスは使用できません");
         }
 
-        JSONValueTypes.checkIsValid(value);
-
-        if (value instanceof JSONValue<?> jsonValue) {
-            this.value.add(index, jsonValue);
-        }
-        else {
-            this.value.add(index, value);
-        }
+        this.value.add(index, JSONValueTypes.get(value).cast(value));
     }
 
     public void add(Object value) {
-        JSONValueTypes.checkIsValid(value);
-
-        if (value instanceof JSONValue<?> jsonValue) {
-            this.value.add(jsonValue);
-        }
-        else {
-            this.value.add(value);
-        }
+        this.value.add(JSONValueTypes.get(value).cast(value));
     }
 
     public void set(int index, Object value) {
@@ -79,14 +65,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
             throw new IllegalArgumentException("そのインデックスは使用できません");
         }
 
-        JSONValueTypes.checkIsValid(value);
-
-        if (value instanceof JSONValue<?> jsonValue) {
-            this.value.set(index, jsonValue.value);
-        }
-        else {
-            this.value.set(index, value);
-        }
+        this.value.set(index, JSONValueTypes.get(value).cast(value));
     }
 
     public void delete(int index) {
@@ -102,8 +81,8 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
     }
 
     @Override
-    public @NotNull Iterator<Object> iterator() {
-        final List<Object> list = new ArrayList<>();
+    public @NotNull Iterator<JSONValue<?>> iterator() {
+        final List<JSONValue<?>> list = new ArrayList<>();
 
         for (int i = 0; i < this.value.size(); i++) {
             list.add(get(i, getTypeAt(i)));
@@ -136,7 +115,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
 
     @Override
     public @NotNull JSONArray copy() {
-        return new JSONArray(asList());
+        return JSONValueTypes.ARRAY.cast(asList());
     }
 
     public boolean isArrayOf(@NotNull JSONValueType<?> type) {
@@ -149,7 +128,7 @@ public final class JSONArray extends JSONValue<List<Object>> implements Iterable
         return true;
     }
 
-    public <T> TypedJSONArray<T> typed(@NotNull JSONValueType<T> type) {
+    public <T extends JSONValue<?>> TypedJSONArray<T> typed(@NotNull JSONValueType<T> type) {
         final TypedJSONArray<T> array = new TypedJSONArray<>(type);
 
         for (int i = 0; i < length(); i++) {

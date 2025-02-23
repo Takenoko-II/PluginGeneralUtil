@@ -112,7 +112,7 @@ public class MojangsonList extends MojangsonValue<List<MojangsonValue<?>>> imple
     }
 
     @Override
-    public @NotNull MojangsonStructure copy() {
+    public @NotNull MojangsonList copy() {
         return MojangsonValueTypes.LIST.cast(asRawList());
     }
 }

@@ -1,14 +1,48 @@
 package com.gmail.subnokoii78.util;
 
-import com.gmail.subnokoii78.util.file.json.JSONObject;
-import com.gmail.subnokoii78.util.file.json.JSONParser;
-import com.gmail.subnokoii78.util.file.json.JSONValueType;
-import com.gmail.subnokoii78.util.file.json.JSONValueTypes;
+import com.gmail.subnokoii78.util.file.json.*;
+import com.gmail.subnokoii78.util.file.json.values.*;
 import com.gmail.subnokoii78.util.file.mojangson.MojangsonParser;
 import com.gmail.subnokoii78.util.file.mojangson.values.*;
 
 public class Main {
     public static void main(String[] args) {
+        final JSONObject jsonObject = JSONParser.object(
+            """
+            {
+                "header": {
+                    "format_version": "1.16.100",
+                    "description": "description da yoooon"
+                },
+                "modules": [
+                    {
+                        "type": "script",
+                        "language": "JavaScript",
+                        "entry": "scripts/main.js",
+                        "id": "foo"
+                    }
+                ],
+                "dependencies": [
+                    {
+                        "name": "@minecraft/server",
+                        "version": "2.0.0-alpha"
+                    }
+                ],
+                "data": {
+                    "int_id": -184629134,
+                    "rate": 0.462,
+                    "public": true,
+                    "key": "hoge-fuga-piyo-tarou-man",
+                    "array": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, null]
+                }
+            }
+            """
+        );
+
+        jsonObject.set("data.array[10]", 'a');
+
+        // System.out.println(JSONSerializer.serialize(jsonObject));
+
         final MojangsonCompound compound = MojangsonParser.compound(
             """
             {
@@ -31,11 +65,5 @@ public class Main {
             }
             """
         );
-
-        final JSONObject jsonObject = JSONParser.object("{\"key\": \"value\"}");
-        final String string = jsonObject.get("key", JSONValueTypes.STRING);
-        System.out.println(string);
-        jsonObject.set("foo.bar", JSONParser.array("[1, 2, 3]"));
-        System.out.println(jsonObject.get("foo.bar", JSONValueTypes.ARRAY));
     }
 }

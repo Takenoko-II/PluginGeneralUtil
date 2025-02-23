@@ -1,9 +1,14 @@
 package com.gmail.subnokoii78.util.file.json;
 
+import com.gmail.subnokoii78.util.file.json.values.*;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 
-public class JSONValueTypes {
-    public static JSONValueType<?> get(Object value) {
+public final class JSONValueTypes {
+    private JSONValueTypes() {}
+
+    public static @NotNull JSONValueType<?> get(Object value) {
         return switch (value) {
             case JSONValue<?> jsonValue -> get(jsonValue.value);
             case Boolean ignored -> BOOLEAN;
@@ -11,6 +16,7 @@ public class JSONValueTypes {
             case String ignored -> STRING;
             case Map<?, ?> ignored -> OBJECT;
             case Collection<?> ignored -> ARRAY;
+            case Character ignored -> STRING;
             case null -> NULL;
             default -> {
                 if (value.getClass().isArray()) yield ARRAY;
@@ -19,50 +25,33 @@ public class JSONValueTypes {
         };
     }
 
-    public static void checkIsValid(Object value) throws IllegalArgumentException {
-        switch (value) {
-            case JSONValue<?> ignored: break;
-            case Boolean ignored: break;
-            case Number ignored: break;
-            case String ignored: break;
-            case Map<?, ?> ignored: break;
-            case Collection<?> ignored: break;
-            case null: break;
-            default: if (!value.getClass().isArray()) throw new IllegalArgumentException("その型の値はJSON構造オブジェクトに使用できません: " + value.getClass().getName());
-        }
-    }
-
-    public static final JSONValueType<Boolean> BOOLEAN = new JSONValueType<>(Boolean.class) {
+    public static final @NotNull JSONValueType<JSONBoolean> BOOLEAN = new JSONValueType<>(JSONBoolean.class) {
         @Override
-        protected Boolean cast(Object value) {
-            if (value instanceof Boolean v) return v;
+        public JSONBoolean cast(Object value) {
+            if (value instanceof JSONBoolean v) return v;
+            else if (value instanceof Boolean v) return JSONBoolean.valueOf(v);
             else throw new IllegalArgumentException("value is not a boolean value");
         }
-
-        @Override
-        public String toString() {
-            return "Boolean";
-        }
     };
 
-    public static final JSONValueType<Number> NUMBER = new JSONValueType<>(Number.class) {
+    public static final @NotNull JSONValueType<JSONNumber> NUMBER = new JSONValueType<>(JSONNumber.class) {
         @Override
-        protected Number cast(Object value) {
-            if (value instanceof Number v) return v;
+        public JSONNumber cast(Object value) {
+            if (value instanceof JSONNumber v) return v;
+            else if (value instanceof Number v) return JSONNumber.valueOf(v);
             else throw new IllegalArgumentException("value is not a number value");
         }
-
-        @Override
-        public String toString() {
-            return "Number";
-        }
     };
 
-    public static final JSONValueType<String> STRING = new JSONValueType<>(String.class) {
+    public static final @NotNull JSONValueType<JSONString> STRING = new JSONValueType<>(JSONString.class) {
         @Override
-        protected String cast(Object value) {
-            if (value instanceof String v) return v;
-            else throw new IllegalArgumentException("value is not a string value");
+        public JSONString cast(Object value) {
+            return switch (value) {
+                case JSONString v -> v;
+                case String v -> JSONString.valueOf(v);
+                case Character v -> JSONString.valueOf(String.valueOf(v));
+                case null, default -> throw new IllegalArgumentException("value is not a string value");
+            };
         }
 
         @Override
@@ -71,17 +60,18 @@ public class JSONValueTypes {
         }
     };
 
-    public static final JSONValueType<JSONObject> OBJECT = new JSONValueType<>(JSONObject.class) {
+    public static final @NotNull JSONValueType<JSONObject> OBJECT = new JSONValueType<>(JSONObject.class) {
         @Override
-        protected JSONObject cast(Object value) {
+        public JSONObject cast(Object value) {
             if (value instanceof JSONObject jsonObject) return jsonObject;
 
             if (value instanceof Map<?, ?> map) {
-                final Map<String, Object> object = new HashMap<>();
+                final Map<String, JSONValue<?>> object = new HashMap<>();
 
                 for (final Object key : map.keySet()) {
                     if (key instanceof String string) {
-                        object.put(string, map.get(string));
+                        final Object val = map.get(string);
+                        object.put(string, get(val).cast(val));
                     }
                     else {
                         throw new IllegalArgumentException("A key of Map is not a string");
@@ -92,83 +82,119 @@ public class JSONValueTypes {
             }
             else throw new IllegalArgumentException("value is not a json object value: " + value.getClass().getName());
         }
+    };
 
+    public static final @NotNull JSONValueType<JSONArray> ARRAY = new JSONValueType<>(JSONArray.class) {
         @Override
-        public String toString() {
-            return "Object";
+        public JSONArray cast(Object value) {
+            switch (value) {
+                case JSONArray jsonArray -> {
+                    return jsonArray;
+                }
+                case Iterable<?> iterable -> {
+                    final List<JSONValue<?>> listOfJSONValue = new ArrayList<>();
+
+                    for (final Object element : iterable) {
+                        listOfJSONValue.add(get(element).cast(element));
+                    }
+
+                    return new JSONArray(listOfJSONValue);
+                }
+                case Object[] iterable -> {
+                    final List<JSONValue<?>> listOfJSONValue = new ArrayList<>();
+
+                    for (final Object element : iterable) {
+                        listOfJSONValue.add(get(element).cast(element));
+                    }
+
+                    return new JSONArray(listOfJSONValue);
+                }
+                case boolean[] iterable -> {
+                    final List<JSONValue<?>> listOfJSONValue = new ArrayList<>();
+
+                    for (final Object element : iterable) {
+                        listOfJSONValue.add(get(element).cast(element));
+                    }
+
+                    return new JSONArray(listOfJSONValue);
+                }
+                case byte[] iterable -> {
+                    final List<JSONValue<?>> listOfJSONValue = new ArrayList<>();
+
+                    for (final Object element : iterable) {
+                        listOfJSONValue.add(get(element).cast(element));
+                    }
+
+                    return new JSONArray(listOfJSONValue);
+                }
+                case short[] iterable -> {
+                    final List<JSONValue<?>> listOfJSONValue = new ArrayList<>();
+
+                    for (final Object element : iterable) {
+                        listOfJSONValue.add(get(element).cast(element));
+                    }
+
+                    return new JSONArray(listOfJSONValue);
+                }
+                case int[] iterable -> {
+                    final List<JSONValue<?>> listOfJSONValue = new ArrayList<>();
+
+                    for (final Object element : iterable) {
+                        listOfJSONValue.add(get(element).cast(element));
+                    }
+
+                    return new JSONArray(listOfJSONValue);
+                }
+                case long[] iterable -> {
+                    final List<JSONValue<?>> listOfJSONValue = new ArrayList<>();
+
+                    for (final Object element : iterable) {
+                        listOfJSONValue.add(get(element).cast(element));
+                    }
+
+                    return new JSONArray(listOfJSONValue);
+                }
+                case char[] iterable -> {
+                    final List<JSONValue<?>> listOfJSONValue = new ArrayList<>();
+
+                    for (final Object element : iterable) {
+                        listOfJSONValue.add(get(element).cast(element));
+                    }
+
+                    return new JSONArray(listOfJSONValue);
+                }
+                case float[] iterable -> {
+                    final List<JSONValue<?>> listOfJSONValue = new ArrayList<>();
+
+                    for (final Object element : iterable) {
+                        listOfJSONValue.add(get(element).cast(element));
+                    }
+
+                    return new JSONArray(listOfJSONValue);
+                }
+                case double[] iterable -> {
+                    final List<JSONValue<?>> listOfJSONValue = new ArrayList<>();
+
+                    for (final Object element : iterable) {
+                        listOfJSONValue.add(get(element).cast(element));
+                    }
+
+                    return new JSONArray(listOfJSONValue);
+                }
+                case null -> {
+                    throw new IllegalArgumentException("value is not a json array value: null");
+                }
+                default -> throw new IllegalArgumentException("value is not a json array value: " + value.getClass().getName());
+            }
         }
     };
 
-    public static final JSONValueType<JSONArray> ARRAY = new JSONValueType<>(JSONArray.class) {
+    public static final @NotNull JSONValueType<JSONNull> NULL = new JSONValueType<>(JSONNull.class) {
         @Override
-        protected JSONArray cast(Object value) {
-            if (value instanceof JSONArray jsonArray) return jsonArray;
-
-            return switch (value) {
-                case boolean[] array -> {
-                    final List<Object> list = new ArrayList<>();
-                    for (boolean element : array) list.add(element);
-                    yield new JSONArray(list);
-                }
-                case byte[] array -> {
-                    final List<Object> list = new ArrayList<>();
-                    for (byte element : array) list.add(element);
-                    yield new JSONArray(list);
-                }
-                case short[] array -> {
-                    final List<Object> list = new ArrayList<>();
-                    for (short element : array) list.add(element);
-                    yield new JSONArray(list);
-                }
-                case int[] array -> {
-                    final List<Object> list = new ArrayList<>();
-                    for (int element : array) list.add(element);
-                    yield new JSONArray(list);
-                }
-                case long[] array -> {
-                    final List<Object> list = new ArrayList<>();
-                    for (long element : array) list.add(element);
-                    yield new JSONArray(list);
-                }
-                case float[] array -> {
-                    final List<Object> list = new ArrayList<>();
-                    for (float element : array) list.add(element);
-                    yield new JSONArray(list);
-                }
-                case double[] array -> {
-                    final List<Object> list = new ArrayList<>();
-                    for (double element : array) list.add(element);
-                    yield new JSONArray(list);
-                }
-                case char[] array -> {
-                    final List<Object> list = new ArrayList<>();
-                    for (char element : array) list.add(element);
-                    yield new JSONArray(list);
-                }
-                case Object[] array -> new JSONArray(Arrays.asList(array));
-                case Collection<?> collection -> new JSONArray(collection);
-                default -> throw new IllegalArgumentException("value is not a json array value");
-            };
-        }
-
-        @Override
-        public String toString() {
-            return "Array";
-        }
-    };
-
-    public static final JSONValueType<JSONNull> NULL = new JSONValueType<>(JSONNull.class) {
-        @Override
-        protected JSONNull cast(Object value) {
+        public JSONNull cast(Object value) {
             if (value instanceof JSONNull jsonNull) return jsonNull;
-
-            if (value == null) return JSONNull.NULL;
+            else if (value == null) return JSONNull.NULL;
             else throw new IllegalArgumentException("value is not a null value");
-        }
-
-        @Override
-        public String toString() {
-            return "Null";
         }
     };
 }

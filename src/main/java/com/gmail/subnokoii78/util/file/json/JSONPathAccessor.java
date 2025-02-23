@@ -1,5 +1,7 @@
 package com.gmail.subnokoii78.util.file.json;
 
+import com.gmail.subnokoii78.util.file.json.values.JSONArray;
+import com.gmail.subnokoii78.util.file.json.values.JSONObject;
 import com.gmail.subnokoii78.util.other.TupleLR;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,7 +18,7 @@ import java.util.stream.Stream;
 public final class JSONPathAccessor {
     private final JSONObject initialObject;
 
-    JSONPathAccessor(@NotNull JSONObject initialObject) {
+    public JSONPathAccessor(@NotNull JSONObject initialObject) {
         this.initialObject = initialObject;
     }
 
@@ -147,7 +149,7 @@ public final class JSONPathAccessor {
         return type;
     }
 
-    public <T> @NotNull T get(@NotNull String path, @NotNull JSONValueType<T> type) {
+    public <T extends JSONValue<?>> @NotNull T get(@NotNull String path, @NotNull JSONValueType<T> type) {
         final T value = access(path, false, accessor -> accessor.get(type));
         if (value == null) {
             throw new IllegalArgumentException("パス '" + path + "' は存在しません");
@@ -195,7 +197,7 @@ public final class JSONPathAccessor {
 
         public abstract @NotNull JSONValueType<?> getType();
 
-        public abstract <P> @NotNull P get(@NotNull JSONValueType<P> type);
+        public abstract <P extends JSONValue<?>> @NotNull P get(@NotNull JSONValueType<P> type);
 
         public abstract <P> void set(@NotNull P value);
 
@@ -225,7 +227,7 @@ public final class JSONPathAccessor {
             }
 
             @Override
-            public <P> @NotNull P get(@NotNull JSONValueType<P> type) {
+            public <P extends JSONValue<?>> @NotNull P get(@NotNull JSONValueType<P> type) {
                 return structure.getKey(key, type);
             }
 
@@ -256,7 +258,7 @@ public final class JSONPathAccessor {
             }
 
             @Override
-            public <P> @NotNull P get(@NotNull JSONValueType<P> type) {
+            public <P extends JSONValue<?>> @NotNull P get(@NotNull JSONValueType<P> type) {
                 return structure.get(key, type);
             }
 

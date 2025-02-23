@@ -103,6 +103,7 @@ public abstract class DeclarationKey<T> {
         }
     };
 
+    @Deprecated
     public static final DeclarationKey<DoubleUnaryOperator> SELF_OPERATOR_NUMBER_SUFFIX = new DeclarationKey<>(DeclarationCategory.SELF_OPERATOR) {
         @Override
         public @NotNull DoubleUnaryOperator selfOperator(@NotNull DoubleUnaryOperator unaryOperator) {

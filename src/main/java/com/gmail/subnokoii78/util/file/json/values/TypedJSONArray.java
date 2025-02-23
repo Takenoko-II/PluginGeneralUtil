@@ -1,13 +1,15 @@
-package com.gmail.subnokoii78.util.file.json;
+package com.gmail.subnokoii78.util.file.json.values;
 
+import com.gmail.subnokoii78.util.file.json.JSONValue;
+import com.gmail.subnokoii78.util.file.json.JSONValueType;
+import com.gmail.subnokoii78.util.file.json.JSONValueTypes;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T>, JSONStructure {
+public class TypedJSONArray<T extends JSONValue<?>> extends JSONValue<List<T>> implements JSONIterable<T>, JSONStructure {
     private final JSONValueType<T> type;
 
     public TypedJSONArray(@NotNull JSONValueType<T> type) {
@@ -15,7 +17,7 @@ public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T>
         this.type = type;
     }
 
-    public TypedJSONArray(@NotNull JSONValueType<T> type, @NotNull Collection<T> list) {
+    public TypedJSONArray(@NotNull JSONValueType<T> type, @NotNull List<T> list) {
         super(new ArrayList<>(list));
         this.type = type;
     }
@@ -56,20 +58,8 @@ public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T>
         this.value.add(index, value);
     }
 
-    public void add(int index, JSONValue<T> value) {
-        if (index < 0 || index > this.value.size()) {
-            throw new IllegalArgumentException("そのインデックスは使用できません");
-        }
-
-        this.value.add(index, value.value);
-    }
-
     public void add(T value) {
         this.value.add(value);
-    }
-
-    public void add(JSONValue<T> value) {
-        this.value.add(value.value);
     }
 
     public void set(int index, T value) {
@@ -78,14 +68,6 @@ public class TypedJSONArray<T> extends JSONValue<List<T>> implements Iterable<T>
         }
 
         this.value.set(index, value);
-    }
-
-    public void set(int index, JSONValue<T> value) {
-        if (index < 0 || index >= this.value.size()) {
-            throw new IllegalArgumentException("そのインデックスは使用できません");
-        }
-
-        this.value.set(index, value.value);
     }
 
     public void delete(int index) {

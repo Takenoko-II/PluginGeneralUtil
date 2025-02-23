@@ -1,6 +1,6 @@
 package com.gmail.subnokoii78.util.other;
 
-import com.gmail.subnokoii78.util.file.json.JSONObject;
+import com.gmail.subnokoii78.util.file.json.values.JSONObject;
 import com.gmail.subnokoii78.util.file.json.JSONParser;
 import com.gmail.subnokoii78.util.file.json.JSONSerializer;
 import com.gmail.subnokoii78.util.ui.container.ContainerUI;

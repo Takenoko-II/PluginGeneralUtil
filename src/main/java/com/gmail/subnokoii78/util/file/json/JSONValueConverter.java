@@ -1,6 +1,10 @@
 package com.gmail.subnokoii78.util.file.json;
 
 import com.gmail.subnokoii78.util.execute.DimensionProvider;
+import com.gmail.subnokoii78.util.file.json.values.JSONArray;
+import com.gmail.subnokoii78.util.file.json.values.JSONNumber;
+import com.gmail.subnokoii78.util.file.json.values.JSONObject;
+import com.gmail.subnokoii78.util.file.json.values.TypedJSONArray;
 import com.gmail.subnokoii78.util.vector.DualAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.TripleAxisRotationBuilder;
 import com.gmail.subnokoii78.util.vector.Vector3Builder;
@@ -22,7 +26,8 @@ public abstract class JSONValueConverter<T> {
         return tryConvert(value) != null;
     }
 
-    protected @NotNull T convert(@NotNull Object value) {
+    @NotNull
+    public T convert(@NotNull Object value) {
         final var v = tryConvert(value);
         if (v == null) throw new IllegalArgumentException("渡された値は " + clazz.getName() + " に変換できません");
         else return v;
@@ -49,7 +54,7 @@ public abstract class JSONValueConverter<T> {
 
         private @Nullable Vector3Builder array(@NotNull JSONArray jsonArray) {
             if (jsonArray.length() == 3 && jsonArray.isArrayOf(JSONValueTypes.NUMBER)) {
-                final TypedJSONArray<Number> typedJSONArray = jsonArray.typed(JSONValueTypes.NUMBER);
+                final TypedJSONArray<JSONNumber> typedJSONArray = jsonArray.typed(JSONValueTypes.NUMBER);
                 return new Vector3Builder(
                     typedJSONArray.get(0).doubleValue(),
                     typedJSONArray.get(1).doubleValue(),
@@ -89,7 +94,7 @@ public abstract class JSONValueConverter<T> {
 
         private @Nullable DualAxisRotationBuilder array(@NotNull JSONArray jsonArray) {
             if (jsonArray.length() == 2 && jsonArray.isArrayOf(JSONValueTypes.NUMBER)) {
-                final TypedJSONArray<Number> typedJSONArray = jsonArray.typed(JSONValueTypes.NUMBER);
+                final TypedJSONArray<JSONNumber> typedJSONArray = jsonArray.typed(JSONValueTypes.NUMBER);
                 return new DualAxisRotationBuilder(
                     typedJSONArray.get(0).floatValue(),
                     typedJSONArray.get(1).floatValue()
@@ -129,7 +134,7 @@ public abstract class JSONValueConverter<T> {
 
         private @Nullable TripleAxisRotationBuilder array(@NotNull JSONArray jsonArray) {
             if (jsonArray.length() == 3 && jsonArray.isArrayOf(JSONValueTypes.NUMBER)) {
-                final TypedJSONArray<Number> typedJSONArray = jsonArray.typed(JSONValueTypes.NUMBER);
+                final TypedJSONArray<JSONNumber> typedJSONArray = jsonArray.typed(JSONValueTypes.NUMBER);
                 return new TripleAxisRotationBuilder(
                     typedJSONArray.get(0).floatValue(),
                     typedJSONArray.get(1).floatValue(),
@@ -156,7 +161,7 @@ public abstract class JSONValueConverter<T> {
             else if (!(jsonObject.hasKey("dimension") && jsonObject.hasKey("location") && jsonObject.hasKey("rotation"))) return null;
             else if (!(jsonObject.getTypeOfKey("dimension").equals(JSONValueTypes.STRING))) return null;
 
-            final World dimension = DimensionProvider.of(jsonObject.getKey("dimension", JSONValueTypes.STRING)).getWorld();
+            final World dimension = DimensionProvider.of(jsonObject.getKey("dimension", JSONValueTypes.STRING).getValue()).getWorld();
             final Object location = jsonObject.getKey("location", jsonObject.getTypeOfKey("location"));
             final Object rotation = jsonObject.getKey("rotation", jsonObject.getTypeOfKey("rotation"));
 

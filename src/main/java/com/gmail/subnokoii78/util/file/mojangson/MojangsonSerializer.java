@@ -12,11 +12,14 @@ import java.util.Set;
 public class MojangsonSerializer {
     private final int indentationSpaceCount;
 
+    private final boolean asJsonString;
+
     private final MojangsonStructure value;
 
-    private MojangsonSerializer(@NotNull MojangsonStructure value, int indentationSpaceCount) {
+    private MojangsonSerializer(@NotNull MojangsonStructure value, int indentationSpaceCount, boolean asJsonString) {
         this.value = value;
         this.indentationSpaceCount = indentationSpaceCount;
+        this.asJsonString = asJsonString;
     }
 
     private @NotNull StringBuilder serialize() throws MojangsonSerializationException {
@@ -77,7 +80,7 @@ public class MojangsonSerializer {
     private StringBuilder iterable(@NotNull MojangsonIterable<?> iterable, int indentation) {
         StringBuilder stringBuilder = new StringBuilder().append(ARRAY_LIST_BRACES[0]);
 
-        if (ITERABLE_TYPE_SYMBOLS.containsKey(iterable.getClass())) {
+        if (!asJsonString && ITERABLE_TYPE_SYMBOLS.containsKey(iterable.getClass())) {
             stringBuilder
                 .append(ITERABLE_TYPE_SYMBOLS.get(iterable.getClass()))
                 .append(SEMICOLON);
@@ -112,7 +115,7 @@ public class MojangsonSerializer {
     }
 
     private StringBuilder string(@NotNull String value) {
-        boolean requireQuote = SYMBOLS_ON_STRING.stream().anyMatch(sym -> value.contains(sym.toString()));
+        boolean requireQuote = asJsonString || SYMBOLS_ON_STRING.stream().anyMatch(sym -> value.contains(sym.toString()));
         final StringBuilder stringBuilder = new StringBuilder();
 
         if (requireQuote) stringBuilder.append(QUOTE);
@@ -130,7 +133,7 @@ public class MojangsonSerializer {
     private StringBuilder number(@NotNull Number value) {
         final StringBuilder stringBuilder = new StringBuilder(String.valueOf(value));
 
-        if (NUMBER_TYPE_SYMBOLS.containsKey(value.getClass())) {
+        if (!asJsonString && NUMBER_TYPE_SYMBOLS.containsKey(value.getClass())) {
             stringBuilder.append(NUMBER_TYPE_SYMBOLS.get(value.getClass()));
         }
 
@@ -204,6 +207,10 @@ public class MojangsonSerializer {
     ));
 
     public static @NotNull String serialize(@NotNull MojangsonStructure structure) {
-        return new MojangsonSerializer(structure, 4).serialize().toString();
+        return new MojangsonSerializer(structure, 4, false).serialize().toString();
+    }
+
+    public static @NotNull String toJson(MojangsonStructure structure) {
+        return new MojangsonSerializer(structure, 4, true).serialize().toString();
     }
 }

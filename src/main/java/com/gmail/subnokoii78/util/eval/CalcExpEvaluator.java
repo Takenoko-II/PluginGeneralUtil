@@ -509,19 +509,7 @@ public final class CalcExpEvaluator {
         evaluator.declare("/", DeclarationKey.OPERATOR_MONOMIAL, (a, b) -> a / b);
         evaluator.declare("%", DeclarationKey.OPERATOR_MONOMIAL, (a, b) -> a % b);
         evaluator.declare("**", DeclarationKey.OPERATOR_FACTOR, Math::pow);
-        evaluator.declare("!", DeclarationKey.SELF_OPERATOR_NUMBER_SUFFIX, x -> {
-            if (x != (double) (int) x) throw new IllegalArgumentException("階乗演算子は実質的な整数の値にのみ使用できます");
-            else if (x < 0) throw new IllegalArgumentException("階乗演算子は負の値に使用できません");
-            else if (x > 127) throw new IllegalArgumentException("階乗演算子は127!を超えた値を計算できないよう制限されています");
 
-            double result = 1;
-
-            for (int i = 2; i <= x; i++) {
-                result *= i;
-            }
-
-            return result;
-        });
         evaluator.declare("&", DeclarationKey.OPERATOR_FACTOR, (x, y) -> {
             if (!(x == (double) (int) x && y == (double) (int) y)) throw new IllegalArgumentException("&演算子は実質的な整数の値にのみ使用できます");
             return (int) x & (int) y;
@@ -559,6 +547,19 @@ public final class CalcExpEvaluator {
         evaluator.declare("to_degrees", DeclarationKey.FUNCTION_1_ARG, Math::toDegrees);
         evaluator.declare("to_radians", DeclarationKey.FUNCTION_1_ARG, Math::toRadians);
         evaluator.declare("log10", DeclarationKey.FUNCTION_1_ARG, Math::log10);
+        evaluator.declare("factorial", DeclarationKey.FUNCTION_1_ARG, x -> {
+            if (x != (double) (int) x) throw new IllegalArgumentException("階乗演算子は実質的な整数の値にのみ使用できます");
+            else if (x < 0) throw new IllegalArgumentException("階乗演算子は負の値に使用できません");
+            else if (x > 127) throw new IllegalArgumentException("階乗演算子は127!を超えた値を計算できないよう制限されています");
+
+            double result = 1;
+
+            for (int i = 2; i <= x; i++) {
+                result *= i;
+            }
+
+            return result;
+        });
 
         evaluator.declare("log", DeclarationKey.FUNCTION_2_ARGS, (a, b) -> Math.log(b) / Math.log(a));
         evaluator.declare("atan2", DeclarationKey.FUNCTION_2_ARGS, Math::atan2);

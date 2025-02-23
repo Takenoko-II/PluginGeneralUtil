@@ -4,7 +4,7 @@ import com.gmail.subnokoii78.util.execute.EntitySelector;
 import com.gmail.subnokoii78.util.execute.SourceOrigin;
 import com.gmail.subnokoii78.util.execute.SelectorArgument;
 import com.gmail.subnokoii78.util.execute.SourceStack;
-import com.gmail.subnokoii78.util.file.json.JSONObject;
+import com.gmail.subnokoii78.util.file.json.values.JSONObject;
 import com.gmail.subnokoii78.util.file.json.JSONParser;
 import com.gmail.subnokoii78.util.schedule.GameTickScheduler;
 import com.gmail.subnokoii78.util.schedule.RealTimeScheduler;

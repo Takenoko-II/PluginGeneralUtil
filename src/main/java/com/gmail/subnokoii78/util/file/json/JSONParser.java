@@ -1,5 +1,9 @@
 package com.gmail.subnokoii78.util.file.json;
 
+import com.gmail.subnokoii78.util.file.json.values.JSONArray;
+import com.gmail.subnokoii78.util.file.json.values.JSONNull;
+import com.gmail.subnokoii78.util.file.json.values.JSONObject;
+import com.gmail.subnokoii78.util.file.json.values.JSONStructure;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -30,7 +34,9 @@ public class JSONParser {
 
     private static final String[] BOOLEANS = {"false", "true"};
 
-    private static final Function<String, Double> NUMBER_PARSER = Double::parseDouble;
+    private static final Function<String, Long> INT_PARSER = Long::parseLong;
+
+    private static final Function<String, Double> DECIMAL_PARSER = Double::parseDouble;
 
     private static final Set<Character> SYMBOLS_ON_STRING = new HashSet<>();
 
@@ -164,7 +170,7 @@ public class JSONParser {
         else throw newException("文字列はクォーテーションで開始される必要があります");
     }
 
-    private @NotNull Double numberValue() {
+    private @NotNull Number numberValue() {
         final StringBuilder sb = new StringBuilder();
         char current = next(false);
 
@@ -200,7 +206,9 @@ public class JSONParser {
             throw newException("数値は数字で終わる必要があります");
         }
 
-        return NUMBER_PARSER.apply(sb.toString());
+        final Function<String, ? extends Number> parser = decimalPointAppeared ? DECIMAL_PARSER : INT_PARSER;
+
+        return parser.apply(sb.toString());
     }
 
     private @NotNull Boolean booleanValue() {

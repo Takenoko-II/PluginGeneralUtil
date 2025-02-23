@@ -1,4 +1,4 @@
-package com.gmail.subnokoii78.util.file.json;
+package com.gmail.subnokoii78.util.file.json.values;
 
 import org.jetbrains.annotations.NotNull;
 
