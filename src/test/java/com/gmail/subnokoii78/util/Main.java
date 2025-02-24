@@ -41,7 +41,7 @@ public class Main {
 
         jsonObject.set("data.array[10]", 'a');
 
-        // System.out.println(JSONSerializer.serialize(jsonObject));
+        System.out.println(JSONSerializer.serialize(JSONValueTypes.OBJECT.cast(jsonObject.asMap())));
 
         final MojangsonCompound compound = MojangsonParser.compound(
             """

@@ -80,8 +80,11 @@ public final class JSONObject extends JSONValue<Map<String, JSONValue<?>>> imple
                 final JSONArray array = getKey(key, JSONValueTypes.ARRAY);
                 map.put(key, array.asList());
             }
+            else if (value.get(key) instanceof JSONPrimitive<?> primitive) {
+                map.put(key, primitive.getValue());
+            }
             else {
-                map.put(key, value.get(key));
+                throw new IllegalStateException("無効な型を検出しました: " + value.get(key).getClass().getName());
             }
         }
 

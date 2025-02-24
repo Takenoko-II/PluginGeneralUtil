@@ -105,8 +105,11 @@ public final class JSONArray extends JSONValue<List<JSONValue<?>>> implements JS
                 final JSONArray array = get(i, JSONValueTypes.ARRAY);
                 list.add(array.asList());
             }
+            else if (value.get(i) instanceof JSONPrimitive<?> primitive) {
+                list.add(primitive.getValue());
+            }
             else {
-                list.add(value.get(i));
+                throw new IllegalStateException("無効な型を検出しました: " + value.get(i).getClass().getName());
             }
         }
 

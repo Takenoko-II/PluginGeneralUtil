@@ -1,6 +1,5 @@
 package com.gmail.subnokoii78.util.file.mojangson.values;
 
-import com.gmail.subnokoii78.util.file.mojangson.MojangsonValue;
 import com.gmail.subnokoii78.util.file.mojangson.MojangsonValueTypes;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,7 +8,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-public class MojangsonIntArray extends MojangsonValue<int[]> implements MojangsonStructure, MojangsonIterable<MojangsonInt> {
+public class MojangsonIntArray extends MojangsonArray<int[]> implements MojangsonIterable<MojangsonInt> {
     public MojangsonIntArray(int[] value) {
         super(value);
     }
@@ -38,10 +37,12 @@ public class MojangsonIntArray extends MojangsonValue<int[]> implements Mojangso
         return "int" + Arrays.toString(value);
     }
 
-    public int[] toIntArray() {
+    @Override
+    public @NotNull int[] toPrimitiveArray() {
         return Arrays.copyOf(value, value.length);
     }
 
+    @Override
     public @NotNull MojangsonList toList() {
         final MojangsonList list = new MojangsonList();
         for (final int intValue : value) {

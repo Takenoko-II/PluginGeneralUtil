@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-public class MojangsonLongArray extends MojangsonValue<long[]> implements MojangsonStructure, MojangsonIterable<MojangsonLong> {
+public class MojangsonLongArray extends MojangsonArray<long[]> implements MojangsonIterable<MojangsonLong> {
     public MojangsonLongArray(long[] value) {
         super(value);
     }
@@ -38,10 +38,12 @@ public class MojangsonLongArray extends MojangsonValue<long[]> implements Mojang
         return "long" + Arrays.toString(value);
     }
 
-    public long[] toLongArray() {
+    @Override
+    public @NotNull long[] toPrimitiveArray() {
         return Arrays.copyOf(value, value.length);
     }
 
+    @Override
     public @NotNull MojangsonList toList() {
         final MojangsonList list = new MojangsonList();
         for (final long longValue : value) {

@@ -10,4 +10,8 @@ public class MojangsonString extends MojangsonPrimitive<String> {
     public static @NotNull MojangsonString valueOf(@NotNull String value) {
         return new MojangsonString(value);
     }
+
+    public static @NotNull MojangsonString valueOf(char value) {
+        return valueOf(String.valueOf(value));
+    }
 }

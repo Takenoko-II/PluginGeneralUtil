@@ -79,8 +79,14 @@ public class MojangsonCompound extends MojangsonValue<Map<String, MojangsonValue
                 final MojangsonList list = getKey(key, MojangsonValueTypes.LIST);
                 map.put(key, list.asRawList());
             }
+            else if (value.get(key) instanceof MojangsonArray<?> array) {
+                map.put(key, array.toPrimitiveArray());
+            }
+            else if (value.get(key) instanceof MojangsonPrimitive<?> primitive) {
+                map.put(key, primitive.getValue());
+            }
             else {
-                map.put(key, value.get(key));
+                throw new IllegalStateException("無効な型を検出しました: " + value.get(key).getClass().getName());
             }
         }
 

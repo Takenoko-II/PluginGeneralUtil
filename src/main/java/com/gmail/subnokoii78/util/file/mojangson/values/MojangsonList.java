@@ -101,10 +101,16 @@ public class MojangsonList extends MojangsonValue<List<MojangsonValue<?>>> imple
             }
             else if (type.equals(MojangsonValueTypes.LIST)) {
                 final MojangsonList list = get(i, MojangsonValueTypes.LIST);
-                list.add(list.asRawList());
+                arrayList.add(list.asRawList());
+            }
+            else if (value.get(i) instanceof MojangsonArray<?> array) {
+                arrayList.add(array.toPrimitiveArray());
+            }
+            else if (value.get(i) instanceof MojangsonPrimitive<?> primitive) {
+                arrayList.add(primitive.getValue());
             }
             else {
-                arrayList.add(value.get(i));
+                throw new IllegalStateException("無効な型を検出しました: " + value.get(i).getClass().getName());
             }
         }
 

@@ -68,9 +68,13 @@ public final class MojangsonValueTypes {
     public static final MojangsonValueType<MojangsonString> STRING = new MojangsonValueType<>(MojangsonString.class) {
         @Override
         public MojangsonString cast(Object value) {
-            if (value instanceof MojangsonString mojangsonString) return mojangsonString;
-            else if (value instanceof String stringValue) return MojangsonString.valueOf(stringValue);
-            else throw new IllegalArgumentException("String型でない値はMojangsonStringに変換できません");
+            return switch (value) {
+                case MojangsonString mojangsonString -> mojangsonString;
+                case String stringValue -> MojangsonString.valueOf(stringValue);
+                case Character characterValue -> MojangsonString.valueOf(characterValue);
+                case null, default ->
+                    throw new IllegalArgumentException("String型でない値はMojangsonStringに変換できません");
+            };
         }
     };
 
@@ -152,17 +156,18 @@ public final class MojangsonValueTypes {
 
     public static @NotNull MojangsonValueType<?> get(Object value) {
         return switch (value) {
-            case Boolean v -> BYTE;
-            case Byte v -> BYTE;
-            case Short v -> SHORT;
-            case Integer v -> INT;
-            case Long v -> LONG;
-            case Float v -> FLOAT;
-            case Double v -> DOUBLE;
-            case String v -> STRING;
-            case byte[] v -> BYTE_ARRAY;
-            case int[] v -> INT_ARRAY;
-            case long[] v -> LONG_ARRAY;
+            case Boolean ignored -> BYTE;
+            case Byte ignored -> BYTE;
+            case Short ignored -> SHORT;
+            case Integer ignored -> INT;
+            case Long ignored -> LONG;
+            case Float ignored -> FLOAT;
+            case Double ignored -> DOUBLE;
+            case Character ignored -> STRING;
+            case String ignored -> STRING;
+            case byte[] ignored -> BYTE_ARRAY;
+            case int[] ignored -> INT_ARRAY;
+            case long[] ignored -> LONG_ARRAY;
             case Map<?, ?> v -> {
                 COMPOUND.cast(v);
                 yield COMPOUND;
